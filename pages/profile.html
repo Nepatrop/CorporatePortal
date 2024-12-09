@@ -1,0 +1,215 @@
+<!-- Страница профиля -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Основная информация -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <img src="https://via.placeholder.com/150" class="rounded-circle mb-3" alt="Profile">
+                    <h4>Иванов Иван Иванович</h4>
+                    <p class="text-muted">Старший разработчик</p>
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-1">Python</span>
+                        <span class="badge bg-primary me-1">JavaScript</span>
+                        <span class="badge bg-primary">C++</span>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm">
+                        Редактировать профиль
+                    </button>
+                </div>
+            </div>
+
+            <!-- Контактная информация -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Контактная информация</h5>
+                    <div class="mb-2">
+                        <i class="fas fa-envelope me-2"></i> ivanov@example.com
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-phone me-2"></i> +7 (999) 123-45-67
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-building me-2"></i> IT-отдел
+                    </div>
+                    <div>
+                        <i class="fas fa-map-marker-alt me-2"></i> Офис 505
+                    </div>
+                </div>
+            </div>
+
+            <!-- Достижения -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Достижения</h5>
+                    <div class="d-flex flex-wrap">
+                        <div class="achievement-badge m-1">
+                            <i class="fas fa-star"></i> 5 лет в компании
+                        </div>
+                        <div class="achievement-badge m-1">
+                            <i class="fas fa-trophy"></i> Лучший сотрудник 2023
+                        </div>
+                        <div class="achievement-badge m-1">
+                            <i class="fas fa-award"></i> Инноватор года
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Активность и статистика -->
+        <div class="col-md-8">
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6>Проектов завершено</h6>
+                            <h2>23</h2>
+                            <div class="small">+2 за последний месяц</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6>Часов обучения</h6>
+                            <h2>156</h2>
+                            <div class="small">+12 за последний месяц</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6>Рейтинг</h6>
+                            <h2>4.8</h2>
+                            <div class="small">Топ 10% сотрудников</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Текущие проекты -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Текущие проекты</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Проект</th>
+                                    <th>Роль</th>
+                                    <th>Прогресс</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Корпоративный портал</td>
+                                    <td>Тех. лид</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" style="width: 75%">75%</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success">В работе</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Система аналитики</td>
+                                    <td>Разработчик</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" style="width: 30%">30%</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning">На паузе</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- График активности -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">График активности</h5>
+                    <canvas id="activityChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Последние действия -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Последние действия</h5>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="small text-muted">Сегодня, 10:30</div>
+                            <div>Завершил задачу "Разработка API для аналитики"</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="small text-muted">Вчера, 15:45</div>
+                            <div>Добавил комментарий к проекту "Корпоративный портал"</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="small text-muted">2 дня назад</div>
+                            <div>Получил сертификат по курсу "Advanced Python"</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- График активности -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                datasets: [{
+                    label: 'Активность',
+                    data: [8, 6, 7, 8, 5, 3, 2],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    .timeline-item {
+        padding: 10px 0;
+        border-left: 2px solid #e9ecef;
+        padding-left: 20px;
+        position: relative;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 15px;
+        width: 12px;
+        height: 12px;
+        background: #3498db;
+        border-radius: 50%;
+    }
+</style>
