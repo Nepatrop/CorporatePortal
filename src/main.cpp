@@ -1,25 +1,42 @@
-#include "includes/mysql_driver.h"
-#include "includes/mysql_connection.h"
-#include <cppconn/statement.h>
+#include "database.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+std::string readSqlFile(const std::string& path) {
+    std::ifstream file(path);
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 int main() {
-    try {
-        sql::mysql::MySQL_Driver *driver;
-        sql::Connection *con;
+    Database db("localhost", "5432", "corporate_portal", 
+                "postgres", "diploma");
+    
+    if (!db.initialize()) {
+        std::cerr << "Failed to initialize database" << std::endl;
+        return 1;
+    }
 
-        driver = sql::mysql::get_mysql_driver_instance();
-        con = driver->connect("tcp://127.0.0.1:3306", "root", "your_password");
+    // Initialize database schema
+    std::string initScript = readSqlFile("database/init_db.sql");
+    if (!db.executeQuery(initScript)) {
+        std::cerr << "Failed to initialize database schema" << std::endl;
+        return 1;
+    }
 
-        con->setSchema("corporate_portal");
+    // Загрузим тестовые данные
+    std::string testDataScript = readSqlFile("database/test_data.sql");
+    if (!db.executeQuery(testDataScript)) {
+        std::cerr << "Failed to load test data" << std::endl;
+        return 1;
+    }
 
-        sql::Statement *stmt;
-        stmt = con->createStatement();
-        stmt->execute("SELECT * FROM Employees");
-
-        delete stmt;
-        delete con;
-    } catch (sql::SQLException &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    // Test query (используем нижний регистр)
+    auto result = db.executeSelect("SELECT * FROM employees");
+    for (const auto& row : result) {
+        std::cout << "Employee: " << row["full_name"].as<std::string>() << std::endl;
     }
 
     return 0;
