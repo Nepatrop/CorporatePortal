@@ -1,3 +1,15 @@
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = ON;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'corporate_portal') THEN
+        PERFORM dblink_exec('dbname=' || current_database(), 
+            'CREATE DATABASE corporate_portal WITH ENCODING ''UTF8'' LC_COLLATE ''Russian_Russia.UTF8'' LC_CTYPE ''Russian_Russia.UTF8''');
+    END IF;
+END
+$$;
+
 CREATE TABLE organizations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL

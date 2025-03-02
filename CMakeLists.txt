@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(corporate_portal_backend)
 
-# Обновляем стандарт до C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -12,13 +11,8 @@ set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE S
 find_package(PostgreSQL REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
 
-# Add source files
-add_executable(corporate_portal_backend 
-    src/main.cpp
-    src/database.cpp
-)
+add_executable(corporate_portal_backend src/main.cpp)
 
-# Link libraries
 target_link_libraries(corporate_portal_backend PRIVATE
     PostgreSQL::PostgreSQL
     libpqxx::pqxx
