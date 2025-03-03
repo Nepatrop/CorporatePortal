@@ -1,154 +1,410 @@
+"use client"
+
+import { useState } from "react"
+
+// Компонент Comment
+function Comment({ comment }) {
+  return (
+    <div style={styles.comment}>
+      <img src={comment.avatar || "/placeholder.svg"} alt={comment.user} style={styles.avatar} />
+      <div style={styles.commentContent}>
+        <strong style={styles.userName}>{comment.user}</strong>
+        <p style={styles.commentText}>{comment.text}</p>
+      </div>
+    </div>
+  )
+}
+
+// Компонент NewsItem
+function NewsItem({ news, onLike, onAddComment }) {
+  const [commentText, setCommentText] = useState("")
+
+  const handleSubmitComment = (e) => {
+    e.preventDefault()
+    if (commentText.trim()) {
+      onAddComment(news.id, commentText)
+      setCommentText("")
+    }
+  }
+
+  return (
+    <div style={styles.newsItem}>
+      <h3 style={styles.newsTitle}>{news.title}</h3>
+      <p style={styles.newsDescription}>{news.description}</p>
+      <img src={news.image || "/placeholder.svg"} alt={news.title} style={styles.newsImage} />
+      <div style={styles.newsFooter}>
+        <span style={styles.newsDate}>{news.date}</span>
+        <button
+          onClick={() => onLike(news.id)}
+          style={styles.likeButton}
+          aria-label={news.liked ? "Убрать лайк" : "Поставить лайк"}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill={news.liked ? "#EE6B0C" : "none"}
+            stroke="#13454B"
+            strokeWidth="2"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          <span style={styles.likeCount}>{news.likes}</span>
+        </button>
+      </div>
+      <div style={styles.commentsSection}>
+        <h4 style={styles.commentsHeader}>Комментарии</h4>
+        {news.comments.map((comment, index) => (
+          <Comment key={index} comment={comment} />
+        ))}
+        <form onSubmit={handleSubmitComment} style={styles.commentForm}>
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Поделиться мыслями..."
+            style={styles.commentInput}
+          />
+          <button type="submit" style={styles.commentSubmit}>
+            Отправить
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// Основной компонент MainContent
 function MainContent() {
-    const internalPortals = [
-      { id: 1, name: "HR Портал", url: "#", icon: "👥" },
-      { id: 2, name: "База знаний", url: "#", icon: "🎓" },
-      { id: 3, name: "IT Поддержка", url: "#", icon: "💻" },
-      { id: 4, name: "Документация", url: "#", icon: "📄" },
-      { id: 5, name: "Обучение", url: "#", icon: "🎓" },
-    ];
-  
-    const news = [
-      { id: 1, title: "Новый проект запущен", date: "2023-05-15" },
-      { id: 2, title: "Обновление системы безопасности", date: "2023-05-14" },
-    ];
-  
-    const birthdays = [
-      { id: 1, name: "Иван Иванов", date: "дата дня рождения" },
-      { id: 2, name: "Мария Петрова", date: "дата дня рождения" },
-    ];
-  
-    return (
-      <main style={styles.main}>
-        <div style={styles.leftColumn}>
-          <h2 style={styles.heading}>Внутренние порталы</h2>
-          <div style={styles.portalGrid}>
-            {internalPortals.map((portal) => (
-              <a key={portal.id} href={portal.url} style={styles.portalLink}>
-                <div style={styles.portalIcon}>{portal.icon}</div>
-                <span style={styles.portalName}>{portal.name}</span>
-              </a>
+  const internalPortals = [
+    { id: 1, name: "HR Портал", url: "#", icon: "👥" },
+    { id: 2, name: "База знаний", url: "#", icon: "🎓" },
+    { id: 3, name: "IT Поддержка", url: "#", icon: "💻" },
+    { id: 4, name: "Документация", url: "#", icon: "📄" },
+    { id: 5, name: "Обучение", url: "#", icon: "🎓" },
+  ]
+
+  const [news, setNews] = useState([
+    {
+      id: 1,
+      title: "Новый проект запущен",
+      date: "2023-05-15",
+      description: "Мы рады сообщить о запуске нового проекта, который поможет оптимизировать рабочие процессы.",
+      image:
+        "https://img.freepik.com/free-photo/desk-real-estate-office_23-2147653310.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
+      likes: 0,
+      liked: false,
+      comments: [
+        {
+          user: "Анна Анновна",
+          avatar: "https://i.pinimg.com/736x/9f/e5/06/9fe5060dabf67f1d5f76b6e52f50c155.jpg",
+          text: "Отличная новость! Жду не дождусь начала работы над проектом.",
+        },
+        {
+          user: "Иван Иванов",
+          avatar: "https://i.pinimg.com/736x/2b/70/ac/2b70acd9b98a0d769a175f1bd4313fec.jpg",
+          text: "Интересно, какие технологии будут использоваться?",
+        },
+      ],
+    },
+    {
+      id: 2,
+      title: "Корпоративное мероприятие",
+      date: "2023-05-10",
+      description: "Не забудьте зарегистрироваться на корпоративное мероприятие, которое состоится в конце месяца.",
+      image:
+        "https://img.freepik.com/free-photo/colleagues-having-fun-business-event_23-2149370528.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
+      likes: 0,
+      liked: false,
+      comments: [],
+    },
+    {
+      id: 3,
+      title: "Новые курсы обучения",
+      date: "2023-05-05",
+      description: "Доступны новые курсы обучения для всех сотрудников. Успейте записаться!",
+      image:
+        "https://img.freepik.com/free-photo/team-process-creation_23-2147656721.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
+      likes: 0,
+      liked: false,
+      comments: [],
+    },
+  ])
+
+  const birthdays = [
+    { id: 1, name: "Иван Иванов", date: "15 мая" },
+    { id: 2, name: "Мария Петрова", date: "20 мая" },
+  ]
+
+  const handleLike = (id) => {
+    setNews(
+      news.map((item) =>
+        item.id === id ? { ...item, likes: item.liked ? item.likes - 1 : item.likes + 1, liked: !item.liked } : item,
+      ),
+    )
+  }
+
+  const handleAddComment = (id, text) => {
+    setNews(
+      news.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              comments: [
+                ...item.comments,
+                { user: "Текущий пользователь", avatar: "https://i.pravatar.cc/40?img=5", text: text },
+              ],
+            }
+          : item,
+      ),
+    )
+  }
+
+  return (
+    <main style={styles.main}>
+      <div style={styles.leftColumn}>
+        <h2 style={styles.heading}>Внутренние порталы</h2>
+        <div style={styles.portalGrid}>
+          {internalPortals.map((portal) => (
+            <a key={portal.id} href={portal.url} style={styles.portalLink}>
+              <div style={styles.portalIcon}>{portal.icon}</div>
+              <span style={styles.portalName}>{portal.name}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <div style={styles.rightColumn}>
+        <div style={{ ...styles.block, ...styles.newsBlock }}>
+          <h2 style={styles.heading}>Новости и статьи</h2>
+          <div style={styles.newsList}>
+            {news.map((item) => (
+              <NewsItem key={item.id} news={item} onLike={handleLike} onAddComment={handleAddComment} />
             ))}
           </div>
         </div>
-        <div style={styles.rightColumn}>
-          <div style={styles.block}>
-            <h2 style={styles.heading}>Новости и статьи</h2>
-            <ul style={styles.list}>
-              {news.map((item) => (
-                <li key={item.id} style={styles.listItem}>
-                  <h3 style={styles.subheading}>{item.title}</h3>
-                  <p style={styles.date}>{item.date}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div style={styles.block}>
-            <h2 style={styles.heading}>Ближайшие дни рождения</h2>
-            <ul style={styles.list}>
-              {birthdays.map((person) => (
-                <li key={person.id} style={styles.listItem}>
-                  <p>
-                    {person.name} - <span style={styles.date}>{person.date}</span>
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div style={{ ...styles.block, ...styles.birthdayBlock }}>
+          <h2 style={styles.heading}>Ближайшие дни рождения</h2>
+          <ul style={styles.list}>
+            {birthdays.map((person) => (
+              <li key={person.id} style={styles.listItem}>
+                <p>
+                  {person.name} - <span style={styles.date}>{person.date}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
-      </main>
-    );
-  }
-  
-  const styles = {
-    main: {
-      display: "flex",
-      height: "calc(100vh - 72px)", // Вычитаем высоту хедера
-      fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-      overflowX: "hidden", // Запрещаем горизонтальную прокрутку
-      padding: "1rem", // Внешний отступ для всего контейнера
-    },
-    leftColumn: {
-      flex: "0 0 60%", // Левая часть занимает 60% ширины
-      padding: "2rem",
-      backgroundColor: "#FFFFFF", // Белый фон
-      boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)", // Тень
-      borderRadius: "8px", // Скругление углов
-      marginRight: "1rem", // Отступ между левой и правой колонками
-      overflowY: "auto", // Прокрутка, если контент не помещается
-      boxSizing: "border-box", // Учитываем padding и border в ширине
-    },
-    rightColumn: {
-      flex: "0 0 40%", // Правая часть занимает 40% ширины
-      display: "flex",
-      flexDirection: "column",
-      gap: "1rem", // Отступ между блоками "Новости" и "Дни рождения"
-      overflowY: "auto", // Прокрутка, если контент не помещается
-      boxSizing: "border-box", // Учитываем padding и border в ширине
-      paddingRight: "1rem", // Добавляем отступ справа
-    },
-    block: {
-      backgroundColor: "#FFFFFF", // Белый фон для блоков
-      padding: "1.5rem",
-      borderRadius: "8px", // Скругление углов
-      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Тень
-      flex: 1, // Растягиваем блоки по высоте
-    },
-    heading: {
-      color: "#13454B", // ИЗУМРУДНЫЙ
-      borderBottom: "2px solid #EE6B0C", // ОРАНЖЕВЫЙ
-      paddingBottom: "0.5rem",
-      marginBottom: "1.5rem",
-      fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-      fontWeight: 500, // Medium для заголовков
-      fontSize: "1.5rem",
-    },
-    portalGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", // Адаптивная сетка
-      gap: "1.5rem", // Отступы между элементами
-    },
-    portalLink: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      textDecoration: "none",
-      color: "#13454B",
-      transition: "transform 0.2s",
-      "&:hover": {
-        transform: "scale(1.05)", // Эффект при наведении
-      },
-    },
-    portalIcon: {
-      fontSize: "2rem",
-      marginBottom: "0.5rem",
-    },
-    portalName: {
-      textAlign: "center",
-      fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-      fontWeight: 300, // Light для основного текста
-    },
-    subheading: {
-      color: "#13454B", // ИЗУМРУДНЫЙ
-      margin: "0 0 0.5rem 0",
-      fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-      fontWeight: 500, // Medium для подзаголовков
-    },
-    list: {
-      listStyle: "none",
-      padding: 0,
-      margin: 0,
-    },
-    listItem: {
-      marginBottom: "1rem",
-      fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-      fontWeight: 300, // Light для основного текста
-    },
-    date: {
-      color: "#B3B3B3", // БЕТОННЫЙ СЕРЫЙ
-      fontSize: "0.9em",
-      fontFamily: "'Arial', sans-serif", // Дополнительный шрифт
-      fontWeight: 400, // Regular для дат
-    },
-  };
-  
-  export default MainContent;
+      </div>
+    </main>
+  )
+}
+
+const styles = {
+  main: {
+    display: "flex",
+    height: "calc(100vh - 72px)",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    overflowX: "hidden",
+    padding: "1rem",
+  },
+  leftColumn: {
+    flex: "0 0 60%",
+    padding: "2rem",
+    backgroundColor: "#FFFFFF",
+    boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
+    borderRadius: "8px",
+    marginRight: "1rem",
+    overflowY: "auto",
+    boxSizing: "border-box",
+  },
+  rightColumn: {
+    flex: "0 0 40%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    boxSizing: "border-box",
+    paddingRight: "1rem",
+  },
+  block: {
+    backgroundColor: "#FFFFFF",
+    padding: "1.5rem",
+    borderRadius: "8px",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: 1,
+    overflow: "hidden",
+  },
+  heading: {
+    color: "#13454B",
+    borderBottom: "2px solid #EE6B0C",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 600,
+    fontSize: "36px",
+    lineHeight: "45px",
+    letterSpacing: "0.5px",
+    padding: "15px 0 12px 0",
+    marginBottom: "40px",
+  },
+  portalGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+    gap: "1.5rem",
+  },
+  portalLink: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textDecoration: "none",
+    color: "#13454B",
+    transition: "transform 0.2s",
+  },
+  portalIcon: {
+    fontSize: "2rem",
+    marginBottom: "0.5rem",
+  },
+  portalName: {
+    textAlign: "center",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 300,
+  },
+  list: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+  },
+  listItem: {
+    marginBottom: "1rem",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 300,
+  },
+  date: {
+    color: "#B3B3B3",
+    fontSize: "0.9em",
+    fontFamily: "'Arial', sans-serif",
+    fontWeight: 400,
+  },
+  newsBlock: {
+    flex: 2,
+    overflowY: "auto",
+    maxHeight: "calc(100vh - 300px)",
+  },
+  birthdayBlock: {
+    flex: 1,
+  },
+  newsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  newsItem: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: "8px",
+    overflow: "hidden",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    padding: "1rem",
+    marginBottom: "1rem",
+  },
+  newsImage: {
+    width: "100%",
+    height: "auto",
+    objectFit: "cover",
+    borderRadius: "4px",
+    marginBottom: "1rem",
+  },
+  newsTitle: {
+    color: "#13454B",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 500,
+    fontSize: "1.2rem",
+    marginBottom: "0.5rem",
+  },
+  newsDescription: {
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 300,
+    fontSize: "1rem",
+    color: "#333",
+    marginBottom: "1rem",
+  },
+  newsFooter: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  newsDate: {
+    fontFamily: "'Arial', sans-serif",
+    fontWeight: 400,
+    fontSize: "0.9rem",
+    color: "#B3B3B3",
+  },
+  likeButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    padding: "0.5rem",
+    transition: "transform 0.2s",
+  },
+  likeCount: {
+    marginLeft: "0.5rem",
+    color: "#13454B",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 500,
+  },
+  commentsSection: {
+    marginTop: "1rem",
+    borderTop: "1px solid #e0e0e0",
+    paddingTop: "1rem",
+  },
+  commentsHeader: {
+    fontSize: "1.1rem",
+    fontWeight: 500,
+    marginBottom: "0.5rem",
+    color: "#13454B",
+  },
+  comment: {
+    display: "flex",
+    alignItems: "flex-start",
+    marginBottom: "1rem",
+  },
+  avatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    marginRight: "1rem",
+  },
+  commentContent: {
+    flex: 1,
+  },
+  userName: {
+    fontWeight: 500,
+    marginBottom: "0.25rem",
+    display: "block",
+  },
+  commentText: {
+    margin: 0,
+    fontSize: "0.9rem",
+  },
+  commentForm: {
+    display: "flex",
+    marginTop: "1rem",
+  },
+  commentInput: {
+    flex: 1,
+    padding: "0.5rem",
+    border: "1px solid #e0e0e0",
+    borderRadius: "4px",
+    marginRight: "0.5rem",
+  },
+  commentSubmit: {
+    padding: "0.5rem 1rem",
+    backgroundColor: "#EE6B0C",
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
+}
+
+export default MainContent
+
