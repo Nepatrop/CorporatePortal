@@ -19,19 +19,30 @@ CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     organization_id INT,
+    department_code UUID,
+    parent_department_code UUID,
     FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
 CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
-    address VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE employees (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
+    physical_person_name VARCHAR(255) NOT NULL,
     organization_id INT,
     department_id INT,
+    position VARCHAR(255),
+    personnel_number VARCHAR(20),
+    dismissal_date DATE,
+    service VARCHAR(255),
+    can_help_with TEXT,
+    responsibilities TEXT,
+    makes_decisions TEXT,
+    is_dismissed BOOLEAN DEFAULT FALSE,
     work_phone VARCHAR(20),
     mobile_phone VARCHAR(20),
     email VARCHAR(255),
