@@ -4,27 +4,40 @@ TRUNCATE TABLE notifications, news, employees, departments, organizations, locat
 
 -- Organizations
 INSERT INTO organizations (name) VALUES 
-('ООО ИТ-Элемент29');
+('ИТ-Элемент29 ООО');
 
 -- Departments
-INSERT INTO departments (name, organization_id) VALUES 
-('ИТ Отдел', 1),
-('Бухгалтерия', 1),
-('Отдел кадров', 1);
+INSERT INTO departments (name, organization_id, department_code, parent_department_code) VALUES 
+('Управление развития систем расчета зарплаты и управления персоналом', 1, 'bc855daa-531c-11ee-81a6-00155d1ad303', NULL),
+('Отдел поддержки систем управления персоналом (Сухой Лог)', 1, 'f401c2d2-531e-11ee-81a6-00155d1ad303', 'bc855daa-531c-11ee-81a6-00155d1ad303');
 
 -- Locations
-INSERT INTO locations (address) VALUES 
-('ул. Пушкина, д. 10'),
-('пр. Ленина, д. 25');
+INSERT INTO locations (name) VALUES 
+('Верхняя Пышма-1'),
+('Сухой Лог');
 
--- Employees with explicit IDs to ensure proper references
-INSERT INTO employees (id, full_name, organization_id, department_id, work_phone, email, location_id) VALUES 
-(1, 'Иванов Иван Иванович', 1, 1, '555-0100', 'ivanov@element29.ru', 1),
-(2, 'Петров Петр Петрович', 1, 1, '555-0101', 'petrov@element29.ru', 1),
-(3, 'Сидорова Анна Ивановна', 1, 2, '555-0102', 'sidorova@element29.ru', 2);
+-- Employees
+INSERT INTO employees (
+    full_name, 
+    physical_person_name,
+    organization_id,
+    department_id,
+    position,
+    personnel_number,
+    service,
+    can_help_with,
+    responsibilities,
+    makes_decisions,
+    is_dismissed,
+    work_phone,
+    location_id
+) VALUES 
+('Лебедев Александр Сергеевич', 'Лебедев Александр Сергеевич', 1, 1, 'Начальник управления', '0000-00003', '', '', '', '', false, '+73436896204', 1),
+('Аккерман Ксения Эдмундовна', 'Аккерман Ксения Эдмундовна', 1, 2, 'Инженер-программист(2519)', '0000-00004', '', '', '', '', false, '+7 (343) 737-11-37', 2);
 
 -- Update manager references
-UPDATE employees SET manager_id = 1 WHERE id IN (2, 3);
+UPDATE employees SET manager_id = (SELECT id FROM employees WHERE personnel_number = '0000-00003') 
+WHERE personnel_number = '0000-00004';
 
 -- News
 INSERT INTO news (content, publication_time, author_id) VALUES 
