@@ -13,7 +13,11 @@
 
 Исправить: В данный момент сборка заточена под использование vcpkg, на Windows, также захардкожена его директория, а именно **C:/dev/vcpkg**.
 
-Следовательно и для установки зависиммостей на Windows необходимо использовать vcpkg командами:
+(Установка vcpkg)[https://learn.microsoft.com/ru-ru/vcpkg/get_started/get-started?pivots=shell-powershell]
+
+Установить необходимо в предварительно созданную директорию: **C:/dev**
+
+Следовательно и для установки зависиммостей на Windows необходимо использовать vcpkg, командами:
 ```bash
 vcpkg install nlohmann-json:x64-windows
 vcpkg install libpqxx:x64-windows
