@@ -1,5 +1,25 @@
 #include "db_process.h"
 #include <iostream>
+
+// Инициализация статических переменных
+nlohmann::json DBProcess::organizations_cache = nlohmann::json::array();
+nlohmann::json DBProcess::departments_cache = nlohmann::json::array();
+nlohmann::json DBProcess::locations_cache = nlohmann::json::array();
+nlohmann::json DBProcess::employees_cache = nlohmann::json::array();
+nlohmann::json DBProcess::news_cache = nlohmann::json::array();
+nlohmann::json DBProcess::notifications_cache = nlohmann::json::array();
+nlohmann::json DBProcess::links_cache = nlohmann::json::array();
+
+std::mutex DBProcess::organizations_mutex;
+std::mutex DBProcess::departments_mutex;
+std::mutex DBProcess::locations_mutex;
+std::mutex DBProcess::employees_mutex;
+std::mutex DBProcess::news_mutex;
+std::mutex DBProcess::notifications_mutex;
+std::mutex DBProcess::links_mutex;
+
+std::unique_ptr<sw::redis::Redis> DBProcess::redis;
+
 std::string DBProcess::getConnectionString() {
     return "dbname=corporate_portal user=postgres password=diploma host=localhost port=5432";
 }
@@ -18,18 +38,36 @@ nlohmann::json DBProcess::resultToJson(pqxx::result& r) {
     return result;
 }
 
+void DBProcess::initCache() {
+    initRedis();
+}
+
 nlohmann::json DBProcess::getOrganizations() {
+    auto cached = getFromCache("organizations");
+    if (!cached.empty()) {
+        return cached;
+    }
+
     try {
         pqxx::connection conn(getConnectionString());
         pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT * FROM organizations");
-        return resultToJson(r);
+        auto result = resultToJson(r);
+        
+        // Сохраняем в Redis
+        setToCache("organizations", result);
+        return result;
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
 }
 
 nlohmann::json DBProcess::getDepartments() {
+    auto cached = getFromCache("departments");
+    if (!cached.empty()) {
+        return cached;
+    }
+
     try {
         pqxx::connection conn(getConnectionString());
         pqxx::work txn(conn);
@@ -38,24 +76,38 @@ nlohmann::json DBProcess::getDepartments() {
             "FROM departments d "
             "LEFT JOIN organizations o ON d.organization_id = o.id"
         );
-        return resultToJson(r);
+        auto result = resultToJson(r);
+        setToCache("departments", result);
+        return result;
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
 }
 
 nlohmann::json DBProcess::getLocations() {
+    auto cached = getFromCache("locations");
+    if (!cached.empty()) {
+        return cached;
+    }
+
     try {
         pqxx::connection conn(getConnectionString());
         pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT * FROM locations");
-        return resultToJson(r);
+        auto result = resultToJson(r);
+        setToCache("locations", result);
+        return result;
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
 }
 
 nlohmann::json DBProcess::getEmployees() {
+    auto cached = getFromCache("employees");
+    if (!cached.empty()) {
+        return cached;
+    }
+
     try {
         pqxx::connection conn(getConnectionString());
         pqxx::work txn(conn);
@@ -71,7 +123,9 @@ nlohmann::json DBProcess::getEmployees() {
             "LEFT JOIN locations l ON e.location_id = l.id "
             "LEFT JOIN employees m ON e.manager_id = m.id"
         );
-        return resultToJson(r);
+        auto result = resultToJson(r);
+        setToCache("employees", result);
+        return result;
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
@@ -110,11 +164,18 @@ nlohmann::json DBProcess::getNotifications() {
 }
 
 nlohmann::json DBProcess::getLinks() {
+    auto cached = getFromCache("links");
+    if (!cached.empty()) {
+        return cached;
+    }
+
     try {
         pqxx::connection conn(getConnectionString());
         pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT * FROM links");
-        return resultToJson(r);
+        auto result = resultToJson(r);
+        setToCache("links", result);
+        return result;
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
@@ -129,6 +190,11 @@ bool DBProcess::setOrganization(const nlohmann::json& data) {
             data["name"].get<std::string>()
         );
         txn.commit();
+        
+        // Инвалидируем кэш
+        redis->del("organizations");
+        redis->del("departments"); // Инвалидируем связанные данные
+        redis->del("employees");   // Инвалидируем связанные данные
         return true;
     } catch (std::exception const& e) {
         return false;
@@ -148,6 +214,8 @@ bool DBProcess::setDepartment(const nlohmann::json& data) {
             data.contains("parent_department_code") ? data["parent_department_code"].get<std::string>() : nullptr
         );
         txn.commit();
+        redis->del("departments");
+        redis->del("employees");   // Инвалидируем связанные данные
         return true;
     } catch (std::exception const& e) {
         return false;
@@ -163,6 +231,8 @@ bool DBProcess::setLocation(const nlohmann::json& data) {
             data["name"].get<std::string>()
         );
         txn.commit();
+        redis->del("locations");
+        redis->del("employees");   // Инвалидируем связанные данные
         return true;
     } catch (std::exception const& e) {
         return false;
@@ -197,6 +267,7 @@ bool DBProcess::setEmployee(const nlohmann::json& data) {
             data.contains("location_id") ? data["location_id"].get<std::string>() : nullptr
         );
         txn.commit();
+        redis->del("employees");
         return true;
     } catch (std::exception const& e) {
         return false;
@@ -246,6 +317,7 @@ bool DBProcess::setLink(const nlohmann::json& data) {
             data.contains("description") ? data["description"].get<std::string>() : nullptr
         );
         txn.commit();
+        redis->del("links");
         return true;
     } catch (std::exception const& e) {
         return false;

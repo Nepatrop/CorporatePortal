@@ -2,6 +2,9 @@
 #include "db_process.h"
 
 int main() {
+    // Инициализируем кэш при запуске
+    DBProcess::initCache();
+    
     httplib::Server svr;
 
     // Включаем CORS

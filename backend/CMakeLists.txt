@@ -12,6 +12,7 @@ set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE S
 find_package(PostgreSQL REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(redis++ CONFIG REQUIRED)
 
 # Добавляем cpp-httplib (заголовочная библиотека)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/cpp-httplib)
@@ -40,6 +41,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     PostgreSQL::PostgreSQL
     libpqxx::pqxx
     nlohmann_json::nlohmann_json
+    redis++::redis++
 )
 
 # Настройки для MSVC
