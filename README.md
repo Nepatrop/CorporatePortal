@@ -13,7 +13,7 @@
 
 Исправить: В данный момент сборка заточена под использование vcpkg, на Windows, также захардкожена его директория, а именно **C:/dev/vcpkg**.
 
-(Установка vcpkg)[https://learn.microsoft.com/ru-ru/vcpkg/get_started/get-started?pivots=shell-powershell]
+[Установка vcpkg](https://learn.microsoft.com/ru-ru/vcpkg/get_started/get-started?pivots=shell-powershell)
 
 Установить необходимо в предварительно созданную директорию: **C:/dev**
 
