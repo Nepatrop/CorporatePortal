@@ -163,22 +163,24 @@ function MainContent() {
   return (
     <main style={styles.main}>
       <div style={styles.leftColumn}>
-        <h2 style={styles.heading}>Внутренние порталы</h2>
-        <div style={styles.portalGrid}>
-          {internalPortals.map((portal) => (
-            <a key={portal.id} href={portal.url} style={styles.portalLink}>
-              <div style={styles.portalIcon}>{portal.icon}</div>
-              <span style={styles.portalName}>{portal.name}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-      <div style={styles.rightColumn}>
         <div style={{ ...styles.block, ...styles.newsBlock }}>
           <h2 style={styles.heading}>Новости и статьи</h2>
           <div style={styles.newsList}>
             {news.map((item) => (
               <NewsItem key={item.id} news={item} onLike={handleLike} onAddComment={handleAddComment} />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={styles.rightColumn}>
+        <div style={{ ...styles.block, ...styles.portalBlock }}>
+          <h2 style={styles.heading}>Внутренние порталы</h2>
+          <div style={styles.portalGrid}>
+            {internalPortals.map((portal) => (
+              <a key={portal.id} href={portal.url} style={styles.portalLink}>
+                <div style={styles.portalIcon}>{portal.icon}</div>
+                <span style={styles.portalName}>{portal.name}</span>
+              </a>
             ))}
           </div>
         </div>
@@ -199,18 +201,38 @@ function MainContent() {
   )
 }
 
+const colors = {
+  primary: "#13454B",
+  secondary: "#EE6B0C",
+  background: "#FFFFFF",
+  text: "#333",
+  lightText: "#B3B3B3",
+};
+
+const fonts = {
+  main: "'Manrope', Arial, sans-serif",
+  secondary: "'Arial', sans-serif",
+};
+
+const baseBlockStyles = {
+  backgroundColor: colors.background,
+  borderRadius: "8px",
+  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  padding: "1.5rem",
+};
+
 const styles = {
   main: {
     display: "flex",
     height: "calc(100vh - 72px)",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    fontFamily: fonts.main,
     overflowX: "hidden",
     padding: "1rem",
   },
   leftColumn: {
     flex: "0 0 60%",
     padding: "2rem",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
     borderRadius: "8px",
     marginRight: "1rem",
@@ -226,17 +248,14 @@ const styles = {
     paddingRight: "1rem",
   },
   block: {
-    backgroundColor: "#FFFFFF",
-    padding: "1.5rem",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    ...baseBlockStyles,
     flex: 1,
     overflow: "hidden",
   },
   heading: {
-    color: "#13454B",
-    borderBottom: "2px solid #EE6B0C",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    color: colors.primary,
+    borderBottom: `2px solid ${colors.secondary}`,
+    fontFamily: fonts.main,
     fontWeight: 600,
     fontSize: "36px",
     lineHeight: "45px",
@@ -254,7 +273,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     textDecoration: "none",
-    color: "#13454B",
+    color: colors.primary,
     transition: "transform 0.2s",
   },
   portalIcon: {
@@ -263,7 +282,7 @@ const styles = {
   },
   portalName: {
     textAlign: "center",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    fontFamily: fonts.main,
     fontWeight: 300,
   },
   list: {
@@ -273,22 +292,20 @@ const styles = {
   },
   listItem: {
     marginBottom: "1rem",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    fontFamily: fonts.main,
     fontWeight: 300,
   },
   date: {
-    color: "#B3B3B3",
+    color: colors.lightText,
     fontSize: "0.9em",
-    fontFamily: "'Arial', sans-serif",
+    fontFamily: fonts.secondary,
     fontWeight: 400,
   },
   newsBlock: {
+    ...baseBlockStyles,
     flex: 2,
-    overflowY: "auto",
-    maxHeight: "calc(100vh - 300px)",
-  },
-  birthdayBlock: {
-    flex: 1,
+    backgroundColor: "transparent", // Убираем фон
+    boxShadow: "none", // Убираем тень
   },
   newsList: {
     display: "flex",
@@ -296,10 +313,7 @@ const styles = {
     gap: "1rem",
   },
   newsItem: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: "8px",
-    overflow: "hidden",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    ...baseBlockStyles,
     padding: "1rem",
     marginBottom: "1rem",
   },
@@ -311,17 +325,17 @@ const styles = {
     marginBottom: "1rem",
   },
   newsTitle: {
-    color: "#13454B",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    color: colors.primary,
+    fontFamily: fonts.main,
     fontWeight: 500,
     fontSize: "1.2rem",
     marginBottom: "0.5rem",
   },
   newsDescription: {
-    fontFamily: "'Manrope', Arial, sans-serif",
+    fontFamily: fonts.main,
     fontWeight: 300,
     fontSize: "1rem",
-    color: "#333",
+    color: colors.text,
     marginBottom: "1rem",
   },
   newsFooter: {
@@ -329,12 +343,6 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "1rem",
-  },
-  newsDate: {
-    fontFamily: "'Arial', sans-serif",
-    fontWeight: 400,
-    fontSize: "0.9rem",
-    color: "#B3B3B3",
   },
   likeButton: {
     background: "none",
@@ -347,20 +355,20 @@ const styles = {
   },
   likeCount: {
     marginLeft: "0.5rem",
-    color: "#13454B",
-    fontFamily: "'Manrope', Arial, sans-serif",
+    color: colors.primary,
+    fontFamily: fonts.main,
     fontWeight: 500,
   },
   commentsSection: {
     marginTop: "1rem",
-    borderTop: "1px solid #e0e0e0",
+    borderTop: `1px solid #e0e0e0`,
     paddingTop: "1rem",
   },
   commentsHeader: {
     fontSize: "1.1rem",
     fontWeight: 500,
     marginBottom: "0.5rem",
-    color: "#13454B",
+    color: colors.primary,
   },
   comment: {
     display: "flex",
@@ -392,19 +400,18 @@ const styles = {
   commentInput: {
     flex: 1,
     padding: "0.5rem",
-    border: "1px solid #e0e0e0",
+    border: `1px solid #e0e0e0`,
     borderRadius: "4px",
     marginRight: "0.5rem",
   },
   commentSubmit: {
     padding: "0.5rem 1rem",
-    backgroundColor: "#EE6B0C",
-    color: "#FFFFFF",
+    backgroundColor: colors.secondary,
+    color: colors.background,
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
   },
-}
+};
 
 export default MainContent
-
