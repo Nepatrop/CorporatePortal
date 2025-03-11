@@ -85,15 +85,45 @@ corporate_portal_backend.exe
 - /api/notifications
 - /api/links
 
-Поддерживаются POST запросы для записи данных в БД, пример POST запроса через консоль браузера:
+Примеры запросов:
+
+GET
+
 ```javascript
-fetch('http://192.168.131.29:8080/api/organizations', {
+fetch(`http://localhost:8080/api/links`, {
+    headers: {
+        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+DELETE
+
+```javascript
+fetch(`http://localhost:8080/api/links/1`, {
+    method: 'DELETE',
+    headers: {
+        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+POST
+
+```javascript
+fetch(`http://localhost:8080/api/links`, {
     method: 'POST',
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
     },
     body: JSON.stringify({
-        name: "ООО Рога и Копыта"
+        "url": "http://portal.element29.ru/new-docs",
+        "description": "Новая документация"
     })
 })
 .then(response => response.json())
