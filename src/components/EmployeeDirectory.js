@@ -1,276 +1,203 @@
-"use client"
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+import Header from './Header';
 
-import { useState } from "react"
-import Header from "./Header"
+const EmployeeDirectory = () => {
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
-function EmployeeDirectory() {
-  // Данные сотрудников (отсортированы по алфавиту)
-  const [employees] = useState([
-    {
-      id: 1,
-      name: "Андреев Андрей Андреевич",
-      department: "IT-отдел",
-      position: "Старший разработчик",
-      phone: "+7 (123) 456-78-90",
-      email: "andreev@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=11",
-    },
-    {
-      id: 2,
-      name: "Борисова Екатерина Сергеевна",
-      department: "Бухгалтерия",
-      position: "Главный бухгалтер",
-      phone: "+7 (123) 456-78-91",
-      email: "borisova@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=5",
-    },
-    {
-      id: 3,
-      name: "Васильев Дмитрий Иванович",
-      department: "Отдел продаж",
-      position: "Менеджер по продажам",
-      phone: "+7 (123) 456-78-92",
-      email: "vasiliev@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=12",
-    },
-    {
-      id: 4,
-      name: "Григорьева Анна Павловна",
-      department: "HR-отдел",
-      position: "HR-менеджер",
-      phone: "+7 (123) 456-78-93",
-      email: "grigorieva@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=9",
-    },
-    {
-      id: 5,
-      name: "Дмитриев Сергей Александрович",
-      department: "IT-отдел",
-      position: "Системный администратор",
-      phone: "+7 (123) 456-78-94",
-      email: "dmitriev@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=13",
-    },
-    {
-      id: 6,
-      name: "Ефимова Мария Владимировна",
-      department: "Маркетинг",
-      position: "Маркетолог",
-      phone: "+7 (123) 456-78-95",
-      email: "efimova@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=6",
-    },
-    {
-      id: 7,
-      name: "Жуков Алексей Петрович",
-      department: "Отдел разработки",
-      position: "Frontend-разработчик",
-      phone: "+7 (123) 456-78-96",
-      email: "zhukov@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=14",
-    },
-    {
-      id: 8,
-      name: "Зайцева Ольга Николаевна",
-      department: "Бухгалтерия",
-      position: "Бухгалтер",
-      phone: "+7 (123) 456-78-97",
-      email: "zaitseva@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=7",
-    },
-    {
-      id: 9,
-      name: "Иванов Иван Иванович",
-      department: "Руководство",
-      position: "Генеральный директор",
-      phone: "+7 (123) 456-78-98",
-      email: "ivanov@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=15",
-    },
-    {
-      id: 10,
-      name: "Козлова Наталья Игоревна",
-      department: "Отдел продаж",
-      position: "Руководитель отдела продаж",
-      phone: "+7 (123) 456-78-99",
-      email: "kozlova@it-element29.ru",
-      photo: "https://i.pravatar.cc/300?img=8",
-    },
-  ])
+    // Загрузка данных о сотрудниках
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get('http://localhost:8081/api/employees', {
+                    headers: {
+                        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+                    }
+                });
 
-  // Функция для группировки сотрудников по первой букве фамилии
-  const groupEmployeesByFirstLetter = () => {
-    const grouped = {}
+                console.log("Данные о сотрудниках:", response.data); // Логируем данные
+                setEmployees(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error("Ошибка при загрузке данных:", err); // Логируем ошибку
+                setError('Ошибка при загрузке данных');
+                setLoading(false);
+            }
+        };
 
-    employees.forEach((employee) => {
-      const firstLetter = employee.name.charAt(0).toUpperCase()
-      if (!grouped[firstLetter]) {
-        grouped[firstLetter] = []
-      }
-      grouped[firstLetter].push(employee)
-    })
+        fetchData();
+    }, []);
 
-    return grouped
-  }
+    // Фильтрация сотрудников по поисковому запросу
+    const filteredEmployees = employees.filter((employee) =>
+        employee.employee && employee.employee.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  const groupedEmployees = groupEmployeesByFirstLetter()
-  const alphabet = Object.keys(groupedEmployees).sort()
+    // Отображение загрузки или ошибки
+    if (loading) return <div style={styles.loading}>Загрузка...</div>;
+    if (error) return <div style={styles.error}>{error}</div>;
 
-  return (
-    <div style={styles.container}>
-      <Header onNavigate={(page) => (window.location.href = page === "home" ? "/" : "/directory")} />
-      <main style={styles.main}>
-        <h1 style={styles.heading}>Справочник сотрудников</h1>
+    return (
+        <>
+            <Header onNavigate={(page) => (window.location.href = page === "home" ? "/" : "/directory")} />
+            <div style={styles.container}>
+                <div style={styles.main}>
+                    <h2 style={styles.heading}>Справочник сотрудников</h2>
 
-        <div style={styles.alphabetNav}>
-          {alphabet.map((letter) => (
-            <a key={letter} href={`#section-${letter}`} style={styles.alphabetLink}>
-              {letter}
-            </a>
-          ))}
-        </div>
-
-        <div style={styles.employeeList}>
-          {alphabet.map((letter) => (
-            <div key={letter} id={`section-${letter}`} style={styles.letterSection}>
-              <h2 style={styles.letterHeading}>{letter}</h2>
-              {groupedEmployees[letter].map((employee) => (
-                <div key={employee.id} style={styles.employeeCard}>
-                  <div style={styles.employeePhoto}>
-                    <img src={employee.photo || "/placeholder.svg"} alt={employee.name} style={styles.photo} />
-                  </div>
-                  <div style={styles.employeeInfo}>
-                    <h3 style={styles.employeeName}>{employee.name}</h3>
-                    <p style={styles.employeeDepartment}>{employee.department}</p>
-                    <p style={styles.employeePosition}>{employee.position}</p>
-                    <div style={styles.employeeContacts}>
-                      <p style={styles.employeePhone}>{employee.phone}</p>
-                      <p style={styles.employeeEmail}>{employee.email}</p>
+                    {/* Поле для поиска сотрудников */}
+                    <div style={styles.alphabetNav}>
+                        <input
+                            type="text"
+                            placeholder="Поиск сотрудника..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ flex: 1, padding: '0.5rem', border: 'none', borderRadius: '4px' }}
+                        />
                     </div>
-                  </div>
+
+                    {/* Список сотрудников */}
+                    <div style={styles.employeeList}>
+                        {filteredEmployees.map((employee) => (
+                            <div key={employee.id} style={styles.employeeCard}>
+                                <div style={styles.employeePhoto}>
+                                    {employee.photo ? (
+                                        <img
+                                            src={employee.photo}
+                                            alt={employee.employee}
+                                            style={styles.photo}
+                                        />
+                                    ) : (
+                                        <FontAwesomeIcon
+                                            icon={faUser}
+                                            style={{ fontSize: "40px", color: styles.employeeName.color }}
+                                        />
+                                    )}
+                                </div>
+                                <div style={styles.employeeInfo}>
+                                    <h4 style={styles.employeeName}>{employee.employee}</h4>
+                                    <p style={styles.employeeDepartment}>
+                                        <strong>Отдел:</strong> {employee.department}
+                                    </p>
+                                    <p style={styles.employeePosition}>
+                                        <strong>Должность:</strong> {employee.position}
+                                    </p>
+                                    <p style={styles.employeePhone}>
+                                        <strong>Телефон:</strong> {employee.work_phone}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-              ))}
             </div>
-          ))}
-        </div>
-      </main>
-    </div>
-  )
-}
+        </>
+    );
+};
 
+// Стили
 const styles = {
-  container: {
-    fontFamily: "'Manrope', Arial, sans-serif",
-    backgroundColor: "#EBEBEB",
-    minHeight: "100vh",
-  },
-  main: {
-    padding: "2rem",
-    maxWidth: "1200px",
-    margin: "0 auto",
-  },
-  heading: {
-    color: "#13454B",
-    borderBottom: "2px solid #EE6B0C",
-    fontFamily: "'Manrope', Arial, sans-serif",
-    fontWeight: 600,
-    fontSize: "36px",
-    lineHeight: "45px",
-    letterSpacing: "0.5px",
-    padding: "15px 0 12px 0",
-    marginBottom: "40px",
-  },
-  alphabetNav: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.5rem",
-    marginBottom: "2rem",
-    padding: "1rem",
-    backgroundColor: "#FFFFFF",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  alphabetLink: {
-    display: "inline-block",
-    width: "30px",
-    height: "30px",
-    lineHeight: "30px",
-    textAlign: "center",
-    backgroundColor: "#13454B",
-    color: "#FFFFFF",
-    borderRadius: "50%",
-    textDecoration: "none",
-    fontWeight: 500,
-    transition: "background-color 0.3s",
-  },
-  employeeList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2rem",
-  },
-  letterSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: "8px",
-    padding: "1.5rem",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  letterHeading: {
-    color: "#13454B",
-    borderBottom: "1px solid #EE6B0C",
-    paddingBottom: "0.5rem",
-    marginBottom: "1.5rem",
-    fontSize: "24px",
-  },
-  employeeCard: {
-    display: "flex",
-    alignItems: "center",
-    padding: "1rem",
-    borderBottom: "1px solid #e0e0e0",
-    gap: "1.5rem",
-  },
-  employeePhoto: {
-    flexShrink: 0,
-  },
-  photo: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "2px solid #13454B",
-  },
-  employeeInfo: {
-    flex: 1,
-  },
-  employeeName: {
-    color: "#13454B",
-    fontSize: "18px",
-    fontWeight: 500,
-    marginBottom: "0.25rem",
-  },
-  employeeDepartment: {
-    color: "#EE6B0C",
-    fontWeight: 500,
-    marginBottom: "0.25rem",
-  },
-  employeePosition: {
-    color: "#333333",
-    marginBottom: "0.5rem",
-    fontWeight: 300,
-  },
-  employeeContacts: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "1rem",
-  },
-  employeePhone: {
-    color: "#666666",
-    fontSize: "0.9rem",
-  },
-  employeeEmail: {
-    color: "#666666",
-    fontSize: "0.9rem",
-  },
-}
+    container: {
+        fontFamily: "'Manrope', Arial, sans-serif",
+        backgroundColor: "#EBEBEB",
+        minHeight: "100vh",
+        paddingTop: "20px",
+    },
+    main: {
+        padding: "2rem",
+        maxWidth: "1200px",
+        margin: "0 auto",
+    },
+    heading: {
+        color: "#13454B",
+        borderBottom: "2px solid #EE6B0C",
+        fontFamily: "'Manrope', Arial, sans-serif",
+        fontWeight: 600,
+        fontSize: "36px",
+        lineHeight: "45px",
+        letterSpacing: "0.5px",
+        padding: "15px 0 12px 0",
+        marginBottom: "40px",
+    },
+    alphabetNav: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.5rem",
+        marginBottom: "2rem",
+        padding: "1rem",
+        backgroundColor: "#FFFFFF",
+        borderRadius: "8px",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    },
+    employeeList: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+    },
+    employeeCard: {
+        display: "flex",
+        alignItems: "center",
+        padding: "1rem",
+        backgroundColor: "#FFFFFF",
+        borderRadius: "8px",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    },
+    employeePhoto: {
+        flexShrink: 0,
+        width: "80px",
+        height: "80px",
+        borderRadius: "50%",
+        overflow: "hidden",
+        marginRight: "1rem",
+        backgroundColor: "#ccc",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    photo: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+    },
+    employeeInfo: {
+        flex: 1,
+    },
+    employeeName: {
+        color: "#13454B",
+        fontSize: "18px",
+        fontWeight: 600,
+        marginBottom: "0.5rem",
+    },
+    employeeDepartment: {
+        color: "#EE6B0C",
+        fontWeight: 500,
+        marginBottom: "0.5rem",
+    },
+    employeePosition: {
+        color: "#333333",
+        marginBottom: "0.5rem",
+        fontWeight: 300,
+    },
+    employeePhone: {
+        color: "#333333",
+        marginBottom: "0.5rem",
+        fontWeight: 300,
+    },
+    loading: {
+        textAlign: "center",
+        fontSize: "18px",
+        marginTop: "20px",
+    },
+    error: {
+        textAlign: "center",
+        fontSize: "18px",
+        marginTop: "20px",
+        color: "red",
+    },
+};
 
-export default EmployeeDirectory
-
+export default EmployeeDirectory;
