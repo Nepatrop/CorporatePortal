@@ -48,6 +48,8 @@ CREATE TABLE employees (
     email VARCHAR(255),
     manager_id INT,
     location_id INT,
+    birth_date DATE,
+    is_admin BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
     FOREIGN KEY (department_id) REFERENCES departments(id),
     FOREIGN KEY (manager_id) REFERENCES employees(id),

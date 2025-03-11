@@ -17,7 +17,7 @@ if errorlevel 1 goto error
 
 echo ------------------------
 echo Build completed successfully!
-echo Output binary is located at: build/Release/CorporatePortalBackend.exe
+echo Output binary is located at: build/Release/corporate_server.exe
 echo ------------------------
 goto end
 

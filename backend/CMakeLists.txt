@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(corporate_portal_backend)
+project(corporate_server)
 
 # Устанавливаем стандарт C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -13,17 +13,18 @@ find_package(PostgreSQL REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# Добавляем cpp-httplib (заголовочная библиотека)
+# Добавляем директории с исходниками
+include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/cpp-httplib)
 
 # Устанавливаем правильные пути к исходникам
 set(SOURCES
     main.cpp
-    db_process.cpp
-)
-
-set(HEADERS
-    db_process.h
+    src/db/get.cpp
+    src/db/post.cpp
+    src/db/config.cpp
+    src/db/delete.cpp
+    src/auth/auth_handler.cpp
 )
 
 # Создаем исполняемый файл
