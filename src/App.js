@@ -6,33 +6,32 @@ import MainContent from "./components/MainContent"
 import EmployeeDirectory from "./components/EmployeeDirectory"
 
 function App() {
-  const [currentPage, setCurrentPage] = useState("home")
+    const [currentPage, setCurrentPage] = useState("home")
 
-  const handleNavigate = (page) => {
-    setCurrentPage(page)
-  }
+    const handleNavigate = (page) => {
+        setCurrentPage(page)
+    }
 
-  return (
-    <div className="App" style={styles.app}>
-      {currentPage === "home" ? (
-        <>
-          <Header onNavigate={handleNavigate} />
-          <MainContent />
-        </>
-      ) : currentPage === "directory" ? (
-        <EmployeeDirectory />
-      ) : null}
-    </div>
-  )
+    return (
+        <div className="App" style={styles.app}>
+            {currentPage === "home" ? (
+                <>
+                    <Header onNavigate={handleNavigate} />
+                    <MainContent />
+                </>
+            ) : currentPage === "directory" ? (
+                <EmployeeDirectory onNavigate={handleNavigate} />
+            ) : null}
+        </div>
+    )
 }
 
 const styles = {
-  app: {
-    fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-    backgroundColor: "#EBEBEB", // СЕРЫЙ
-    minHeight: "100vh",
-  },
+    app: {
+        fontFamily: "'Manrope', Arial, sans-serif",
+        backgroundColor: "#EBEBEB",
+        minHeight: "100vh",
+    },
 }
 
 export default App
-
