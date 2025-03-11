@@ -90,7 +90,7 @@ corporate_portal_backend.exe
 GET
 
 ```javascript
-fetch(`http://localhost:8080/api/links`, {
+fetch(`http://localhost:8081/api/links`, {
     headers: {
         'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
     }
@@ -102,7 +102,7 @@ fetch(`http://localhost:8080/api/links`, {
 DELETE
 
 ```javascript
-fetch(`http://localhost:8080/api/links/1`, {
+fetch(`http://localhost:8081/api/links/1`, {
     method: 'DELETE',
     headers: {
         'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
@@ -115,7 +115,7 @@ fetch(`http://localhost:8080/api/links/1`, {
 POST
 
 ```javascript
-fetch(`http://localhost:8080/api/links`, {
+fetch(`http://localhost:8081/api/links`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
