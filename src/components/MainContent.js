@@ -98,7 +98,7 @@ function MainContent() {
         {
           user: "Анна Анновна",
           avatar: "https://i.pinimg.com/736x/9f/e5/06/9fe5060dabf67f1d5f76b6e52f50c155.jpg",
-          text: "Отличная новость! Жду не дождусь начала работы над проектом.",
+          text: "Отличная ��овость! Жду не дождусь начала работы над проектом.",
         },
         {
           user: "Иван Иванов",
@@ -205,21 +205,22 @@ const colors = {
   primary: "#13454B",
   secondary: "#EE6B0C",
   background: "#FFFFFF",
+  blockBackground: "#F5F5F5", // Светло-серый фон для блоков
   text: "#333",
   lightText: "#B3B3B3",
-};
+}
 
 const fonts = {
   main: "'Manrope', Arial, sans-serif",
   secondary: "'Arial', sans-serif",
-};
+}
 
 const baseBlockStyles = {
-  backgroundColor: colors.background,
+  backgroundColor: colors.blockBackground, // Светло-серый фон для блоков
   borderRadius: "8px",
-  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
   padding: "1.5rem",
-};
+}
 
 const styles = {
   main: {
@@ -228,13 +229,12 @@ const styles = {
     fontFamily: fonts.main,
     overflowX: "hidden",
     padding: "1rem",
+    backgroundColor: colors.background, // Белый фон для всей страницы
   },
   leftColumn: {
     flex: "0 0 60%",
     padding: "2rem",
-    backgroundColor: colors.background,
-    boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
-    borderRadius: "8px",
+    backgroundColor: colors.background, // Белый фон
     marginRight: "1rem",
     overflowY: "auto",
     boxSizing: "border-box",
@@ -412,6 +412,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
   },
-};
+}
 
 export default MainContent
+
