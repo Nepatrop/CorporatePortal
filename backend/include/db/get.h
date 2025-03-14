@@ -14,4 +14,5 @@ public:
     static nlohmann::json getNews();
     static nlohmann::json getNotifications();
     static nlohmann::json getLinks();
+    static nlohmann::json getEmployeeByPersonnelNumber(const std::string& personnel_number);
 };

@@ -25,6 +25,7 @@ set(SOURCES
     src/db/config.cpp
     src/db/delete.cpp
     src/auth/auth_handler.cpp
+    src/auth/user_auth.cpp
 )
 
 # Создаем исполняемый файл

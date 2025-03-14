@@ -10,6 +10,9 @@ BEGIN
 END
 $$;
 
+-- Добавляем поддержку UUID
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE organizations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
@@ -19,7 +22,7 @@ CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     organization_id INT,
-    department_code UUID,
+    department_code UUID UNIQUE NOT NULL, -- Добавляем UNIQUE и NOT NULL ограничения
     parent_department_code UUID,
     FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
@@ -36,7 +39,7 @@ CREATE TABLE employees (
     organization_id INT,
     department_id INT,
     position VARCHAR(255),
-    personnel_number VARCHAR(20),
+    personnel_number VARCHAR(20) UNIQUE NOT NULL, -- Добавляем UNIQUE ограничение
     dismissal_date DATE,
     service VARCHAR(255),
     can_help_with TEXT,
@@ -44,8 +47,6 @@ CREATE TABLE employees (
     makes_decisions TEXT,
     is_dismissed BOOLEAN DEFAULT FALSE,
     work_phone VARCHAR(20),
-    mobile_phone VARCHAR(20),
-    email VARCHAR(255),
     manager_id INT,
     location_id INT,
     birth_date DATE,
@@ -78,3 +79,17 @@ CREATE TABLE links (
     url VARCHAR(255) NOT NULL,
     description TEXT
 );
+
+CREATE TABLE user_auth (
+    id SERIAL PRIMARY KEY,
+    personnel_number VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    employee_id INT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (personnel_number) REFERENCES employees(personnel_number)
+);
+
+CREATE INDEX idx_user_auth_personnel_number ON user_auth(personnel_number);

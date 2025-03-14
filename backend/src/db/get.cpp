@@ -94,6 +94,35 @@ nlohmann::json Get::getEmployees() {
     }
 }
 
+nlohmann::json Get::getEmployeeByPersonnelNumber(const std::string& personnel_number) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+        
+        auto result = txn.exec_params(
+            "SELECT * FROM employees WHERE personnel_number = $1",
+            personnel_number
+        );
+        
+        nlohmann::json json_array = nlohmann::json::array();
+        
+        for (const auto& row : result) {
+            nlohmann::json obj;
+            for (const auto& field : row) {
+                if (!field.is_null()) {
+                    obj[field.name()] = field.as<std::string>();
+                }
+            }
+            json_array.push_back(obj);
+        }
+        
+        return json_array;
+
+    } catch (const std::exception& e) {
+        return nlohmann::json::array();
+    }
+}
+
 nlohmann::json Get::getNews() {
     try {
         pqxx::connection conn(Config::getConnectionString());

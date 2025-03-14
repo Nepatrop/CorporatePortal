@@ -1,15 +1,9 @@
 SET client_encoding = 'UTF8';
 
-TRUNCATE TABLE notifications, news, employees, departments, organizations, locations, links RESTART IDENTITY CASCADE;
+-- Очищаем все таблицы кроме organizations и departments
+TRUNCATE TABLE notifications, news, user_auth, employees, locations, links RESTART IDENTITY CASCADE;
 
--- Organizations
-INSERT INTO organizations (name) VALUES 
-('ИТ-Элемент29 ООО');
-
--- Departments
-INSERT INTO departments (name, organization_id, department_code, parent_department_code) VALUES 
-('Управление развития систем расчета зарплаты и управления персоналом', 1, 'bc855daa-531c-11ee-81a6-00155d1ad303', NULL),
-('Отдел поддержки систем управления персоналом (Сухой Лог)', 1, 'f401c2d2-531e-11ee-81a6-00155d1ad303', 'bc855daa-531c-11ee-81a6-00155d1ad303');
+-- Organizations уже создана в процессе импорта JSON
 
 -- Locations
 INSERT INTO locations (name) VALUES 
@@ -55,3 +49,8 @@ INSERT INTO notifications (message, time, source, employee_id) VALUES
 INSERT INTO links (url, description) VALUES 
 ('http://portal.element29.ru/docs', 'Внутренняя документация'),
 ('http://portal.element29.ru/wiki', 'База знаний');
+
+-- Добавляем тестовые учетные записи для существующих сотрудников
+INSERT INTO user_auth (personnel_number, password_hash, employee_id) VALUES 
+('0000-00003', 'admin123', 1),  -- Временно храним пароль как есть для тестов
+('0000-00004', 'user123', 2);   -- Временно храним пароль как есть для тестов

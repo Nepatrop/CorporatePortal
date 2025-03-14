@@ -1,5 +1,6 @@
 .vscode
 build
+organizations.json
 
 # dependencies
 /node_modules

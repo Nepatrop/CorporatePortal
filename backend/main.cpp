@@ -2,6 +2,7 @@
 #include "db/get.h"
 #include "db/post.h"
 #include "db/delete.h"
+#include "auth/user_auth.h"
 #include "auth/auth_handler.h"
 
 int main() {
@@ -52,8 +53,13 @@ int main() {
         res.set_content(Get::getLocations().dump(), "application/json");
     });
 
-    svr.Get("/api/employees", [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(Get::getEmployees().dump(), "application/json");
+    svr.Get("/api/employees", [](const httplib::Request& req, httplib::Response& res) {
+        auto personnel_number = req.get_param_value("personnel_number");
+        if (!personnel_number.empty()) {
+            res.set_content(Get::getEmployeeByPersonnelNumber(personnel_number).dump(), "application/json");
+        } else {
+            res.set_content(Get::getEmployees().dump(), "application/json");
+        }
     });
 
     svr.Get("/api/notifications", [](const httplib::Request&, httplib::Response& res) {
@@ -105,6 +111,55 @@ int main() {
         auto json = nlohmann::json::parse(req.body);
         bool success = Post::postLink(json);
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
+    });
+
+    // Auth endpoints
+    svr.Post("/api/auth/login", [](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        // Используем personnel_number вместо email
+        bool success = UserAuth::validateCredentials(
+            json["personnel_number"].get<std::string>(),
+            json["password"].get<std::string>()
+        );
+        
+        if (success) {
+            // Получаем данные пользователя по табельному номеру
+            auto userData = UserAuth::getUserData(json["personnel_number"].get<std::string>());
+            res.set_content(userData.dump(), "application/json");
+        } else {
+            res.status = 401;
+            res.set_content(R"({"error": "Invalid credentials"})", "application/json");
+        }
+    });
+
+    svr.Post("/api/auth/register", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            auto json = nlohmann::json::parse(req.body);
+            
+            // Проверяем обязательные поля
+            if (!json.contains("personnel_number") || !json.contains("password") || 
+                !json.contains("full_name") || !json.contains("department") ||
+                !json.contains("position") || !json.contains("work_phone") ||
+                !json.contains("birth_date")) {
+                res.status = 400;
+                res.set_content(R"({"error": "Missing required fields"})", "application/json");
+                return;
+            }
+
+            bool success = UserAuth::createUser(json);
+            
+            if (success) {
+                auto userData = UserAuth::getUserData(json["personnel_number"].get<std::string>());
+                res.set_content(userData.dump(), "application/json");
+            } else {
+                res.status = 400;
+                res.set_content(R"({"error": "Registration failed"})", "application/json");
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Registration error: " << e.what() << std::endl;
+            res.status = 500;
+            res.set_content(R"({"error": "Server error"})", "application/json");
+        }
     });
 
     // Delete endpoints

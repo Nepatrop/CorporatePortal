@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import logo from "../logo.svg"
 
 function Login({ onLogin, onNavigate }) {
   const [isRegistration, setIsRegistration] = useState(false)
   const [loginData, setLoginData] = useState({
-    email: "",
+    personnel_number: "",  // Заменяем email на personnel_number
     password: "",
     rememberMe: false,
   })
@@ -14,9 +14,58 @@ function Login({ onLogin, onNavigate }) {
     organization: "",
     department: "",
     fullName: "",
-    email: "",
     password: "",
+    position: "",
+    personnel_number: "",
+    work_phone: "",
+    birth_date: ""
   })
+  const [organizations, setOrganizations] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [searchOrg, setSearchOrg] = useState("")
+  const [searchDept, setSearchDept] = useState("")
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false)
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false)
+  const [personnelNumberError, setPersonnelNumberError] = useState("")
+  const [loginError, setLoginError] = useState("");
+  const [registrationError, setRegistrationError] = useState("");
+
+  useEffect(() => {
+    // Загружаем список организаций при монтировании
+    fetch('http://localhost:8081/api/organizations', {
+      headers: {
+        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+      }
+    })
+    .then(response => response.json())
+    .then(data => setOrganizations(data))
+    .catch(error => console.error('Error fetching organizations:', error));
+
+    // Загружаем список отделов
+    fetch('http://localhost:8081/api/departments', {
+      headers: {
+        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+      }
+    })
+    .then(response => response.json())
+    .then(data => setDepartments(data))
+    .catch(error => console.error('Error fetching departments:', error));
+  }, []);
+
+  // Обновляем обработчики кликов вне выпадающих списков
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowOrgDropdown(false);
+        setShowDeptDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLoginChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -26,87 +75,287 @@ function Login({ onLogin, onNavigate }) {
     })
   }
 
-  const handleRegistrationChange = (e) => {
-    const { name, value } = e.target
+  const checkPersonnelNumber = async (number) => {
+    try {
+      const response = await fetch(`http://localhost:8081/api/employees?personnel_number=${number}`, {
+        headers: {
+          'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+        }
+      });
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setPersonnelNumberError("Табельный номер зарегистрирован.");
+        return true;
+      }
+      setPersonnelNumberError("");
+      return false;
+    } catch (error) {
+      console.error("Error checking personnel number:", error);
+      return false;
+    }
+  };
+
+  const handleRegistrationChange = async (e) => {
+    const { name, value } = e.target;
+    setRegistrationData(prev => ({...prev, [name]: value}));
+    // Убираем проверку при вводе
+    if (personnelNumberError) {
+      setPersonnelNumberError('');
+    }
+  };
+
+  const formatPhoneNumber = (value) => {
+    // Удаляем все нецифровые символы
+    const numbers = value.replace(/\D/g, '');
+    
+    if (numbers.length === 0) return '';
+    
+    // Форматируем номер в формат +7 (XXX) XXX-XX-XX
+    if (numbers.length <= 1) return `+7`;
+    if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`;
+    if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`;
+    if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`;
+    return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`;
+  };
+
+  const handlePhoneChange = (e) => {
+    const { name, value } = e.target;
     setRegistrationData({
       ...registrationData,
-      [name]: value,
-    })
-  }
+      [name]: formatPhoneNumber(value)
+    });
+  };
 
   const handleLoginSubmit = async (e) => {
-    e.preventDefault()
-    console.log("Login data:", loginData)
-
-    // Здесь будет запрос к API для авторизации пользователя
+    e.preventDefault();
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(loginData),
-      })
+        const response = await fetch('http://localhost:8081/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+            },
+            body: JSON.stringify({
+                personnel_number: loginData.personnel_number,  // Используем табельный номер
+                password: loginData.password
+            })
+        });
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Login successful:", data)
-        if (onLogin) {
-          onLogin(data) // Передача данных авторизации в родительский компонент
+        if (response.ok) {
+            const userData = await response.json();
+            console.log('Login successful:', userData);
+            setLoginError(""); // Очищаем ошибку при успехе
+            onLogin(userData);
+        } else {
+            console.error('Login failed');
+            setLoginError("Неверный табельный номер или пароль");
         }
-      } else {
-        console.error("Login failed:", response.statusText)
-      }
     } catch (error) {
-      console.error("Error during login:", error)
+        console.error('Error:', error);
+        setLoginError("Ошибка сервера. Попробуйте позже");
     }
-  }
+};
 
   const handleRegistrationSubmit = async (e) => {
-    e.preventDefault()
-    console.log("Registration data:", registrationData)
-
-    // Здесь будет запрос к API для регистрации пользователя
-    try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(registrationData),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Registration successful:", data)
-        setIsRegistration(false)
-        setLoginData({
-          ...loginData,
-          email: registrationData.email,
-        })
-      } else {
-        console.error("Registration failed:", response.statusText)
-      }
-    } catch (error) {
-      console.error("Error during registration:", error)
+    e.preventDefault();
+    
+    // Проверяем табельный номер перед отправкой формы
+    const isPersonnelNumberTaken = await checkPersonnelNumber(registrationData.personnel_number);
+    if (isPersonnelNumberTaken) {
+      setPersonnelNumberError("Табельный номер зарегистрирован.");
+      return; // Прерываем отправку формы
     }
-  }
+
+    try {
+        const response = await fetch('http://localhost:8081/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+            },
+            body: JSON.stringify({
+                full_name: registrationData.fullName,
+                password: registrationData.password,
+                organization: registrationData.organization,
+                department: registrationData.department,
+                position: registrationData.position,
+                personnel_number: registrationData.personnel_number,
+                work_phone: registrationData.work_phone,
+                birth_date: registrationData.birth_date,
+                is_admin: false
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Registration successful:", data);
+            setRegistrationError(""); // Очищаем ошибку при успехе
+            
+            // Сразу пытаемся выполнить вход с теми же данными
+            const loginResponse = await fetch('http://localhost:8081/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+                },
+                body: JSON.stringify({
+                    personnel_number: registrationData.personnel_number,
+                    password: registrationData.password
+                })
+            });
+
+            if (loginResponse.ok) {
+                const userData = await loginResponse.json();
+                console.log('Auto login successful:', userData);
+                onLogin(userData); // Сразу переходим в систему
+            } else {
+                // Если автологин не удался, переходим на страницу входа
+                setIsRegistration(false);
+                setLoginData({
+                    personnel_number: registrationData.personnel_number,
+                    password: registrationData.password,
+                    rememberMe: false
+                });
+            }
+        } else {
+            const error = await response.json();
+            console.error("Registration failed:", error);
+            setRegistrationError(error.error || "Ошибка регистрации");
+        }
+    } catch (error) {
+        console.error("Error during registration:", error);
+        setRegistrationError("Ошибка сервера при регистрации");
+    }
+  };
 
   const toggleRegistration = () => {
     setIsRegistration(!isRegistration)
   }
 
-  // Функция для изменения стилей при наведении
   const handleMouseOver = (e) => {
     e.target.style.backgroundColor = "#EE6B0C" // Оранжевый фон
     e.target.style.color = "#FFFFFF" // Белый текст
   }
 
-  // Функция для возврата стилей при уходе курсора
   const handleMouseOut = (e) => {
     e.target.style.backgroundColor = "#FFFFFF" // Белый фон
     e.target.style.color = "#EE6B0C" // Оранжевый текст
   }
+
+  // Обновляем функции фильтрации
+  const filteredOrganizations = organizations.filter(org => 
+    org.name.toLowerCase().includes(searchOrg.toLowerCase())
+  );
+
+  const filteredDepartments = departments.filter(dept => 
+    dept.name.toLowerCase().startsWith(searchDept.toLowerCase())
+  );
+
+  const renderOrganizationField = () => (
+    <div style={styles.inputGroup}>
+      <label htmlFor="organization" style={styles.label}>
+        Организация
+      </label>
+      <div style={styles.dropdownContainer} className="dropdown-container">
+        <input
+          type="text"
+          id="organization"
+          name="organization"
+          value={registrationData.organization}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchOrg(value);
+            setRegistrationData(prev => ({...prev, organization: value}));
+            setShowOrgDropdown(true);
+          }}
+          onFocus={() => setShowOrgDropdown(true)}
+          placeholder="Выберите организацию"
+          style={styles.input}
+          required
+        />
+        {showOrgDropdown && filteredOrganizations.length > 0 && (
+          <div style={styles.dropdown}>
+            {filteredOrganizations.map(org => (
+              <div
+                key={org.id}
+                style={{
+                  ...styles.dropdownItem,
+                  backgroundColor: registrationData.organization === org.name ? '#F5F5F5' : '#FFFFFF',
+                }}
+                onClick={() => {
+                  setRegistrationData(prev => ({...prev, organization: org.name}));
+                  setSearchOrg(org.name);
+                  setShowOrgDropdown(false);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5F5F5';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 
+                    registrationData.organization === org.name ? '#F5F5F5' : '#FFFFFF';
+                }}
+              >
+                {org.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderDepartmentField = () => (
+    <div style={styles.inputGroup}>
+      <label htmlFor="department" style={styles.label}>
+        Отдел/подразделение
+      </label>
+      <div style={styles.dropdownContainer} className="dropdown-container">
+        <input
+          type="text"
+          id="department"
+          name="department"
+          value={registrationData.department}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchDept(value);
+            setRegistrationData(prev => ({...prev, department: value}));
+            setShowDeptDropdown(true);
+          }}
+          onFocus={() => setShowDeptDropdown(true)}
+          placeholder="Выберите отдел"
+          style={styles.input}
+          required
+        />
+        {showDeptDropdown && filteredDepartments.length > 0 && (
+          <div style={styles.dropdown}>
+            {filteredDepartments.map(dept => (
+              <div
+                key={dept.id}
+                style={{
+                  ...styles.dropdownItem,
+                  backgroundColor: registrationData.department === dept.name ? '#F5F5F5' : '#FFFFFF',
+                }}
+                onClick={() => {
+                  setRegistrationData(prev => ({...prev, department: dept.name}));
+                  setSearchDept(dept.name);
+                  setShowDeptDropdown(false);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5F5F5';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 
+                    registrationData.department === dept.name ? '#F5F5F5' : '#FFFFFF';
+                }}
+              >
+                {dept.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div style={styles.container}>
@@ -118,15 +367,10 @@ function Login({ onLogin, onNavigate }) {
           
           input:focus {
             outline: none;
-            border: 1px solid #EE6B0C !important;
           }
           
-          input[type="password"] {
-            color: #13454B !important;
-          }
-          
-          input[type="password"]::placeholder {
-            color: #AAAAAA !important;
+          input:invalid {
+            border-color: #EE6B0C;
           }
         `}
       </style>
@@ -141,23 +385,34 @@ function Login({ onLogin, onNavigate }) {
 
           {!isRegistration ? (
             <form onSubmit={handleLoginSubmit} style={styles.form}>
-              <div style={styles.inputGroup}>
-                <label htmlFor="email" style={styles.label}>
-                  Логин (почта)
+              <div style={{
+                ...styles.inputGroup,
+                position: 'relative',
+                marginBottom: loginError ? '20px' : '0'
+              }}>
+                <label htmlFor="personnel_number" style={styles.label}>
+                  Табельный номер
                 </label>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={loginData.email}
+                  type="text"
+                  id="personnel_number"
+                  name="personnel_number"
+                  value={loginData.personnel_number}
                   onChange={handleLoginChange}
-                  placeholder="Введите вашу почту"
-                  style={styles.input}
+                  placeholder="Введите табельный номер"
+                  style={{
+                    ...styles.input,
+                    border: loginError ? '1px solid #EE6B0C' : '1px solid #CCCCCC',
+                  }}
                   required
                 />
               </div>
 
-              <div style={styles.inputGroup}>
+              <div style={{
+                ...styles.inputGroup,
+                position: 'relative',
+                marginBottom: loginError ? '20px' : '0'
+              }}>
                 <label htmlFor="password" style={styles.label}>
                   Пароль
                 </label>
@@ -168,9 +423,23 @@ function Login({ onLogin, onNavigate }) {
                   value={loginData.password}
                   onChange={handleLoginChange}
                   placeholder="Введите ваш пароль"
-                  style={styles.input}
+                  style={{
+                    ...styles.input,
+                    border: loginError ? '1px solid #EE6B0C' : '1px solid #CCCCCC',
+                  }}
                   required
                 />
+                {loginError && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-20px',
+                    left: 0,
+                    color: '#EE6B0C',
+                    fontSize: '12px'
+                  }}>
+                    {loginError}
+                  </div>
+                )}
               </div>
 
               <div style={styles.checkboxGroup}>
@@ -193,7 +462,7 @@ function Login({ onLogin, onNavigate }) {
                 onMouseOver={handleMouseOver}
                 onMouseOut={handleMouseOut}
               >
-                Войти
+                Войти{" "}
               </button>
 
               <p style={styles.switchText}>
@@ -205,36 +474,45 @@ function Login({ onLogin, onNavigate }) {
             </form>
           ) : (
             <form onSubmit={handleRegistrationSubmit} style={styles.form}>
-              <div style={styles.inputGroup}>
-                <label htmlFor="organization" style={styles.label}>
-                  Организация
-                </label>
-                <input
-                  type="text"
-                  id="organization"
-                  name="organization"
-                  value={registrationData.organization}
-                  onChange={handleRegistrationChange}
-                  placeholder="Введите название организации"
-                  style={styles.input}
-                  required
-                />
-              </div>
+              {renderOrganizationField()}
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="department" style={styles.label}>
-                  Отдел/подразделение
+              {renderDepartmentField()}
+
+              <div style={{
+                ...styles.inputGroup,
+                position: 'relative',
+                marginBottom: personnelNumberError ? '20px' : '0' // Добавляем отступ если есть ошибка
+              }}>
+                <label htmlFor="personnel_number" style={{
+                  ...styles.label,
+                  marginBottom: '8px' // Увеличиваем отступ от label до input
+                }}>
+                  Табельный номер
                 </label>
                 <input
                   type="text"
-                  id="department"
-                  name="department"
-                  value={registrationData.department}
+                  id="personnel_number"
+                  name="personnel_number"
+                  value={registrationData.personnel_number}
                   onChange={handleRegistrationChange}
-                  placeholder="Введите отдел/подразделение"
-                  style={styles.input}
+                  placeholder="Например: 0000-00001"
+                  style={{
+                    ...styles.input,
+                    border: personnelNumberError ? '1px solid #EE6B0C' : '1px solid #CCCCCC',
+                  }}
                   required
                 />
+                {personnelNumberError && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-20px', // Размещаем сообщение под полем ввода
+                    left: 0,
+                    color: '#EE6B0C',
+                    fontSize: '12px'
+                  }}>
+                    {personnelNumberError}
+                  </div>
+                )}
               </div>
 
               <div style={styles.inputGroup}>
@@ -248,22 +526,6 @@ function Login({ onLogin, onNavigate }) {
                   value={registrationData.fullName}
                   onChange={handleRegistrationChange}
                   placeholder="Введите ваше ФИО"
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="regEmail" style={styles.label}>
-                  Логин (почта)
-                </label>
-                <input
-                  type="email"
-                  id="regEmail"
-                  name="email"
-                  value={registrationData.email}
-                  onChange={handleRegistrationChange}
-                  placeholder="Введите вашу почту"
                   style={styles.input}
                   required
                 />
@@ -285,6 +547,53 @@ function Login({ onLogin, onNavigate }) {
                 />
               </div>
 
+              <div style={styles.inputGroup}>
+                <label htmlFor="position" style={styles.label}>
+                  Должность
+                </label>
+                <input
+                  type="text"
+                  id="position"
+                  name="position"
+                  value={registrationData.position}
+                  onChange={handleRegistrationChange}
+                  placeholder="Введите вашу должность"
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="work_phone" style={styles.label}>
+                  Рабочий телефон
+                </label>
+                <input
+                  type="tel"
+                  id="work_phone"
+                  name="work_phone"
+                  value={registrationData.work_phone}
+                  onChange={handlePhoneChange}
+                  placeholder="+7 (343) XXX-XX-XX"
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="birth_date" style={styles.label}>
+                  Дата рождения
+                </label>
+                <input
+                  type="date"
+                  id="birth_date"
+                  name="birth_date"
+                  value={registrationData.birth_date}
+                  onChange={handleRegistrationChange}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
               <button
                 type="submit"
                 style={styles.button}
@@ -293,6 +602,17 @@ function Login({ onLogin, onNavigate }) {
               >
                 Зарегистрироваться
               </button>
+
+              {registrationError && (
+                <div style={{
+                  color: '#EE6B0C',
+                  fontSize: '12px',
+                  textAlign: 'center',
+                  marginTop: '10px'
+                }}>
+                  {registrationError}
+                </div>
+              )}
 
               <p style={styles.switchText}>
                 Уже есть аккаунт?{" "}
@@ -316,6 +636,7 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: "#FFFFFF",
     fontFamily: "'Manrope', Arial, sans-serif",
+    flexDirection: "column",
   },
   authContainer: {
     display: "flex",
@@ -369,6 +690,7 @@ const styles = {
     backgroundColor: "#FFFFFF",
     fontSize: "16px",
     color: "#13454B", // Изумрудный цвет текста
+    transition: "border-color 0.2s ease", // Добавляем плавный переход для border
   },
   checkboxGroup: {
     display: "flex",
@@ -398,15 +720,43 @@ const styles = {
     transition: "background-color 0.3s, color 0.3s", // Плавный переход
   },
   switchText: {
-    color: "#13454B", // Изумрудный цвет текста
     textAlign: "center",
     fontSize: "14px",
     marginTop: "10px",
+    color: "#13454B", // Изумрудный цвет текста
   },
   switchLink: {
     color: "#EE6B0C", // Оранжевый цвет для ссылки
     cursor: "pointer",
     textDecoration: "underline",
+  },
+  dropdownContainer: {
+    position: 'relative',
+    width: '100%',
+    className: 'dropdown-container'
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 5px)',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #CCCCCC',
+    borderRadius: '8px',
+    maxHeight: '200px',
+    overflowY: 'auto',
+    zIndex: 1000,
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  },
+  dropdownItem: {
+    padding: '10px 15px',
+    cursor: 'pointer',
+    color: '#13454B',
+    fontSize: '14px',
+    transition: 'background-color 0.2s',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
   },
 }
 

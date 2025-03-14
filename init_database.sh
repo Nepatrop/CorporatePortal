@@ -2,7 +2,17 @@
 
 DB_NAME="corporate_portal"
 DB_USER="postgres"
+export PGPASSWORD="diploma"  # Устанавливаем пароль как переменную окружения
 PSQL="psql -U $DB_USER"
+
+# Запрашиваем подтверждение на удаление существующей БД
+echo "Хотите удалить существующую БД? (y/n)"
+read drop_db
+if [ "$drop_db" = "y" ]; then
+    echo "Удаление существующей БД..."
+    $PSQL -c "DROP DATABASE $DB_NAME;"
+    echo "База данных удалена."
+fi
 
 # Проверка существует ли бд
 if $PSQL -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
@@ -37,13 +47,32 @@ if [ -z "$TABLES" ]; then
     read answer
     if [ "$answer" = "y" ]; then
         $PSQL -d $DB_NAME -f database/init_db.sql
-        echo "Таблицы базы данных созданны"
+        echo "Таблицы базы данных созданы"
         echo
-        echo "Зписать в таблицы тестовую информацию? (y/n)"
-        read answer
-        if [ "$answer" = "y" ]; then
-            $PSQL -d $DB_NAME -f database/test_data.sql
-            echo "Тестовая информация записанна успешно."
+        
+        echo "Загружаем структуру отделов из organizations.json..."
+        cd database/json_import
+        ./build.bat
+        cd ../..
+        
+        CURRENT_DIR=$(pwd -W)
+        JSON_PATH="$CURRENT_DIR\\database\\organizations.json"
+        echo "JSON файл: $JSON_PATH"
+        
+        ./database/json_import/build/Release/departments_import.exe "$JSON_PATH"
+        
+        if [ $? -eq 0 ]; then
+            echo "Структура отделов успешно загружена."
+            echo
+            echo "Записать тестовые данные в остальные таблицы? (y/n)"
+            read answer
+            if [ "$answer" = "y" ]; then
+                $PSQL -d $DB_NAME -f database/test_data.sql
+                echo "Тестовая информация записана успешно."
+            fi
+        else
+            echo "Ошибка при загрузке структуры отделов (код: $?)"
+            exit 1
         fi
     else
         echo "Операция отменена."
