@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import logo from "../logo.svg"
 import { api } from "../utils/api"
+import { useUser } from '../context/UserContext'; // Импортируем useUser
 
 function Login({ onLogin, onNavigate }) {
+  const { setCurrentUser } = useUser(); // Используем контекст пользователя
   const [isRegistration, setIsRegistration] = useState(false)
   const [loginData, setLoginData] = useState({
     personnel_number: "",
@@ -146,6 +148,9 @@ function Login({ onLogin, onNavigate }) {
         console.log("Login successful:", userData)
         setLoginError("")
 
+        // Сохраняем данные пользователя в контекст
+        setCurrentUser(userData)
+
         // Сохраняем данные если включено "Запомнить меня"
         if (loginData.rememberMe) {
           localStorage.setItem(
@@ -206,6 +211,7 @@ function Login({ onLogin, onNavigate }) {
         if (loginResponse.ok) {
           const userData = await loginResponse.json()
           console.log("Auto login successful:", userData)
+          setCurrentUser(userData) // Сохраняем данные пользователя в контекст
           onLogin(userData) // Сразу переходим в систему
         } else {
           // Если автологин не удался, переходим на страницу входа
@@ -802,4 +808,3 @@ const styles = {
 }
 
 export default Login
-

@@ -1,6 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
+import { useState, useRef } from "react";
+import { useUser } from '../context/UserContext'; // Импортируем useUser
 
 // Компонент Comment
 function Comment({ comment }) {
@@ -12,26 +13,26 @@ function Comment({ comment }) {
         <p style={styles.commentText}>{comment.text}</p>
       </div>
     </div>
-  )
+  );
 }
 
 // Компонент NewsItem
 function NewsItem({ news, onLike, onAddComment }) {
-  const [commentText, setCommentText] = useState("")
+  const [commentText, setCommentText] = useState("");
 
   const handleSubmitComment = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (commentText.trim()) {
-      onAddComment(news.id, commentText)
-      setCommentText("")
+      onAddComment(news.id, commentText);
+      setCommentText("");
     }
-  }
+  };
 
   // Форматирование времени
   const formatTime = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-  }
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
     <div style={styles.newsItem}>
@@ -88,75 +89,76 @@ function NewsItem({ news, onLike, onAddComment }) {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 // Компонент для добавления новости
 function AddNewsForm({ onAddNews }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [image, setImage] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
-  const fileInputRef = useRef(null)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [validationError, setValidationError] = useState(false);
+  const fileInputRef = useRef(null);
 
-  // Обработчик загрузки изображения
   const handleImageChange = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file) {
-      setImage(file)
-      const reader = new FileReader()
+      setImage(file);
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
-  // Обработчик отправки формы
   const handleSubmit = (e) => {
-    e.preventDefault()
-    if (title.trim() && description.trim()) {
-      const newNews = {
-        id: Date.now(),
-        title,
-        description,
-        image: imagePreview,
-        date: new Date().toISOString(),
-        author: "Текущий пользователь", // В реальном приложении здесь будет имя текущего пользователя
-        likes: 0,
-        liked: false,
-        comments: [],
-      }
-      onAddNews(newNews)
-      resetForm()
+    e.preventDefault();
+    if (!title.trim() || !description.trim()) {
+      setValidationError(true);
+      return;
     }
-  }
 
-  // Сброс формы
+    const newNews = {
+      id: Date.now(),
+      title,
+      description,
+      image: imagePreview,
+      date: new Date().toISOString(),
+      author: "Текущий пользователь",
+      likes: 0,
+      liked: false,
+      comments: [],
+    };
+
+    onAddNews(newNews);
+    resetForm();
+  };
+
   const resetForm = () => {
-    setTitle("")
-    setDescription("")
-    setImage(null)
-    setImagePreview(null)
-    setIsExpanded(false)
+    setTitle("");
+    setDescription("");
+    setImage(null);
+    setImagePreview(null);
+    setValidationError(false);
+    setIsExpanded(false);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
-  // Обработчик клика на поле ввода
   const handleInputClick = () => {
     if (!isExpanded) {
-      setIsExpanded(true)
+      setIsExpanded(true);
     }
-  }
+  };
 
-  // Обработчик клика на кнопку прикрепления файла
   const handleAttachClick = (e) => {
-    e.preventDefault()
-    fileInputRef.current.click()
-  }
+    e.preventDefault();
+    fileInputRef.current.click();
+  };
 
   return (
     <div style={styles.addNewsFormContainer}>
@@ -167,7 +169,10 @@ function AddNewsForm({ onAddNews }) {
           onChange={(e) => setTitle(e.target.value)}
           onClick={handleInputClick}
           placeholder={isExpanded ? "Заголовок новости" : "Что у вас нового?"}
-          style={styles.addNewsInput}
+          style={{
+            ...styles.addNewsInput,
+            borderColor: validationError && !title.trim() ? colors.secondary : "#e0e0e0",
+          }}
         />
 
         {isExpanded && (
@@ -176,9 +181,16 @@ function AddNewsForm({ onAddNews }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Текст новости..."
-              style={styles.addNewsTextarea}
+              style={{
+                ...styles.addNewsTextarea,
+                borderColor: validationError && !description.trim() ? colors.secondary : "#e0e0e0",
+              }}
               rows={3}
             />
+
+            {validationError && (!title.trim() || !description.trim()) && (
+              <p style={styles.validationError}>Не все поля заполнены</p>
+            )}
 
             <div style={styles.addNewsActions}>
               <div style={styles.attachmentContainer}>
@@ -210,7 +222,7 @@ function AddNewsForm({ onAddNews }) {
                 <button type="button" onClick={resetForm} style={styles.cancelButton}>
                   Отмена
                 </button>
-                <button type="submit" style={styles.publishButton} disabled={!title.trim() || !description.trim()}>
+                <button type="submit" style={styles.publishButton}>
                   Опубликовать
                 </button>
               </div>
@@ -218,13 +230,13 @@ function AddNewsForm({ onAddNews }) {
 
             {imagePreview && (
               <div style={styles.imagePreviewContainer}>
-                <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" style={styles.imagePreview} />
+                <img src={imagePreview} alt="Предпросмотр" style={styles.imagePreview} />
                 <button
                   type="button"
                   onClick={() => {
-                    setImage(null)
-                    setImagePreview(null)
-                    if (fileInputRef.current) fileInputRef.current.value = ""
+                    setImage(null);
+                    setImagePreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
                   style={styles.removeImageButton}
                 >
@@ -236,18 +248,20 @@ function AddNewsForm({ onAddNews }) {
         )}
       </form>
     </div>
-  )
+  );
 }
 
 // Основной компонент MainContent
 function MainContent() {
+  const { currentUser } = useUser(); // Используем контекст пользователя
+
   const internalPortals = [
     { id: 1, name: "HR Портал", url: "#" },
     { id: 2, name: "База знаний", url: "#" },
     { id: 3, name: "IT Поддержка", url: "#" },
     { id: 4, name: "Документация", url: "#" },
     { id: 5, name: "Обучение", url: "#" },
-  ]
+  ];
 
   const [news, setNews] = useState([
     {
@@ -297,20 +311,20 @@ function MainContent() {
       liked: false,
       comments: [],
     },
-  ])
+  ]);
 
   const birthdays = [
     { id: 1, name: "Иван Иванов", date: "15 мая" },
     { id: 2, name: "Мария Петрова", date: "20 мая" },
-  ]
+  ];
 
   const handleLike = (id) => {
     setNews(
       news.map((item) =>
         item.id === id ? { ...item, likes: item.liked ? item.likes - 1 : item.likes + 1, liked: !item.liked } : item,
       ),
-    )
-  }
+    );
+  };
 
   const handleAddComment = (id, text) => {
     setNews(
@@ -325,26 +339,30 @@ function MainContent() {
             }
           : item,
       ),
-    )
-  }
+    );
+  };
 
-  // Функция добавления новой новости
   const handleAddNews = (newNews) => {
-    setNews([newNews, ...news]) // Добавляем новость в начало списка
-  }
+    if (currentUser) {
+      const newsWithAuthor = {
+        ...newNews,
+        author: currentUser.full_name, // Используем имя текущего пользователя
+        author_id: currentUser.id, // Добавляем ID пользователя
+        author_position: currentUser.position, // Добавляем должность пользователя
+      };
+      setNews([newsWithAuthor, ...news]);
+    } else {
+      console.error("Пользователь не авторизован");
+    }
+  };
 
   return (
     <main style={styles.main}>
       <div style={styles.contentWrapper}>
-        {/* Левая колонка с новостями (прокручиваемая) */}
         <div style={styles.leftColumn}>
           <div style={{ ...styles.block, ...styles.newsBlock }}>
             <h2 style={styles.heading}>Новости и статьи</h2>
-
-            {/* Форма добавления новости */}
             <AddNewsForm onAddNews={handleAddNews} />
-
-            {/* Список новостей */}
             <div style={styles.newsList}>
               {news.map((item) => (
                 <NewsItem key={item.id} news={item} onLike={handleLike} onAddComment={handleAddComment} />
@@ -353,7 +371,6 @@ function MainContent() {
           </div>
         </div>
 
-        {/* Правая колонка со статическими блоками */}
         <div style={styles.rightColumn}>
           <div style={styles.rightColumnFixed}>
             <div style={{ ...styles.block, ...styles.portalBlock }}>
@@ -382,36 +399,37 @@ function MainContent() {
         </div>
       </div>
     </main>
-  )
+  );
 }
 
+// Стили
 const colors = {
   primary: "#13454B",
   secondary: "#EE6B0C",
-  background: "#F5F5F5", // Светло-серый фон как в блоке регистрации
-  blockBackground: "#FFFFFF", // Белый фон для блоков
+  background: "#F5F5F5",
+  blockBackground: "#FFFFFF",
   text: "#333",
   lightText: "#B3B3B3",
-}
+};
 
 const fonts = {
   main: "'Manrope', Arial, sans-serif",
   secondary: "'Arial', sans-serif",
-}
+};
 
 const baseBlockStyles = {
-  backgroundColor: colors.blockBackground, // Белый фон для блоков
+  backgroundColor: colors.blockBackground,
   borderRadius: "8px",
   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
   padding: "1.5rem",
-}
+};
 
 const styles = {
   main: {
     height: "calc(100vh - 72px)",
     fontFamily: fonts.main,
-    backgroundColor: colors.background, // Светло-серый фон для всей страницы
-    overflowY: "auto", // Добавляем прокрутку для всей страницы
+    backgroundColor: colors.background,
+    overflowY: "auto",
     padding: "1rem",
   },
   contentWrapper: {
@@ -426,12 +444,12 @@ const styles = {
   },
   rightColumn: {
     flex: "0 0 40%",
-    position: "relative", // Для позиционирования фиксированного блока
+    position: "relative",
     boxSizing: "border-box",
   },
   rightColumnFixed: {
-    position: "sticky", // Делаем блок "прилипающим" при прокрутке
-    top: "1rem", // Отступ сверху
+    position: "sticky",
+    top: "1rem",
     display: "flex",
     flexDirection: "column",
     gap: "1rem",
@@ -632,8 +650,6 @@ const styles = {
   birthdayBlock: {
     marginBottom: "1rem",
   },
-
-  // Стили для формы добавления новости
   addNewsFormContainer: {
     marginTop: "1rem",
     marginBottom: "1.5rem",
@@ -697,24 +713,21 @@ const styles = {
   },
   cancelButton: {
     padding: "0.5rem 1rem",
-    backgroundColor: "#f5f5f5",
-    color: "#333",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
+    background: "none",
+    border: "none",
+    color: "#777",
+    cursor: "pointer",
     fontSize: "14px",
     fontWeight: 500,
-    cursor: "pointer",
   },
   publishButton: {
     padding: "0.5rem 1rem",
-    backgroundColor: colors.secondary,
-    color: "#FFFFFF",
+    background: "none",
     border: "none",
-    borderRadius: "4px",
+    color: colors.secondary,
+    cursor: "pointer",
     fontSize: "14px",
     fontWeight: 500,
-    cursor: "pointer",
-    opacity: (props) => (props.disabled ? 0.6 : 1),
   },
   imagePreviewContainer: {
     position: "relative",
@@ -744,7 +757,11 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
   },
-}
+  validationError: {
+    color: colors.secondary,
+    fontSize: "0.9rem",
+    marginBottom: "0.75rem",
+  },
+};
 
-export default MainContent
-
+export default MainContent;
