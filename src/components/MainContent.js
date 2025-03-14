@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { api } from '../utils/api';
+import { useState, useRef } from "react"
 
 // Компонент Comment
 function Comment({ comment }) {
@@ -28,13 +27,29 @@ function NewsItem({ news, onLike, onAddComment }) {
     }
   }
 
+  // Форматирование времени
+  const formatTime = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+  }
+
   return (
     <div style={styles.newsItem}>
+      <div style={styles.newsHeader}>
+        <div style={styles.authorInfo}>
+          <strong style={styles.authorName}>{news.author || "Администратор"}</strong>
+          <span style={styles.newsTime}>
+            {formatTime(news.date)} {new Date(news.date).toLocaleDateString("ru-RU")}
+          </span>
+        </div>
+      </div>
+
       <h3 style={styles.newsTitle}>{news.title}</h3>
       <p style={styles.newsDescription}>{news.description}</p>
-      <img src={news.image || "/placeholder.svg"} alt={news.title} style={styles.newsImage} />
+
+      {news.image && <img src={news.image || "/placeholder.svg"} alt={news.title} style={styles.newsImage} />}
+
       <div style={styles.newsFooter}>
-        <span style={styles.newsDate}>{news.date}</span>
         <button
           onClick={() => onLike(news.id)}
           style={styles.likeButton}
@@ -53,6 +68,7 @@ function NewsItem({ news, onLike, onAddComment }) {
           <span style={styles.likeCount}>{news.likes}</span>
         </button>
       </div>
+
       <div style={styles.commentsSection}>
         <h4 style={styles.commentsHeader}>Комментарии</h4>
         {news.comments.map((comment, index) => (
@@ -75,21 +91,170 @@ function NewsItem({ news, onLike, onAddComment }) {
   )
 }
 
+// Компонент для добавления новости
+function AddNewsForm({ onAddNews }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [image, setImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const fileInputRef = useRef(null)
+
+  // Обработчик загрузки изображения
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Обработчик отправки формы
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (title.trim() && description.trim()) {
+      const newNews = {
+        id: Date.now(),
+        title,
+        description,
+        image: imagePreview,
+        date: new Date().toISOString(),
+        author: "Текущий пользователь", // В реальном приложении здесь будет имя текущего пользователя
+        likes: 0,
+        liked: false,
+        comments: [],
+      }
+      onAddNews(newNews)
+      resetForm()
+    }
+  }
+
+  // Сброс формы
+  const resetForm = () => {
+    setTitle("")
+    setDescription("")
+    setImage(null)
+    setImagePreview(null)
+    setIsExpanded(false)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  // Обработчик клика на поле ввода
+  const handleInputClick = () => {
+    if (!isExpanded) {
+      setIsExpanded(true)
+    }
+  }
+
+  // Обработчик клика на кнопку прикрепления файла
+  const handleAttachClick = (e) => {
+    e.preventDefault()
+    fileInputRef.current.click()
+  }
+
+  return (
+    <div style={styles.addNewsFormContainer}>
+      <form onSubmit={handleSubmit} style={styles.addNewsForm}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onClick={handleInputClick}
+          placeholder={isExpanded ? "Заголовок новости" : "Что у вас нового?"}
+          style={styles.addNewsInput}
+        />
+
+        {isExpanded && (
+          <>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Текст новости..."
+              style={styles.addNewsTextarea}
+              rows={3}
+            />
+
+            <div style={styles.addNewsActions}>
+              <div style={styles.attachmentContainer}>
+                <button onClick={handleAttachClick} style={styles.attachButton} type="button">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                  </svg>
+                  <span style={styles.attachText}>Прикрепить файл</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  style={styles.fileInput}
+                  accept="image/*"
+                />
+              </div>
+
+              <div style={styles.formButtons}>
+                <button type="button" onClick={resetForm} style={styles.cancelButton}>
+                  Отмена
+                </button>
+                <button type="submit" style={styles.publishButton} disabled={!title.trim() || !description.trim()}>
+                  Опубликовать
+                </button>
+              </div>
+            </div>
+
+            {imagePreview && (
+              <div style={styles.imagePreviewContainer}>
+                <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" style={styles.imagePreview} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage(null)
+                    setImagePreview(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
+                  style={styles.removeImageButton}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </form>
+    </div>
+  )
+}
+
 // Основной компонент MainContent
 function MainContent() {
   const internalPortals = [
-    { id: 1, name: "HR Портал", url: "#", icon: "👥" },
-    { id: 2, name: "База знаний", url: "#", icon: "🎓" },
-    { id: 3, name: "IT Поддержка", url: "#", icon: "💻" },
-    { id: 4, name: "Документация", url: "#", icon: "📄" },
-    { id: 5, name: "Обучение", url: "#", icon: "🎓" },
+    { id: 1, name: "HR Портал", url: "#" },
+    { id: 2, name: "База знаний", url: "#" },
+    { id: 3, name: "IT Поддержка", url: "#" },
+    { id: 4, name: "Документация", url: "#" },
+    { id: 5, name: "Обучение", url: "#" },
   ]
 
   const [news, setNews] = useState([
     {
       id: 1,
       title: "Новый проект запущен",
-      date: "2023-05-15",
+      date: "2023-05-15T10:30:00",
+      author: "Иванов Иван Иванович",
       description: "Мы рады сообщить о запуске нового проекта, который поможет оптимизировать рабочие процессы.",
       image:
         "https://img.freepik.com/free-photo/desk-real-estate-office_23-2147653310.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
@@ -99,7 +264,7 @@ function MainContent() {
         {
           user: "Анна Анновна",
           avatar: "https://i.pinimg.com/736x/9f/e5/06/9fe5060dabf67f1d5f76b6e52f50c155.jpg",
-          text: "Отличная ��овость! Жду не дождусь начала работы над проектом.",
+          text: "Отличная новость! Жду не дождусь начала работы над проектом.",
         },
         {
           user: "Иван Иванов",
@@ -111,7 +276,8 @@ function MainContent() {
     {
       id: 2,
       title: "Корпоративное мероприятие",
-      date: "2023-05-10",
+      date: "2023-05-10T15:45:00",
+      author: "Петрова Мария Сергеевна",
       description: "Не забудьте зарегистрироваться на корпоративное мероприятие, которое состоится в конце месяца.",
       image:
         "https://img.freepik.com/free-photo/colleagues-having-fun-business-event_23-2149370528.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
@@ -122,7 +288,8 @@ function MainContent() {
     {
       id: 3,
       title: "Новые курсы обучения",
-      date: "2023-05-05",
+      date: "2023-05-05T09:15:00",
+      author: "Сидоров Алексей Петрович",
       description: "Доступны новые курсы обучения для всех сотрудников. Успейте записаться!",
       image:
         "https://img.freepik.com/free-photo/team-process-creation_23-2147656721.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
@@ -161,41 +328,57 @@ function MainContent() {
     )
   }
 
+  // Функция добавления новой новости
+  const handleAddNews = (newNews) => {
+    setNews([newNews, ...news]) // Добавляем новость в начало списка
+  }
+
   return (
     <main style={styles.main}>
-      <div style={styles.leftColumn}>
-        <div style={{ ...styles.block, ...styles.newsBlock }}>
-          <h2 style={styles.heading}>Новости и статьи</h2>
-          <div style={styles.newsList}>
-            {news.map((item) => (
-              <NewsItem key={item.id} news={item} onLike={handleLike} onAddComment={handleAddComment} />
-            ))}
+      <div style={styles.contentWrapper}>
+        {/* Левая колонка с новостями (прокручиваемая) */}
+        <div style={styles.leftColumn}>
+          <div style={{ ...styles.block, ...styles.newsBlock }}>
+            <h2 style={styles.heading}>Новости и статьи</h2>
+
+            {/* Форма добавления новости */}
+            <AddNewsForm onAddNews={handleAddNews} />
+
+            {/* Список новостей */}
+            <div style={styles.newsList}>
+              {news.map((item) => (
+                <NewsItem key={item.id} news={item} onLike={handleLike} onAddComment={handleAddComment} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-      <div style={styles.rightColumn}>
-        <div style={{ ...styles.block, ...styles.portalBlock }}>
-          <h2 style={styles.heading}>Внутренние порталы</h2>
-          <div style={styles.portalGrid}>
-            {internalPortals.map((portal) => (
-              <a key={portal.id} href={portal.url} style={styles.portalLink}>
-                <div style={styles.portalIcon}>{portal.icon}</div>
-                <span style={styles.portalName}>{portal.name}</span>
-              </a>
-            ))}
+
+        {/* Правая колонка со статическими блоками */}
+        <div style={styles.rightColumn}>
+          <div style={styles.rightColumnFixed}>
+            <div style={{ ...styles.block, ...styles.portalBlock }}>
+              <h2 style={styles.heading}>Внутренние порталы</h2>
+              <div style={styles.portalGrid}>
+                {internalPortals.map((portal) => (
+                  <a key={portal.id} href={portal.url} style={styles.portalLink}>
+                    <span style={styles.portalName}>{portal.name}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div style={{ ...styles.block, ...styles.birthdayBlock }}>
+              <h2 style={styles.heading}>Ближайшие дни рождения</h2>
+              <ul style={styles.list}>
+                {birthdays.map((person) => (
+                  <li key={person.id} style={styles.listItem}>
+                    <p>
+                      {person.name} - <span style={styles.date}>{person.date}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-        <div style={{ ...styles.block, ...styles.birthdayBlock }}>
-          <h2 style={styles.heading}>Ближайшие дни рождения</h2>
-          <ul style={styles.list}>
-            {birthdays.map((person) => (
-              <li key={person.id} style={styles.listItem}>
-                <p>
-                  {person.name} - <span style={styles.date}>{person.date}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </main>
@@ -205,8 +388,8 @@ function MainContent() {
 const colors = {
   primary: "#13454B",
   secondary: "#EE6B0C",
-  background: "#FFFFFF",
-  blockBackground: "#F5F5F5", // Светло-серый фон для блоков
+  background: "#F5F5F5", // Светло-серый фон как в блоке регистрации
+  blockBackground: "#FFFFFF", // Белый фон для блоков
   text: "#333",
   lightText: "#B3B3B3",
 }
@@ -217,7 +400,7 @@ const fonts = {
 }
 
 const baseBlockStyles = {
-  backgroundColor: colors.blockBackground, // Светло-серый фон для блоков
+  backgroundColor: colors.blockBackground, // Белый фон для блоков
   borderRadius: "8px",
   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
   padding: "1.5rem",
@@ -225,33 +408,38 @@ const baseBlockStyles = {
 
 const styles = {
   main: {
-    display: "flex",
     height: "calc(100vh - 72px)",
     fontFamily: fonts.main,
-    overflowX: "hidden",
+    backgroundColor: colors.background, // Светло-серый фон для всей страницы
+    overflowY: "auto", // Добавляем прокрутку для всей страницы
     padding: "1rem",
-    backgroundColor: colors.background, // Белый фон для всей страницы
+  },
+  contentWrapper: {
+    display: "flex",
+    width: "100%",
+    gap: "1rem",
   },
   leftColumn: {
     flex: "0 0 60%",
-    padding: "2rem",
-    backgroundColor: colors.background, // Белый фон
-    marginRight: "1rem",
-    overflowY: "auto",
+    padding: "1rem",
     boxSizing: "border-box",
   },
   rightColumn: {
     flex: "0 0 40%",
+    position: "relative", // Для позиционирования фиксированного блока
+    boxSizing: "border-box",
+  },
+  rightColumnFixed: {
+    position: "sticky", // Делаем блок "прилипающим" при прокрутке
+    top: "1rem", // Отступ сверху
     display: "flex",
     flexDirection: "column",
     gap: "1rem",
-    boxSizing: "border-box",
     paddingRight: "1rem",
   },
   block: {
     ...baseBlockStyles,
-    flex: 1,
-    overflow: "hidden",
+    marginBottom: "1rem",
   },
   heading: {
     color: colors.primary,
@@ -262,29 +450,31 @@ const styles = {
     lineHeight: "45px",
     letterSpacing: "0.5px",
     padding: "15px 0 12px 0",
-    marginBottom: "40px",
+    marginBottom: "20px",
   },
   portalGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
   },
   portalLink: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
+    alignItems: "flex-start",
     textDecoration: "none",
-    color: colors.primary,
+    color: "#000000",
     transition: "transform 0.2s",
-  },
-  portalIcon: {
-    fontSize: "2rem",
-    marginBottom: "0.5rem",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 500,
+    fontSize: "16px",
+    padding: "0.5rem 0",
+    borderBottom: "1px solid #e0e0e0",
   },
   portalName: {
-    textAlign: "center",
-    fontFamily: fonts.main,
-    fontWeight: 300,
+    textAlign: "left",
+    fontFamily: "'Manrope', Arial, sans-serif",
+    fontWeight: 500,
+    fontSize: "16px",
   },
   list: {
     listStyle: "none",
@@ -303,26 +493,46 @@ const styles = {
     fontWeight: 400,
   },
   newsBlock: {
-    ...baseBlockStyles,
-    flex: 2,
-    backgroundColor: "transparent", // Убираем фон
-    boxShadow: "none", // Убираем тень
+    backgroundColor: colors.blockBackground,
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
   },
   newsList: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: "1.5rem",
+    marginTop: "1.5rem",
   },
   newsItem: {
-    ...baseBlockStyles,
-    padding: "1rem",
+    padding: "1.5rem",
     marginBottom: "1rem",
+    backgroundColor: colors.blockBackground,
+    borderRadius: "8px",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+    border: "1px solid #e0e0e0",
+  },
+  newsHeader: {
+    marginBottom: "1rem",
+  },
+  authorInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  authorName: {
+    color: colors.primary,
+    fontSize: "1rem",
+    fontWeight: 600,
+  },
+  newsTime: {
+    color: colors.lightText,
+    fontSize: "0.85rem",
   },
   newsImage: {
     width: "100%",
     height: "auto",
     objectFit: "cover",
     borderRadius: "4px",
+    marginTop: "1rem",
     marginBottom: "1rem",
   },
   newsTitle: {
@@ -338,12 +548,15 @@ const styles = {
     fontSize: "1rem",
     color: colors.text,
     marginBottom: "1rem",
+    lineHeight: "1.5",
   },
   newsFooter: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     marginBottom: "1rem",
+    borderTop: "1px solid #e0e0e0",
+    paddingTop: "1rem",
   },
   likeButton: {
     background: "none",
@@ -408,10 +621,128 @@ const styles = {
   commentSubmit: {
     padding: "0.5rem 1rem",
     backgroundColor: colors.secondary,
-    color: colors.background,
+    color: colors.blockBackground,
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
+  },
+  portalBlock: {
+    marginBottom: "1rem",
+  },
+  birthdayBlock: {
+    marginBottom: "1rem",
+  },
+
+  // Стили для формы добавления новости
+  addNewsFormContainer: {
+    marginTop: "1rem",
+    marginBottom: "1.5rem",
+  },
+  addNewsForm: {
+    backgroundColor: colors.blockBackground,
+    borderRadius: "8px",
+    padding: "1rem",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #e0e0e0",
+  },
+  addNewsInput: {
+    width: "100%",
+    padding: "0.75rem",
+    borderRadius: "4px",
+    border: "1px solid #e0e0e0",
+    fontSize: "16px",
+    fontFamily: fonts.main,
+    marginBottom: "0.75rem",
+  },
+  addNewsTextarea: {
+    width: "100%",
+    padding: "0.75rem",
+    borderRadius: "4px",
+    border: "1px solid #e0e0e0",
+    fontSize: "16px",
+    fontFamily: fonts.main,
+    resize: "vertical",
+    marginBottom: "0.75rem",
+  },
+  addNewsActions: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "0.75rem",
+  },
+  attachmentContainer: {
+    display: "flex",
+    alignItems: "center",
+  },
+  attachButton: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    background: "none",
+    border: "none",
+    color: "#777",
+    cursor: "pointer",
+    padding: "0.5rem",
+    fontSize: "14px",
+  },
+  attachText: {
+    color: "#777",
+  },
+  fileInput: {
+    display: "none",
+  },
+  formButtons: {
+    display: "flex",
+    gap: "0.75rem",
+  },
+  cancelButton: {
+    padding: "0.5rem 1rem",
+    backgroundColor: "#f5f5f5",
+    color: "#333",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontWeight: 500,
+    cursor: "pointer",
+  },
+  publishButton: {
+    padding: "0.5rem 1rem",
+    backgroundColor: colors.secondary,
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontWeight: 500,
+    cursor: "pointer",
+    opacity: (props) => (props.disabled ? 0.6 : 1),
+  },
+  imagePreviewContainer: {
+    position: "relative",
+    marginTop: "0.75rem",
+    marginBottom: "0.75rem",
+    display: "inline-block",
+  },
+  imagePreview: {
+    maxWidth: "100%",
+    maxHeight: "200px",
+    borderRadius: "4px",
+    border: "1px solid #e0e0e0",
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: "5px",
+    right: "5px",
+    width: "24px",
+    height: "24px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    color: "#fff",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontSize: "12px",
   },
 }
 
