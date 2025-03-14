@@ -210,8 +210,8 @@ const EmployeeDirectory = ({ onNavigate }) => {
 // Стили
 const styles = {
   container: {
-    fontFamily: "'Manrope', Arial, sans-serif",
-    backgroundColor: "#FFFFFF", // Белый фон для всей страницы
+    fontFamily: "'Open Sans', Arial, sans-serif", // Основной шрифт для всего компонента
+    backgroundColor: "#FFFFFF",
     minHeight: "calc(100vh - 72px)",
   },
   layout: {
@@ -220,10 +220,10 @@ const styles = {
   },
   filterSidebar: {
     width: "300px",
-    backgroundColor: "#F5F5F5", // Светло-серый фон для блока
+    backgroundColor: "#F5F5F5",
     alignSelf: "stretch",
     height: "100%",
-    borderRadius: "0", // Убираем скругление краев
+    borderRadius: "0",
   },
   filterHeader: {
     display: "flex",
@@ -238,6 +238,7 @@ const styles = {
     color: "#13454B",
     fontSize: "18px",
     fontWeight: 600,
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для "Параметры поиска"
   },
   filterIcon: {
     color: "#13454B",
@@ -253,41 +254,44 @@ const styles = {
     marginBottom: "5px",
     color: "#13454B",
     fontWeight: 500,
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для меток фильтров
   },
   filterInput: {
     width: "100%",
     padding: "10px 12px",
     border: "1px solid #e0e0e0",
-    borderRadius: "20px", // Более закругленные поля ввода
+    borderRadius: "20px",
     fontSize: "14px",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для полей ввода
   },
   filterButtonsContainer: {
     display: "flex",
-    flexDirection: "column", // Кнопки друг над другом
+    flexDirection: "column",
     gap: "10px",
     marginTop: "20px",
   },
   filterButton: {
     padding: "10px 16px",
-    backgroundColor: "#FFFFFF", // Белый фон
-    color: "#EE6B0C", // Оранжевый текст
-    border: "1px solid #EE6B0C", // Оранжевая рамка
-    borderRadius: "20px", // Закругленные кнопки
+    backgroundColor: "#FFFFFF",
+    color: "#EE6B0C",
+    border: "1px solid #EE6B0C",
+    borderRadius: "20px",
     cursor: "pointer",
     fontWeight: 500,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.3s ease",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для кнопок
   },
   activeButton: {
-    backgroundColor: "#EE6B0C", // Оранжевый фон при нажатии
-    color: "#FFFFFF", // Белый текст при нажатии
+    backgroundColor: "#EE6B0C",
+    color: "#FFFFFF",
   },
   main: {
     flex: 1,
     padding: "0",
-    backgroundColor: "#FFFFFF", // Белый фон для основного контента
+    backgroundColor: "#FFFFFF",
     overflowY: "auto",
   },
   employeeListContainer: {
@@ -298,19 +302,20 @@ const styles = {
   columnHeaders: {
     display: "flex",
     padding: "15px 2rem",
-    backgroundColor: "#F5F5F5", // Такой же фон, как у блока параметров поиска
-    borderRadius: "0", // Без скруглений
+    backgroundColor: "#F5F5F5",
+    borderRadius: "0",
     fontWeight: 600,
-    color: "#333333", // Цвет текста темнее, чем фон
+    color: "#333333",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для заголовков колонок
   },
   nameHeader: {
     flex: "2",
-    paddingLeft: "100px", // Учитываем место для фото
+    paddingLeft: "100px",
   },
   departmentHeader: {
     flex: "1",
     textAlign: "left",
-    paddingLeft: "20px", // Сдвигаем немного влево
+    paddingLeft: "20px",
   },
   contactsHeader: {
     flex: "1",
@@ -325,8 +330,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     padding: "1rem 2rem",
-    backgroundColor: "#FFFFFF", // Белый фон
-    borderBottom: "1px solid #E0E0E0", // Светло-серая разделительная линия
+    backgroundColor: "#FFFFFF",
+    borderBottom: "1px solid #E0E0E0",
   },
   employeePhotoAndInfo: {
     display: "flex",
@@ -344,7 +349,8 @@ const styles = {
     alignItems: "center",
     color: "#EE6B0C",
     fontWeight: 500,
-    paddingLeft: "20px", // Сдвигаем немного влево
+    paddingLeft: "20px",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для подразделения
   },
   employeeContacts: {
     flex: "1",
@@ -374,33 +380,39 @@ const styles = {
     fontSize: "18px",
     fontWeight: 600,
     margin: 0,
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для ФИО
   },
   employeePosition: {
     color: "#333333",
     fontWeight: 300,
     margin: "0.25rem 0 0 0",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для должности
   },
   employeePhone: {
     color: "#333333",
     fontWeight: 300,
     margin: 0,
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для телефона
   },
   employeeEmail: {
     color: "#333333",
     fontWeight: 300,
     margin: 0,
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для email
   },
   loading: {
     textAlign: "center",
     fontSize: "18px",
     marginTop: "20px",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для сообщения о загрузке
   },
   error: {
     textAlign: "center",
     fontSize: "18px",
     marginTop: "20px",
     color: "red",
+    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для сообщения об ошибке
   },
-}
+};
 
 export default EmployeeDirectory
