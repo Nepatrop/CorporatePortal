@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { api } from '../utils/api';
 
 // Компонент Comment
 function Comment({ comment }) {

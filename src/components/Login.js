@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import logo from "../logo.svg"
+import { api } from '../utils/api';
 
 function Login({ onLogin, onNavigate }) {
   const [isRegistration, setIsRegistration] = useState(false)
@@ -31,25 +32,20 @@ function Login({ onLogin, onNavigate }) {
   const [registrationError, setRegistrationError] = useState("");
 
   useEffect(() => {
-    // Загружаем список организаций при монтировании
-    fetch('http://localhost:8081/api/organizations', {
-      headers: {
-        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+    // Загружаем список организаций и отделов
+    const fetchData = async () => {
+      try {
+        const [orgsData, deptsData] = await Promise.all([
+          api.get('/api/organizations'),
+          api.get('/api/departments')
+        ]);
+        setOrganizations(orgsData);
+        setDepartments(deptsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
-    })
-    .then(response => response.json())
-    .then(data => setOrganizations(data))
-    .catch(error => console.error('Error fetching organizations:', error));
-
-    // Загружаем список отделов
-    fetch('http://localhost:8081/api/departments', {
-      headers: {
-        'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-      }
-    })
-    .then(response => response.json())
-    .then(data => setDepartments(data))
-    .catch(error => console.error('Error fetching departments:', error));
+    };
+    fetchData();
   }, []);
 
   // Обновляем обработчики кликов вне выпадающих списков
@@ -91,12 +87,7 @@ function Login({ onLogin, onNavigate }) {
 
   const checkPersonnelNumber = async (number) => {
     try {
-      const response = await fetch(`http://localhost:8081/api/employees?personnel_number=${number}`, {
-        headers: {
-          'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-        }
-      });
-      const data = await response.json();
+      const data = await api.get(`/api/employees?personnel_number=${number}`);
       if (data && data.length > 0) {
         setPersonnelNumberError("Табельный номер зарегистрирован.");
         return true;
@@ -143,16 +134,9 @@ function Login({ onLogin, onNavigate }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8081/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-        },
-        body: JSON.stringify({
-          personnel_number: loginData.personnel_number,
-          password: loginData.password
-        })
+      const response = await api.post('/api/auth/login', {
+        personnel_number: loginData.personnel_number,
+        password: loginData.password
       });
 
       if (response.ok) {
@@ -186,72 +170,55 @@ function Login({ onLogin, onNavigate }) {
   const handleRegistrationSubmit = async (e) => {
     e.preventDefault();
     
-    // Проверяем табельный номер перед отправкой формы
-    const isPersonnelNumberTaken = await checkPersonnelNumber(registrationData.personnel_number);
-    if (isPersonnelNumberTaken) {
-      setPersonnelNumberError("Табельный номер зарегистрирован.");
-      return; // Прерываем отправку формы
+    if (await checkPersonnelNumber(registrationData.personnel_number)) {
+      return;
     }
 
     try {
-        const response = await fetch('http://localhost:8081/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-            },
-            body: JSON.stringify({
-                full_name: registrationData.fullName,
-                password: registrationData.password,
-                organization: registrationData.organization,
-                department: registrationData.department,
-                position: registrationData.position,
-                personnel_number: registrationData.personnel_number,
-                work_phone: registrationData.work_phone,
-                birth_date: registrationData.birth_date,
-                is_admin: false
-            })
+      const response = await api.post('/api/auth/register', {
+        full_name: registrationData.fullName,
+        password: registrationData.password,
+        organization: registrationData.organization,
+        department: registrationData.department,
+        position: registrationData.position,
+        personnel_number: registrationData.personnel_number,
+        work_phone: registrationData.work_phone,
+        birth_date: registrationData.birth_date,
+        is_admin: false
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Registration successful:", data);
+        setRegistrationError(""); // Очищаем ошибку при успехе
+        
+        // Сразу пытаемся выполнить вход с теми же данными
+        const loginResponse = await api.post('/api/auth/login', {
+          personnel_number: registrationData.personnel_number,
+          password: registrationData.password
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log("Registration successful:", data);
-            setRegistrationError(""); // Очищаем ошибку при успехе
-            
-            // Сразу пытаемся выполнить вход с теми же данными
-            const loginResponse = await fetch('http://localhost:8081/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-                },
-                body: JSON.stringify({
-                    personnel_number: registrationData.personnel_number,
-                    password: registrationData.password
-                })
-            });
-
-            if (loginResponse.ok) {
-                const userData = await loginResponse.json();
-                console.log('Auto login successful:', userData);
-                onLogin(userData); // Сразу переходим в систему
-            } else {
-                // Если автологин не удался, переходим на страницу входа
-                setIsRegistration(false);
-                setLoginData({
-                    personnel_number: registrationData.personnel_number,
-                    password: registrationData.password,
-                    rememberMe: false
-                });
-            }
+        if (loginResponse.ok) {
+          const userData = await loginResponse.json();
+          console.log('Auto login successful:', userData);
+          onLogin(userData); // Сразу переходим в систему
         } else {
-            const error = await response.json();
-            console.error("Registration failed:", error);
-            setRegistrationError(error.error || "Ошибка регистрации");
+          // Если автологин не удался, переходим на страницу входа
+          setIsRegistration(false);
+          setLoginData({
+            personnel_number: registrationData.personnel_number,
+            password: registrationData.password,
+            rememberMe: false
+          });
         }
+      } else {
+        const error = await response.json();
+        console.error("Registration failed:", error);
+        setRegistrationError(error.error || "Ошибка регистрации");
+      }
     } catch (error) {
-        console.error("Error during registration:", error);
-        setRegistrationError("Ошибка сервера при регистрации");
+      console.error("Error during registration:", error);
+      setRegistrationError("Ошибка сервера при регистрации");
     }
   };
 
@@ -305,21 +272,11 @@ function Login({ onLogin, onNavigate }) {
             {filteredOrganizations.map(org => (
               <div
                 key={org.id}
-                style={{
-                  ...styles.dropdownItem,
-                  backgroundColor: registrationData.organization === org.name ? '#F5F5F5' : '#FFFFFF',
-                }}
+                style={{...styles.dropdownItem}}
                 onClick={() => {
                   setRegistrationData(prev => ({...prev, organization: org.name}));
                   setSearchOrg(org.name);
                   setShowOrgDropdown(false);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F5F5F5';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 
-                    registrationData.organization === org.name ? '#F5F5F5' : '#FFFFFF';
                 }}
               >
                 {org.name}

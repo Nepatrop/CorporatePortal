@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import axios from "axios"
+import { api } from '../utils/api';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser, faChevronDown, faChevronUp, faSearch } from "@fortawesome/free-solid-svg-icons"
 import Header from "./Header"
@@ -22,23 +22,18 @@ const EmployeeDirectory = ({ onNavigate }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:8081/api/employees", {
-          headers: {
-            "X-API-Key": "cp_e29b7d8f4a6c2135d9f0",
-          },
-        })
-
-        console.log("Данные о сотрудниках:", response.data) // Логируем данные
-        setEmployees(response.data)
-        setLoading(false)
+        const data = await api.get('/api/employees');
+        console.log("Данные о сотрудниках:", data);
+        setEmployees(data);
+        setLoading(false);
       } catch (err) {
-        console.error("Ошибка при загрузке данных:", err) // Логируем ошибку
-        setError("Ошибка при загрузке данных")
-        setLoading(false)
+        console.error("Ошибка при загрузке данных:", err);
+        setError("Ошибка при загрузке данных");
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
+    fetchData();
   }, [])
 
   // Обработчик изменения фильтров
