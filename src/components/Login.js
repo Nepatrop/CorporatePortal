@@ -71,10 +71,11 @@ function Login({ onLogin, onNavigate }) {
   useEffect(() => {
     const savedData = localStorage.getItem('rememberedLogin');
     if (savedData) {
-      const { personnel_number, rememberMe } = JSON.parse(savedData);
+      const { personnel_number, password, rememberMe } = JSON.parse(savedData);
       setLoginData(prev => ({
         ...prev,
         personnel_number,
+        password,
         rememberMe
       }));
     }
@@ -163,6 +164,7 @@ function Login({ onLogin, onNavigate }) {
         if (loginData.rememberMe) {
           localStorage.setItem('rememberedLogin', JSON.stringify({
             personnel_number: loginData.personnel_number,
+            password: loginData.password,
             rememberMe: true
           }));
         } else {
