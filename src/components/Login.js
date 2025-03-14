@@ -6,7 +6,7 @@ import logo from "../logo.svg"
 function Login({ onLogin, onNavigate }) {
   const [isRegistration, setIsRegistration] = useState(false)
   const [loginData, setLoginData] = useState({
-    personnel_number: "",  // Заменяем email на personnel_number
+    personnel_number: "",
     password: "",
     rememberMe: false,
   })
@@ -65,6 +65,19 @@ function Login({ onLogin, onNavigate }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, []);
+
+  // Добавляем эффект для загрузки сохраненных данных при монтировании
+  useEffect(() => {
+    const savedData = localStorage.getItem('rememberedLogin');
+    if (savedData) {
+      const { personnel_number, rememberMe } = JSON.parse(savedData);
+      setLoginData(prev => ({
+        ...prev,
+        personnel_number,
+        rememberMe
+      }));
+    }
   }, []);
 
   const handleLoginChange = (e) => {
@@ -129,32 +142,44 @@ function Login({ onLogin, onNavigate }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch('http://localhost:8081/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
-            },
-            body: JSON.stringify({
-                personnel_number: loginData.personnel_number,  // Используем табельный номер
-                password: loginData.password
-            })
-        });
+      const response = await fetch('http://localhost:8081/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'cp_e29b7d8f4a6c2135d9f0'
+        },
+        body: JSON.stringify({
+          personnel_number: loginData.personnel_number,
+          password: loginData.password
+        })
+      });
 
-        if (response.ok) {
-            const userData = await response.json();
-            console.log('Login successful:', userData);
-            setLoginError(""); // Очищаем ошибку при успехе
-            onLogin(userData);
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Login successful:', userData);
+        setLoginError("");
+
+        // Сохраняем данные если включено "Запомнить меня"
+        if (loginData.rememberMe) {
+          localStorage.setItem('rememberedLogin', JSON.stringify({
+            personnel_number: loginData.personnel_number,
+            rememberMe: true
+          }));
         } else {
-            console.error('Login failed');
-            setLoginError("Неверный табельный номер или пароль");
+          // Очищаем сохраненные данные если "Запомнить меня" выключено
+          localStorage.removeItem('rememberedLogin');
         }
+
+        onLogin(userData);
+      } else {
+        console.error('Login failed');
+        setLoginError("Неверный табельный номер или пароль");
+      }
     } catch (error) {
-        console.error('Error:', error);
-        setLoginError("Ошибка сервера. Попробуйте позже");
+      console.error('Error:', error);
+      setLoginError("Ошибка сервера. Попробуйте позже");
     }
-};
+  };
 
   const handleRegistrationSubmit = async (e) => {
     e.preventDefault();
