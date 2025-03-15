@@ -1,6 +1,9 @@
+-- Устанавливаем кодировку
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = ON;
+SET timezone = 'UTC';
 
+-- Создаем БД с правильной локалью
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'corporate_portal') THEN
@@ -10,7 +13,7 @@ BEGIN
 END
 $$;
 
--- Добавляем поддержку UUID
+-- Добавляем поддержку UUID если нужно
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE organizations (
@@ -57,12 +60,36 @@ CREATE TABLE employees (
     FOREIGN KEY (location_id) REFERENCES locations(id)
 );
 
+-- Обновляем структуру таблицы новостей
 CREATE TABLE news (
     id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    publication_time TIMESTAMP NOT NULL,
-    author_id INT,
+    author_id INT NOT NULL,
+    publication_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    image_data BYTEA,
+    image_type VARCHAR(50),
     FOREIGN KEY (author_id) REFERENCES employees(id)
+);
+
+CREATE TABLE news_likes (
+    id SERIAL PRIMARY KEY,
+    news_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES employees(id),
+    UNIQUE(news_id, employee_id)
+);
+
+CREATE TABLE news_comments (
+    id SERIAL PRIMARY KEY,
+    news_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
 
 CREATE TABLE notifications (

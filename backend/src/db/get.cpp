@@ -123,22 +123,6 @@ nlohmann::json Get::getEmployeeByPersonnelNumber(const std::string& personnel_nu
     }
 }
 
-nlohmann::json Get::getNews() {
-    try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        pqxx::result r = txn.exec(
-            "SELECT n.*, e.full_name as author_name "
-            "FROM news n "
-            "LEFT JOIN employees e ON n.author_id = e.id "
-            "ORDER BY n.publication_time DESC"
-        );
-        return resultToJson(r);
-    } catch (std::exception const& e) {
-        return nlohmann::json::array();
-    }
-}
-
 nlohmann::json Get::getNotifications() {
     try {
         pqxx::connection conn(Config::getConnectionString());
@@ -160,6 +144,110 @@ nlohmann::json Get::getLinks() {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT * FROM links");
+        return resultToJson(r);
+    } catch (std::exception const& e) {
+        return nlohmann::json::array();
+    }
+}
+
+bool Get::checkIfLikedByEmployee(int newsId, int employeeId, pqxx::work& txn) {
+    auto result = txn.exec_params(
+        "SELECT 1 FROM news_likes WHERE news_id = $1 AND employee_id = $2",
+        newsId, employeeId
+    );
+    return !result.empty();
+}
+
+nlohmann::json Get::getNewsWithDetails(int currentUserId) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+        txn.exec0("SET TIME ZONE 'UTC';"); // Используем точку с запятой
+
+        pqxx::result r = txn.exec_params(R"(
+            WITH comment_details AS (
+                SELECT 
+                    nc.news_id,
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', nc.id,
+                            'text', nc.text,
+                            'author', e.full_name,
+                            'created_at', TO_CHAR(nc.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                        )
+                    ) FILTER (WHERE nc.id IS NOT NULL) as comments
+                FROM news_comments nc
+                LEFT JOIN employees e ON nc.employee_id = e.id
+                GROUP BY nc.news_id
+            )
+            SELECT 
+                n.id,
+                n.title,
+                n.content,
+                encode(n.image_data, 'base64') as image_data,
+                n.image_type,
+                TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time,
+                e.full_name as author_name,
+                COUNT(DISTINCT nl.id) as likes_count,
+                EXISTS (
+                    SELECT 1 
+                    FROM news_likes nl2 
+                    WHERE nl2.news_id = n.id 
+                    AND nl2.employee_id = $1
+                ) as is_liked,
+                COALESCE(cd.comments, '[]') as comments
+            FROM news n
+            LEFT JOIN employees e ON n.author_id = e.id
+            LEFT JOIN news_likes nl ON n.id = nl.news_id
+            LEFT JOIN comment_details cd ON n.id = cd.news_id
+            GROUP BY n.id, n.title, n.content, n.image_data, n.image_type, 
+                     n.publication_time, e.full_name, cd.comments
+            ORDER BY n.publication_time DESC
+        )", currentUserId);
+
+        nlohmann::json result = nlohmann::json::array();
+        
+        for (const auto& row : r) {
+            nlohmann::json newsItem = {
+                {"id", row["id"].as<int>()},
+                {"title", row["title"].as<std::string>()},
+                {"content", row["content"].as<std::string>()},
+                {"publication_time", row["publication_time"].as<std::string>()},
+                {"author_name", row["author_name"].is_null() ? "" : row["author_name"].as<std::string>()},
+                {"likes_count", row["likes_count"].as<int>()},
+                {"liked", row["is_liked"].as<bool>()},
+                {"comments", row["comments"].is_null() ? nlohmann::json::array() : nlohmann::json::parse(row["comments"].as<std::string>())},
+                {"image_data", row["image_data"].is_null() ? "" : row["image_data"].as<std::string>()},
+                {"image_type", row["image_type"].is_null() ? "" : row["image_type"].as<std::string>()}
+            };
+            
+            result.push_back(newsItem);
+        }
+        
+        return result;
+    } catch (const std::exception& e) {
+        return nlohmann::json::array();
+    }
+}
+
+nlohmann::json Get::getNewsComments(int news_id) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+        
+        pqxx::result r = txn.exec_params(R"(
+            SELECT 
+                nc.id,
+                nc.text,
+                nc.created_at,
+                e.full_name as author_name,
+                e.position as author_position
+            FROM news_comments nc
+            LEFT JOIN employees e ON nc.employee_id = e.id
+            WHERE nc.news_id = $1
+            ORDER BY nc.created_at ASC
+        )", news_id);
+        
         return resultToJson(r);
     } catch (std::exception const& e) {
         return nlohmann::json::array();

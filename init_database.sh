@@ -22,10 +22,11 @@ else
     echo "База данных $DB_NAME не найдена. Создать? (y/n)"
     read answer
     if [ "$answer" = "y" ]; then
-        $PSQL -c "CREATE DATABASE $DB_NAME WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'ru_RU.UTF8' LC_CTYPE 'ru_RU.UTF8';"
+        # Создаем базу данных с правильной локалью
+        $PSQL -c "CREATE DATABASE $DB_NAME WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'Russian_Russia.UTF8' LC_CTYPE 'Russian_Russia.UTF8';"
         if [ $? -ne 0 ]; then
             echo "Пробуем альтернативную локаль..."
-            $PSQL -c "CREATE DATABASE $DB_NAME WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'ru_RU.utf8' LC_CTYPE 'ru_RU.utf8';"
+            $PSQL -c "CREATE DATABASE $DB_NAME WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'ru_RU.UTF8' LC_CTYPE 'ru_RU.UTF8';"
             if [ $? -ne 0 ]; then
                 echo "Попытка использовать локаль по умолчанию..."
                 $PSQL -c "CREATE DATABASE $DB_NAME WITH TEMPLATE template0 ENCODING 'UTF8';"
@@ -46,7 +47,8 @@ if [ -z "$TABLES" ]; then
     echo "Таблицы не найдены. Создать необходимые таблицы базы данных? (y/n)"
     read answer
     if [ "$answer" = "y" ]; then
-        $PSQL -d $DB_NAME -f database/init_db.sql
+        # При выполнении SQL скриптов добавляем явное указание кодировки и обработку ошибок
+        $PSQL -d $DB_NAME -v ON_ERROR_STOP=0 -c "SET client_encoding = 'UTF8';" -f database/init_db.sql
         echo "Таблицы базы данных созданы"
         echo
         

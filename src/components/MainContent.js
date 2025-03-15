@@ -1,54 +1,92 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useUser } from '../context/UserContext'; // Импортируем useUser
+import { api } from "../utils/api"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 // Компонент Comment
 function Comment({ comment }) {
   return (
     <div style={styles.comment}>
-      <img src={comment.avatar || "/placeholder.svg"} alt={comment.user} style={styles.avatar} />
+      <img src={comment.avatar || "/placeholder.svg"} alt={comment.author} style={styles.avatar} />
       <div style={styles.commentContent}>
-        <strong style={styles.userName}>{comment.user}</strong>
+        <strong style={styles.userName}>{comment.author}</strong>
         <p style={styles.commentText}>{comment.text}</p>
       </div>
     </div>
   );
 }
 
+// Добавляем функцию форматирования времени
+const formatDateTime = (utcDateString) => {
+  try {
+    if (!utcDateString) return '';
+    
+    // Строка приходит в формате ISO 8601 с UTC
+    const date = new Date(utcDateString);
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', utcDateString);
+      return utcDateString;
+    }
+
+    // Форматируем в локальное время
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error, 'for string:', utcDateString);
+    return utcDateString;
+  }
+};
+
 // Компонент NewsItem
 function NewsItem({ news, onLike, onAddComment }) {
   const [commentText, setCommentText] = useState("");
+  const comments = news.comments || [];
 
-  const handleSubmitComment = (e) => {
+  const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (commentText.trim()) {
-      onAddComment(news.id, commentText);
+      await onAddComment(news.id, commentText);
       setCommentText("");
     }
   };
 
-  // Форматирование времени
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-  };
-
   return (
     <div style={styles.newsItem}>
-      <div style={styles.newsHeader}>
-        <div style={styles.authorInfo}>
-          <strong style={styles.authorName}>{news.author || "Администратор"}</strong>
-          <span style={styles.newsTime}>
-            {formatTime(news.date)} {new Date(news.date).toLocaleDateString("ru-RU")}
-          </span>
+      <div style={styles.authorInfo}>
+        <div style={styles.authorInfoContainer}>
+          <div style={styles.authorAvatar}>
+            <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
+          </div>
+          <div style={styles.authorDetails}>
+            <strong style={styles.authorName}>{news.author_name}</strong>
+            <span style={styles.newsTime}>{formatDateTime(news.publication_time)}</span>
+          </div>
         </div>
       </div>
 
       <h3 style={styles.newsTitle}>{news.title}</h3>
-      <p style={styles.newsDescription}>{news.description}</p>
+      <p style={styles.newsDescription}>{news.content}</p>
 
-      {news.image && <img src={news.image || "/placeholder.svg"} alt={news.title} style={styles.newsImage} />}
+      {news.image_data && news.image_type && (
+        <img 
+          src={`data:${news.image_type};base64,${news.image_data}`}
+          alt={news.title} 
+          style={styles.newsImage} 
+          onError={(e) => {
+            console.error('Image loading error:', e);
+            e.target.style.display = 'none';
+          }}
+        />
+      )}
 
       <div style={styles.newsFooter}>
         <button
@@ -66,21 +104,25 @@ function NewsItem({ news, onLike, onAddComment }) {
           >
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
           </svg>
-          <span style={styles.likeCount}>{news.likes}</span>
+          <span style={styles.likeCount}>{news.likes_count}</span>
         </button>
       </div>
 
       <div style={styles.commentsSection}>
-        <h4 style={styles.commentsHeader}>Комментарии</h4>
-        {news.comments.map((comment, index) => (
+        <h4 style={styles.commentsHeader}>
+          Комментарии ({news.comments?.length || 0})
+        </h4>
+        
+        {comments.map((comment, index) => (
           <Comment key={index} comment={comment} />
         ))}
+
         <form onSubmit={handleSubmitComment} style={styles.commentForm}>
           <input
             type="text"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Поделиться мыслями..."
+            placeholder="Написать комментарий..."
             style={styles.commentInput}
           />
           <button type="submit" style={styles.commentSubmit}>
@@ -101,6 +143,7 @@ function AddNewsForm({ onAddNews }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [validationError, setValidationError] = useState(false);
   const fileInputRef = useRef(null);
+  const { currentUser } = useUser();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -114,27 +157,44 @@ function AddNewsForm({ onAddNews }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
       setValidationError(true);
       return;
     }
 
-    const newNews = {
-      id: Date.now(),
-      title,
-      description,
-      image: imagePreview,
-      date: new Date().toISOString(),
-      author: "Текущий пользователь",
-      likes: 0,
-      liked: false,
-      comments: [],
-    };
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', description);
+      formData.append('author_id', currentUser.id.toString());
+      
+      if (image) {
+        // Получаем содержимое файла как ArrayBuffer
+        const imageBuffer = await image.arrayBuffer();
+        // Создаем Blob из ArrayBuffer
+        const imageBlob = new Blob([imageBuffer], { type: image.type });
+        formData.append('image_data', imageBlob, image.name);
+        formData.append('image_type', image.type);
+      }
 
-    onAddNews(newNews);
-    resetForm();
+      console.log('Sending form data:', formData); // Для отладки
+
+      const response = await api.postFormData('/api/news', formData);
+
+      if (response.ok) {
+        const newNews = await response.json();
+        console.log('New news response:', newNews); // Для отладки
+        onAddNews(newNews);
+        resetForm();
+      } else {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+      }
+    } catch (error) {
+      console.error('Error creating news:', error);
+    }
   };
 
   const resetForm = () => {
@@ -253,7 +313,86 @@ function AddNewsForm({ onAddNews }) {
 
 // Основной компонент MainContent
 function MainContent() {
-  const { currentUser } = useUser(); // Используем контекст пользователя
+  const [news, setNews] = useState([]);
+  const { currentUser } = useUser();
+
+  // Загрузка новостей
+  const loadNews = useCallback(async () => {
+    try {
+      const newsData = await api.get(`/api/news?current_user_id=${currentUser.id}`);
+      const newsWithDefaults = newsData.map(item => ({
+        ...item,
+        author: item.author_name,
+        description: item.content,
+        comments: item.comments || [],
+        likes_count: item.likes_count || 0,
+        liked: item.liked || false,
+        // Время приходит в UTC, так и оставляем его в UTC
+        publication_time: item.publication_time 
+      }));
+      setNews(newsWithDefaults);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    }
+  }, [currentUser.id]);
+
+  useEffect(() => {
+    loadNews();
+  }, [loadNews]);
+
+  const handleLike = async (newsId) => {
+    try {
+      const response = await api.post(`/api/news/${parseInt(newsId)}/like`, {
+        employee_id: parseInt(currentUser.id)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNews(prevNews => prevNews.map(item => {
+          if (item.id === newsId) {
+            return {
+              ...item,
+              likes_count: data.action === "liked" ? item.likes_count + 1 : item.likes_count - 1,
+              liked: data.action === "liked"
+            };
+          }
+          return item;
+        }));
+      }
+    } catch (error) {
+      console.error('Error liking news:', error);
+    }
+  };
+
+  const handleAddComment = async (newsId, text) => {
+    try {
+      console.log('Sending comment:', { newsId, text, employee_id: currentUser.id }); // Добавляем логирование
+
+      const response = await api.post(`/api/news/${newsId}/comments`, {
+        employee_id: currentUser.id,
+        text: text
+      });
+
+      if (response.ok) {
+        const newComment = await response.json();
+        console.log('New comment response:', newComment); // Добавляем логирование
+        setNews(prevNews => prevNews.map(item => {
+          if (item.id === newsId) {
+            return {
+              ...item,
+              comments: [...(item.comments || []), newComment]
+            };
+          }
+          return item;
+        }));
+      } else {
+        const errorText = await response.text();
+        console.error('Comment error response:', errorText);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
 
   const internalPortals = [
     { id: 1, name: "HR Портал", url: "#" },
@@ -263,97 +402,13 @@ function MainContent() {
     { id: 5, name: "Обучение", url: "#" },
   ];
 
-  const [news, setNews] = useState([
-    {
-      id: 1,
-      title: "Новый проект запущен",
-      date: "2023-05-15T10:30:00",
-      author: "Иванов Иван Иванович",
-      description: "Мы рады сообщить о запуске нового проекта, который поможет оптимизировать рабочие процессы.",
-      image:
-        "https://img.freepik.com/free-photo/desk-real-estate-office_23-2147653310.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
-      likes: 0,
-      liked: false,
-      comments: [
-        {
-          user: "Анна Анновна",
-          avatar: "https://i.pinimg.com/736x/9f/e5/06/9fe5060dabf67f1d5f76b6e52f50c155.jpg",
-          text: "Отличная новость! Жду не дождусь начала работы над проектом.",
-        },
-        {
-          user: "Иван Иванов",
-          avatar: "https://i.pinimg.com/736x/2b/70/ac/2b70acd9b98a0d769a175f1bd4313fec.jpg",
-          text: "Интересно, какие технологии будут использоваться?",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Корпоративное мероприятие",
-      date: "2023-05-10T15:45:00",
-      author: "Петрова Мария Сергеевна",
-      description: "Не забудьте зарегистрироваться на корпоративное мероприятие, которое состоится в конце месяца.",
-      image:
-        "https://img.freepik.com/free-photo/colleagues-having-fun-business-event_23-2149370528.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
-      likes: 0,
-      liked: false,
-      comments: [],
-    },
-    {
-      id: 3,
-      title: "Новые курсы обучения",
-      date: "2023-05-05T09:15:00",
-      author: "Сидоров Алексей Петрович",
-      description: "Доступны новые курсы обучения для всех сотрудников. Успейте записаться!",
-      image:
-        "https://img.freepik.com/free-photo/team-process-creation_23-2147656721.jpg?ga=GA1.1.813541660.1734266620&semt=ais_hybrid",
-      likes: 0,
-      liked: false,
-      comments: [],
-    },
-  ]);
-
   const birthdays = [
     { id: 1, name: "Иван Иванов", date: "15 мая" },
     { id: 2, name: "Мария Петрова", date: "20 мая" },
   ];
 
-  const handleLike = (id) => {
-    setNews(
-      news.map((item) =>
-        item.id === id ? { ...item, likes: item.liked ? item.likes - 1 : item.likes + 1, liked: !item.liked } : item,
-      ),
-    );
-  };
-
-  const handleAddComment = (id, text) => {
-    setNews(
-      news.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              comments: [
-                ...item.comments,
-                { user: "Текущий пользователь", avatar: "https://i.pravatar.cc/40?img=5", text: text },
-              ],
-            }
-          : item,
-      ),
-    );
-  };
-
-  const handleAddNews = (newNews) => {
-    if (currentUser) {
-      const newsWithAuthor = {
-        ...newNews,
-        author: currentUser.full_name, // Используем имя текущего пользователя
-        author_id: currentUser.id, // Добавляем ID пользователя
-        author_position: currentUser.position, // Добавляем должность пользователя
-      };
-      setNews([newsWithAuthor, ...news]);
-    } else {
-      console.error("Пользователь не авторизован");
-    }
+  const handleAddNews = async (newNews) => {
+    await loadNews();
   };
 
   return (
@@ -532,6 +587,25 @@ const styles = {
     marginBottom: "1rem",
   },
   authorInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  authorInfoContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+  },
+  authorAvatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    backgroundColor: "#e0e0e0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  authorDetails: {
     display: "flex",
     flexDirection: "column",
     gap: "0.25rem",

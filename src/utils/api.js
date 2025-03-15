@@ -25,6 +25,18 @@ export const api = {
         return response;
     },
 
+    postFormData: async (endpoint, formData) => {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'X-API-Key': API_KEY,
+                // Не добавляем Content-Type, он будет установлен автоматически для FormData
+            },
+            body: formData
+        });
+        return response;
+    },
+
     delete: async (endpoint) => {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'DELETE',
