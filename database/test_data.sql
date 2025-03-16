@@ -36,11 +36,11 @@ WHERE personnel_number = '0000-00004';
 -- Добавляем тестовые новости с изображениями
 INSERT INTO news (title, content, image_data, image_type, publication_time, author_id) VALUES 
 ('Новый проект запущен', 'Мы рады сообщить о запуске нового проекта, который поможет оптимизировать рабочие процессы.', 
- pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\1.jpg'), 'image/jpg', '2023-05-15 10:30:00', 1),
+ pg_read_binary_file('img\1.jpg'), 'image/jpg', '2023-05-15 10:30:00', 1),
 ('Корпоративное мероприятие', 'Не забудьте зарегистрироваться на корпоративное мероприятие, которое состоится в конце месяца.',
- pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\2.jpg'), 'image/jpg', '2023-05-10 15:45:00', 1),
+ pg_read_binary_file('img\2.jpg'), 'image/jpg', '2023-05-10 15:45:00', 1),
 ('Новые курсы обучения', 'Доступны новые курсы обучения для всех сотрудников. Успейте записаться!',
- pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\3.jpg'), 'image/jpg', '2023-05-05 09:15:00', 2);
+ pg_read_binary_file('img\3.jpg'), 'image/jpg', '2023-05-05 09:15:00', 2);
 
 -- Добавляем лайки к новостям (убираем created_at из INSERT)
 INSERT INTO news_likes (news_id, employee_id) VALUES
