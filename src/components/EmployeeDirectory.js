@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { api } from '../utils/api';
+import { api } from "../utils/api"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faChevronDown, faChevronUp, faSearch } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faChevronDown, faChevronUp, faSearch, faCopy } from "@fortawesome/free-solid-svg-icons"
 import Header from "./Header"
 
 const EmployeeDirectory = ({ onNavigate }) => {
@@ -17,23 +17,25 @@ const EmployeeDirectory = ({ onNavigate }) => {
     phone: "",
   })
   const [activeButton, setActiveButton] = useState(null)
+  const [showCopyNotification, setShowCopyNotification] = useState(false)
+  const [copiedText, setCopiedText] = useState("")
 
   // Загрузка данных о сотрудниках
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await api.get('/api/employees');
-        console.log("Данные о сотрудниках:", data);
-        setEmployees(data);
-        setLoading(false);
+        const data = await api.get("/api/employees")
+        console.log("Данные о сотрудниках:", data)
+        setEmployees(data)
+        setLoading(false)
       } catch (err) {
-        console.error("Ошибка при загрузке данных:", err);
-        setError("Ошибка при загрузке данных");
-        setLoading(false);
+        console.error("Ошибка при загрузке данных:", err)
+        setError("Ошибка при загрузке данных")
+        setLoading(false)
       }
-    };
+    }
 
-    fetchData();
+    fetchData()
   }, [])
 
   // Обработчик изменения фильтров
@@ -63,20 +65,31 @@ const EmployeeDirectory = ({ onNavigate }) => {
     setTimeout(() => setActiveButton(null), 300)
   }
 
+  // Функция для копирования текста
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedText(label)
+      setShowCopyNotification(true)
+      setTimeout(() => {
+        setShowCopyNotification(false)
+      }, 2000)
+    })
+  }
+
   // Фильтрация сотрудников
   const filteredEmployees = employees.filter((employee) => {
-    if (!filters.name && !filters.position && !filters.phone) return true;
+    if (!filters.name && !filters.position && !filters.phone) return true
 
-    const employeeName = employee.employee?.toLowerCase() || "";
-    const employeePosition = employee.position?.toLowerCase() || "";
-    const employeePhone = employee.work_phone?.toLowerCase() || "";
+    const employeeName = employee.employee?.toLowerCase() || ""
+    const employeePosition = employee.position?.toLowerCase() || ""
+    const employeePhone = employee.work_phone?.toLowerCase() || ""
 
-    const nameMatch = !filters.name || employeeName.includes(filters.name.toLowerCase());
-    const positionMatch = !filters.position || employeePosition.includes(filters.position.toLowerCase());
-    const phoneMatch = !filters.phone || employeePhone.includes(filters.phone.toLowerCase());
+    const nameMatch = !filters.name || employeeName.includes(filters.name.toLowerCase())
+    const positionMatch = !filters.position || employeePosition.includes(filters.position.toLowerCase())
+    const phoneMatch = !filters.phone || employeePhone.includes(filters.phone.toLowerCase())
 
-    return nameMatch && positionMatch && phoneMatch;
-  });
+    return nameMatch && positionMatch && phoneMatch
+  })
 
   // Отображение загрузки или ошибки
   if (loading) return <div style={styles.loading}>Загрузка...</div>
@@ -193,7 +206,20 @@ const EmployeeDirectory = ({ onNavigate }) => {
                     </div>
                     <div style={styles.employeeDepartment}>{employee.department}</div>
                     <div style={styles.employeeContacts}>
-                      <p style={styles.employeePhone}>{employee.work_phone}</p>
+                      <div style={styles.employeePhoneContainer}>
+                        <p style={styles.employeePhone}>{employee.work_phone}</p>
+                        {employee.work_phone && (
+                          <button
+                            style={styles.copyButton}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copyToClipboard(employee.work_phone, "Телефон")
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faCopy} />
+                          </button>
+                        )}
+                      </div>
                       {employee.email && <p style={styles.employeeEmail}>{employee.email}</p>}
                     </div>
                   </div>
@@ -203,6 +229,9 @@ const EmployeeDirectory = ({ onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Уведомление о копировании */}
+      {showCopyNotification && <div style={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
     </>
   )
 }
@@ -315,7 +344,7 @@ const styles = {
   departmentHeader: {
     flex: "1",
     textAlign: "left",
-    paddingLeft: "20px",
+    paddingLeft: "0", // Изменено с "20px" на "0"
   },
   contactsHeader: {
     flex: "1",
@@ -349,7 +378,7 @@ const styles = {
     alignItems: "center",
     color: "#EE6B0C",
     fontWeight: 500,
-    paddingLeft: "20px",
+    paddingLeft: "0", // Изменено с "20px" на "0"
     fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для подразделения
   },
   employeeContacts: {
@@ -357,6 +386,11 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
+  },
+  employeePhoneContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
   },
   employeePhoto: {
     flexShrink: 0,
@@ -413,6 +447,28 @@ const styles = {
     color: "red",
     fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для сообщения об ошибке
   },
-};
+  copyButton: {
+    background: "none",
+    border: "none",
+    color: "#EE6B0C", // Оранжевый цвет для иконки копирования
+    cursor: "pointer",
+    padding: "5px",
+    fontSize: "14px",
+  },
+  copyNotification: {
+    position: "fixed",
+    bottom: "20px",
+    right: "20px",
+    backgroundColor: "#13454B",
+    color: "#FFFFFF",
+    padding: "10px 20px",
+    borderRadius: "4px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+    zIndex: 1100,
+    fontFamily: "'Open Sans', Arial, sans-serif",
+    fontSize: "14px",
+  },
+}
 
 export default EmployeeDirectory
+

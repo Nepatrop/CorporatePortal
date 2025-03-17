@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useUser } from '../context/UserContext'; // Импортируем useUser
+import { useState, useRef, useEffect, useCallback } from "react"
+import { useUser } from "../context/UserContext" // Импортируем useUser
 import { api } from "../utils/api"
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faUser } from "@fortawesome/free-solid-svg-icons"
 
 // Компонент Comment
 function Comment({ comment }) {
@@ -16,48 +16,48 @@ function Comment({ comment }) {
         <p style={styles.commentText}>{comment.text}</p>
       </div>
     </div>
-  );
+  )
 }
 
 // Добавляем функцию форматирования времени
 const formatDateTime = (utcDateString) => {
   try {
-    if (!utcDateString) return '';
-    
+    if (!utcDateString) return ""
+
     // Строка приходит в формате ISO 8601 с UTC
-    const date = new Date(utcDateString);
+    const date = new Date(utcDateString)
     if (isNaN(date.getTime())) {
-      console.error('Invalid date string:', utcDateString);
-      return utcDateString;
+      console.error("Invalid date string:", utcDateString)
+      return utcDateString
     }
 
     // Форматируем в локальное время
-    return new Intl.DateTimeFormat('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(date);
+    return new Intl.DateTimeFormat("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date)
   } catch (error) {
-    console.error('Error formatting date:', error, 'for string:', utcDateString);
-    return utcDateString;
+    console.error("Error formatting date:", error, "for string:", utcDateString)
+    return utcDateString
   }
-};
+}
 
 // Компонент NewsItem
 function NewsItem({ news, onLike, onAddComment }) {
-  const [commentText, setCommentText] = useState("");
-  const comments = news.comments || [];
+  const [commentText, setCommentText] = useState("")
+  const comments = news.comments || []
 
   const handleSubmitComment = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (commentText.trim()) {
-      await onAddComment(news.id, commentText);
-      setCommentText("");
+      await onAddComment(news.id, commentText)
+      setCommentText("")
     }
-  };
+  }
 
   return (
     <div style={styles.newsItem}>
@@ -77,13 +77,13 @@ function NewsItem({ news, onLike, onAddComment }) {
       <p style={styles.newsDescription}>{news.content}</p>
 
       {news.image_data && news.image_type && (
-        <img 
+        <img
           src={`data:${news.image_type};base64,${news.image_data}`}
-          alt={news.title} 
-          style={styles.newsImage} 
+          alt={news.title}
+          style={styles.newsImage}
           onError={(e) => {
-            console.error('Image loading error:', e);
-            e.target.style.display = 'none';
+            console.error("Image loading error:", e)
+            e.target.style.display = "none"
           }}
         />
       )}
@@ -109,10 +109,8 @@ function NewsItem({ news, onLike, onAddComment }) {
       </div>
 
       <div style={styles.commentsSection}>
-        <h4 style={styles.commentsHeader}>
-          Комментарии ({news.comments?.length || 0})
-        </h4>
-        
+        <h4 style={styles.commentsHeader}>Комментарии ({news.comments?.length || 0})</h4>
+
         {comments.map((comment, index) => (
           <Comment key={index} comment={comment} />
         ))}
@@ -131,94 +129,94 @@ function NewsItem({ news, onLike, onAddComment }) {
         </form>
       </div>
     </div>
-  );
+  )
 }
 
 // Компонент для добавления новости
 function AddNewsForm({ onAddNews }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [validationError, setValidationError] = useState(false);
-  const fileInputRef = useRef(null);
-  const { currentUser } = useUser();
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [image, setImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [validationError, setValidationError] = useState(false)
+  const fileInputRef = useRef(null)
+  const { currentUser } = useUser()
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]
     if (file) {
-      setImage(file);
-      const reader = new FileReader();
+      setImage(file)
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!title.trim() || !description.trim()) {
-      setValidationError(true);
-      return;
+      setValidationError(true)
+      return
     }
 
     try {
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('content', description);
-      formData.append('author_id', currentUser.id.toString());
-      
+      const formData = new FormData()
+      formData.append("title", title)
+      formData.append("content", description)
+      formData.append("author_id", currentUser.id.toString())
+
       if (image) {
         // Получаем содержимое файла как ArrayBuffer
-        const imageBuffer = await image.arrayBuffer();
+        const imageBuffer = await image.arrayBuffer()
         // Создаем Blob из ArrayBuffer
-        const imageBlob = new Blob([imageBuffer], { type: image.type });
-        formData.append('image_data', imageBlob, image.name);
-        formData.append('image_type', image.type);
+        const imageBlob = new Blob([imageBuffer], { type: image.type })
+        formData.append("image_data", imageBlob, image.name)
+        formData.append("image_type", image.type)
       }
 
-      console.log('Sending form data:', formData); // Для отладки
+      console.log("Sending form data:", formData) // Для отладки
 
-      const response = await api.postFormData('/api/news', formData);
+      const response = await api.postFormData("/api/news", formData)
 
       if (response.ok) {
-        const newNews = await response.json();
-        console.log('New news response:', newNews); // Для отладки
-        onAddNews(newNews);
-        resetForm();
+        const newNews = await response.json()
+        console.log("New news response:", newNews) // Для отладки
+        onAddNews(newNews)
+        resetForm()
       } else {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
+        const errorText = await response.text()
+        console.error("Error response:", errorText)
       }
     } catch (error) {
-      console.error('Error creating news:', error);
+      console.error("Error creating news:", error)
     }
-  };
+  }
 
   const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setImage(null);
-    setImagePreview(null);
-    setValidationError(false);
-    setIsExpanded(false);
+    setTitle("")
+    setDescription("")
+    setImage(null)
+    setImagePreview(null)
+    setValidationError(false)
+    setIsExpanded(false)
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = ""
     }
-  };
+  }
 
   const handleInputClick = () => {
     if (!isExpanded) {
-      setIsExpanded(true);
+      setIsExpanded(true)
     }
-  };
+  }
 
   const handleAttachClick = (e) => {
-    e.preventDefault();
-    fileInputRef.current.click();
-  };
+    e.preventDefault()
+    fileInputRef.current.click()
+  }
 
   return (
     <div style={styles.addNewsFormContainer}>
@@ -290,13 +288,13 @@ function AddNewsForm({ onAddNews }) {
 
             {imagePreview && (
               <div style={styles.imagePreviewContainer}>
-                <img src={imagePreview} alt="Предпросмотр" style={styles.imagePreview} />
+                <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" style={styles.imagePreview} />
                 <button
                   type="button"
                   onClick={() => {
-                    setImage(null);
-                    setImagePreview(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    setImage(null)
+                    setImagePreview(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ""
                   }}
                   style={styles.removeImageButton}
                 >
@@ -308,19 +306,19 @@ function AddNewsForm({ onAddNews }) {
         )}
       </form>
     </div>
-  );
+  )
 }
 
 // Основной компонент MainContent
 function MainContent() {
-  const [news, setNews] = useState([]);
-  const { currentUser } = useUser();
+  const [news, setNews] = useState([])
+  const { currentUser } = useUser()
 
   // Загрузка новостей
   const loadNews = useCallback(async () => {
     try {
-      const newsData = await api.get(`/api/news?current_user_id=${currentUser.id}`);
-      const newsWithDefaults = newsData.map(item => ({
+      const newsData = await api.get(`/api/news?current_user_id=${currentUser.id}`)
+      const newsWithDefaults = newsData.map((item) => ({
         ...item,
         author: item.author_name,
         description: item.content,
@@ -328,71 +326,75 @@ function MainContent() {
         likes_count: item.likes_count || 0,
         liked: item.liked || false,
         // Время приходит в UTC, так и оставляем его в UTC
-        publication_time: item.publication_time 
-      }));
-      setNews(newsWithDefaults);
+        publication_time: item.publication_time,
+      }))
+      setNews(newsWithDefaults)
     } catch (error) {
-      console.error('Error fetching news:', error);
+      console.error("Error fetching news:", error)
     }
-  }, [currentUser.id]);
+  }, [currentUser.id])
 
   useEffect(() => {
-    loadNews();
-  }, [loadNews]);
+    loadNews()
+  }, [loadNews])
 
   const handleLike = async (newsId) => {
     try {
-      const response = await api.post(`/api/news/${parseInt(newsId)}/like`, {
-        employee_id: parseInt(currentUser.id)
-      });
-      
+      const response = await api.post(`/api/news/${Number.parseInt(newsId)}/like`, {
+        employee_id: Number.parseInt(currentUser.id),
+      })
+
       if (response.ok) {
-        const data = await response.json();
-        setNews(prevNews => prevNews.map(item => {
-          if (item.id === newsId) {
-            return {
-              ...item,
-              likes_count: data.action === "liked" ? item.likes_count + 1 : item.likes_count - 1,
-              liked: data.action === "liked"
-            };
-          }
-          return item;
-        }));
+        const data = await response.json()
+        setNews((prevNews) =>
+          prevNews.map((item) => {
+            if (item.id === newsId) {
+              return {
+                ...item,
+                likes_count: data.action === "liked" ? item.likes_count + 1 : item.likes_count - 1,
+                liked: data.action === "liked",
+              }
+            }
+            return item
+          }),
+        )
       }
     } catch (error) {
-      console.error('Error liking news:', error);
+      console.error("Error liking news:", error)
     }
-  };
+  }
 
   const handleAddComment = async (newsId, text) => {
     try {
-      console.log('Sending comment:', { newsId, text, employee_id: currentUser.id }); // Добавляем логирование
+      console.log("Sending comment:", { newsId, text, employee_id: currentUser.id }) // Добавляем логирование
 
       const response = await api.post(`/api/news/${newsId}/comments`, {
         employee_id: currentUser.id,
-        text: text
-      });
+        text: text,
+      })
 
       if (response.ok) {
-        const newComment = await response.json();
-        console.log('New comment response:', newComment); // Добавляем логирование
-        setNews(prevNews => prevNews.map(item => {
-          if (item.id === newsId) {
-            return {
-              ...item,
-              comments: [...(item.comments || []), newComment]
-            };
-          }
-          return item;
-        }));
+        const newComment = await response.json()
+        console.log("New comment response:", newComment) // Добавляем логирование
+        setNews((prevNews) =>
+          prevNews.map((item) => {
+            if (item.id === newsId) {
+              return {
+                ...item,
+                comments: [...(item.comments || []), newComment],
+              }
+            }
+            return item
+          }),
+        )
       } else {
-        const errorText = await response.text();
-        console.error('Comment error response:', errorText);
+        const errorText = await response.text()
+        console.error("Comment error response:", errorText)
       }
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Error adding comment:", error)
     }
-  };
+  }
 
   const internalPortals = [
     { id: 1, name: "HR Портал", url: "#" },
@@ -400,16 +402,28 @@ function MainContent() {
     { id: 3, name: "IT Поддержка", url: "#" },
     { id: 4, name: "Документация", url: "#" },
     { id: 5, name: "Обучение", url: "#" },
-  ];
+  ]
 
   const birthdays = [
-    { id: 1, name: "Иван Иванов", date: "15 мая" },
-    { id: 2, name: "Мария Петрова", date: "20 мая" },
-  ];
+    {
+      id: 1,
+      name: "Иван Иванов",
+      date: "15 мая 2023",
+      department: "Отдел разработки",
+      photo: null,
+    },
+    {
+      id: 2,
+      name: "Мария Петрова",
+      date: "20 мая 2023",
+      department: "Бухгалтерия",
+      photo: null,
+    },
+  ]
 
   const handleAddNews = async (newNews) => {
-    await loadNews();
-  };
+    await loadNews()
+  }
 
   return (
     <main style={styles.main}>
@@ -440,21 +454,32 @@ function MainContent() {
             </div>
             <div style={{ ...styles.block, ...styles.birthdayBlock }}>
               <h2 style={styles.heading}>Ближайшие дни рождения</h2>
-              <ul style={styles.list}>
+              <div style={styles.birthdayList}>
                 {birthdays.map((person) => (
-                  <li key={person.id} style={styles.listItem}>
-                    <p>
-                      {person.name} - <span style={styles.date}>{person.date}</span>
-                    </p>
-                  </li>
+                  <div key={person.id} style={styles.birthdayItem}>
+                    <div style={styles.birthdayAvatar}>
+                      {person.photo ? (
+                        <img src={person.photo || "/placeholder.svg"} alt={person.name} style={styles.birthdayPhoto} />
+                      ) : (
+                        <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
+                      )}
+                    </div>
+                    <div style={styles.birthdayInfo}>
+                      <p style={styles.birthdayName}>{person.name}</p>
+                      <p style={styles.birthdayDepartment}>{person.department}</p>
+                    </div>
+                    <div style={styles.birthdayDate}>
+                      <span>{person.date}</span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </main>
-  );
+  )
 }
 
 // Стили
@@ -465,19 +490,19 @@ const colors = {
   blockBackground: "#FFFFFF",
   text: "#333",
   lightText: "#B3B3B3",
-};
+}
 
 const fonts = {
   main: "'Manrope', Arial, sans-serif",
   secondary: "'Arial', sans-serif",
-};
+}
 
 const baseBlockStyles = {
   backgroundColor: colors.blockBackground,
   borderRadius: "8px",
   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
   padding: "1.5rem",
-};
+}
 
 const styles = {
   main: {
@@ -836,6 +861,56 @@ const styles = {
     fontSize: "0.9rem",
     marginBottom: "0.75rem",
   },
-};
+  // Стили для блока "ближайшие дни рождения"
+  birthdayList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  birthdayItem: {
+    display: "flex",
+    alignItems: "center",
+    padding: "0.5rem 0",
+    borderBottom: "1px solid #e0e0e0",
+  },
+  birthdayAvatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    backgroundColor: "#e0e0e0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: "1rem",
+    overflow: "hidden",
+  },
+  birthdayPhoto: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  birthdayInfo: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+  },
+  birthdayName: {
+    margin: 0,
+    fontWeight: 500,
+    fontSize: "14px",
+    color: colors.primary,
+  },
+  birthdayDepartment: {
+    margin: 0,
+    fontSize: "12px",
+    color: "#777",
+  },
+  birthdayDate: {
+    fontSize: "14px",
+    color: colors.lightText,
+    marginLeft: "1rem",
+  },
+}
 
-export default MainContent;
+export default MainContent
+

@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react"
 import logo from "../logo.svg"
 import { api } from "../utils/api"
-import { useUser } from '../context/UserContext'; // Импортируем useUser
+import { useUser } from "../context/UserContext" // Импортируем useUser
 
 function Login({ onLogin, onNavigate }) {
-  const { setCurrentUser } = useUser(); // Используем контекст пользователя
+  const { setCurrentUser } = useUser() // Используем контекст пользователя
   const [isRegistration, setIsRegistration] = useState(false)
   const [loginData, setLoginData] = useState({
     personnel_number: "",
@@ -410,6 +410,7 @@ function Login({ onLogin, onNavigate }) {
                   placeholder="Введите табельный номер"
                   style={{
                     ...styles.input,
+                    boxShadow: loginError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
                     border: loginError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
                   }}
                   required
@@ -436,6 +437,7 @@ function Login({ onLogin, onNavigate }) {
                     placeholder="Введите ваш пароль"
                     style={{
                       ...styles.input,
+                      boxShadow: loginError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
                       border: loginError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
                       paddingRight: "40px", // Добавляем отступ для иконки глаза
                     }}
@@ -526,6 +528,7 @@ function Login({ onLogin, onNavigate }) {
                   placeholder="Например: 0000-00001"
                   style={{
                     ...styles.input,
+                    boxShadow: personnelNumberError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
                     border: personnelNumberError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
                   }}
                   required
@@ -808,3 +811,4 @@ const styles = {
 }
 
 export default Login
+

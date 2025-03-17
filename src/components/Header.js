@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import logo from "../logo-white.svg"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faCopy, faTimes, faPencilAlt, faCheck } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faCopy, faTimes, faPencilAlt, faCheck, faCamera } from "@fortawesome/free-solid-svg-icons"
 import { useUser } from "../context/UserContext"
 import { api } from "../utils/api"
 
@@ -17,16 +17,16 @@ function Header({ onNavigate }) {
   const [copiedText, setCopiedText] = useState("")
   const { currentUser, setCurrentUser, logout, updateUser } = useUser()
   const profileRef = useRef(null)
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [showErrorMessage, setShowErrorMessage] = useState(false)
   const [editedProfile, setEditedProfile] = useState({
     full_name: "",
     position: "",
     work_phone: "",
     can_help_with: "",
     responsibilities: "",
-    makes_decisions: ""
-  });
+    makes_decisions: "",
+  })
 
   // Состояние для редактируемых полей
   const [editableFields, setEditableFields] = useState({
@@ -37,6 +37,14 @@ function Header({ onNavigate }) {
     email: "",
     birth_date: "",
   })
+
+  // Добавляем возможность изменения фотографии, убираем мобильный номер и добавляем новые поля
+
+  // 1. Добавляем новые состояния для загрузки фото
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false)
+  const fileInputRef = useRef(null)
 
   // Функция для форматирования номера телефона
   const formatPhoneNumber = (value) => {
@@ -75,10 +83,14 @@ function Header({ onNavigate }) {
         work_phone: currentUser.work_phone || "",
         can_help_with: currentUser.can_help_with || "",
         responsibilities: currentUser.responsibilities || "",
-        makes_decisions: currentUser.makes_decisions || ""
-      });
+        makes_decisions: currentUser.makes_decisions || "",
+        location: currentUser.location || "",
+        organization: currentUser.organization || "",
+        department: currentUser.department || "",
+      })
     }
-  }, [currentUser]);
+  }, [currentUser])
+  
 
   // Обработчик клика вне модального окна
   useEffect(() => {
@@ -104,6 +116,9 @@ function Header({ onNavigate }) {
       setHasUnsavedChanges(false)
       setChangedFields({})
       setShowExitWarning(false)
+      // Сбрасываем предпросмотр фото
+      setPhotoPreview(null)
+      setPhotoFile(null)
     }
   }
 
@@ -190,6 +205,9 @@ function Header({ onNavigate }) {
       setIsEditing(false)
       setHasUnsavedChanges(false)
       setChangedFields({})
+      // Сбрасываем предпросмотр фото
+      setPhotoPreview(null)
+      setPhotoFile(null)
     }
   }
 
@@ -199,86 +217,89 @@ function Header({ onNavigate }) {
     setHasUnsavedChanges(false)
     setChangedFields({})
     setShowExitWarning(false)
+    // Сбрасываем предпросмотр фото
+    setPhotoPreview(null)
+    setPhotoFile(null)
   }
 
   // Обработчик сохранения изменений
   const handleSaveChanges = async () => {
     try {
-      console.log('Sending data:', editableFields);
-      
-      // Фильтруем пустые значения и undefined
-      const changedData = {};
-      Object.keys(changedFields).forEach(field => {
-        if (editableFields[field] && editableFields[field].trim() !== '') {
-          changedData[field] = editableFields[field].trim();
-        }
-      });
+      console.log("Sending data:", editableFields)
 
-      console.log('Changed fields to send:', changedData);
-      
+      // Фильтруем пустые значения и undefined
+      const changedData = {}
+      Object.keys(changedFields).forEach((field) => {
+        if (editableFields[field] && editableFields[field].trim() !== "") {
+          changedData[field] = editableFields[field].trim()
+        }
+      })
+
+      console.log("Changed fields to send:", changedData)
+
       if (Object.keys(changedData).length === 0) {
-        console.log('No valid fields to update');
-        return;
+        console.log("No valid fields to update")
+        return
       }
 
-      const response = await api.putEmployee(currentUser.id, changedData);
-      
+      const response = await api.putEmployee(currentUser.id, changedData)
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Server response:', data);
+        const data = await response.json()
+        console.log("Server response:", data)
 
         if (data.success) {
-          setCurrentUser(prev => ({
+          setCurrentUser((prev) => ({
             ...prev,
-            ...changedData
-          }));
-          
-          setIsEditing(false);
-          setHasUnsavedChanges(false);
-          setChangedFields({});
-          setShowExitWarning(false);
-          setShowSuccessMessage(true);
-          setTimeout(() => setShowSuccessMessage(false), 3000);
+            ...changedData,
+          }))
+
+          setIsEditing(false)
+          setHasUnsavedChanges(false)
+          setChangedFields({})
+          setShowExitWarning(false)
+          setShowSuccessMessage(true)
+          setTimeout(() => setShowSuccessMessage(false), 3000)
         } else {
-          console.error('Server returned error:', data.error);
-          setShowErrorMessage(true);
-          setTimeout(() => setShowErrorMessage(false), 3000);
+          console.error("Server returned error:", data.error)
+          setShowErrorMessage(true)
+          setTimeout(() => setShowErrorMessage(false), 3000)
         }
       } else {
-        throw new Error('Network response was not ok');
+        throw new Error("Network response was not ok")
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
-      setShowErrorMessage(true);
-      setTimeout(() => setShowErrorMessage(false), 3000);
+      console.error("Error saving profile:", error)
+      setShowErrorMessage(true)
+      setTimeout(() => setShowErrorMessage(false), 3000)
     }
-  };
+  }
 
   const handleSaveProfile = async () => {
     try {
-      const response = await api.putEmployee(currentUser.id, editedProfile);
-      
+      const response = await api.putEmployee(currentUser.id, editedProfile)
+
       if (response.ok) {
-        const data = await response.json();
-        setCurrentUser(prev => ({
+        const data = await response.json()
+        setCurrentUser((prev) => ({
           ...prev,
-          ...editedProfile
-        }));
-        setIsEditing(false);
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
+          ...editedProfile,
+        }))
+        setIsEditing(false)
+        setShowSuccessMessage(true)
+        setTimeout(() => setShowSuccessMessage(false), 3000)
       } else {
-        const error = await response.text();
-        console.error('Error saving profile:', error);
-        setShowErrorMessage(true);
-        setTimeout(() => setShowErrorMessage(false), 3000);
+        const error = await response.text()
+        console.error("Error saving profile:", error)
+        setShowErrorMessage(true)
+        setTimeout(() => setShowErrorMessage(false), 3000)
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
-      setShowErrorMessage(true);
-      setTimeout(() => setShowErrorMessage(false), 3000);
+      console.error("Error saving profile:", error)
+      setShowErrorMessage(true)
+      setTimeout(() => setShowErrorMessage(false), 3000)
     }
-  };
+  }
 
   // Функция для копирования текста
   const copyToClipboard = (text, label) => {
@@ -300,7 +321,26 @@ function Header({ onNavigate }) {
 
   // Функция для отображения информации о руководителе
   const showManagerInfo = (managerName) => {
-    alert(`Информация о руководителе: ${managerName}\nВ полной версии здесь будет отображаться профиль руководителя.`)
+    alert(`Информация о руководителе: ${managerName}\nВ полной версии здесь будет отображаться ��рофиль руководителя.`)
+  }
+
+  // 2. Добавляем функцию для обработки изменения фото
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result)
+        // Добавляем фото в список измененных полей
+        setChangedFields((prev) => ({
+          ...prev,
+          photo: true,
+        }))
+        setHasUnsavedChanges(true)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   return (
@@ -363,15 +403,54 @@ function Header({ onNavigate }) {
             <div style={styles.profileContent}>
               {/* Основная информация */}
               <div style={styles.profileMainInfo}>
-                <div style={styles.profilePhoto}>
-                  {currentUser?.photo ? (
-                    <img
-                      src={currentUser.photo || "/placeholder.svg"}
-                      alt={currentUser.full_name}
-                      style={styles.profilePhotoImg}
-                    />
+                {/* 3. Обновляем блок с фотографией в профиле */}
+                <div
+                  style={styles.profilePhoto}
+                  onMouseEnter={() => setShowPhotoUpload(true)}
+                  onMouseLeave={() => setShowPhotoUpload(false)}
+                >
+                  {isEditing ? (
+                    <>
+                      {photoPreview ? (
+                        <img
+                          src={photoPreview || "/placeholder.svg"}
+                          alt={currentUser.full_name}
+                          style={styles.profilePhotoImg}
+                        />
+                      ) : currentUser?.photo ? (
+                        <img
+                          src={currentUser.photo || "/placeholder.svg"}
+                          alt={currentUser.full_name}
+                          style={styles.profilePhotoImg}
+                        />
+                      ) : (
+                        <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
+                      )}
+                      {showPhotoUpload && (
+                        <div style={styles.photoUploadOverlay} onClick={() => fileInputRef.current.click()}>
+                          <FontAwesomeIcon icon={faCamera} style={styles.cameraIcon} />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handlePhotoChange}
+                        style={{ display: "none" }}
+                        accept="image/*"
+                      />
+                    </>
                   ) : (
-                    <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
+                    <>
+                      {currentUser?.photo ? (
+                        <img
+                          src={currentUser.photo || "/placeholder.svg"}
+                          alt={currentUser.full_name}
+                          style={styles.profilePhotoImg}
+                        />
+                      ) : (
+                        <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
+                      )}
+                    </>
                   )}
                 </div>
                 <div style={styles.profileNameContainer}>
@@ -440,6 +519,12 @@ function Header({ onNavigate }) {
                     )}
                   </div>
 
+                  {/* 4. Обновляем блок с основной информацией - добавляем местоположение и организацию */}
+                  <div style={styles.infoRow}>
+                    <span style={styles.infoLabel}>Местоположение:</span>
+                    <span style={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
+                  </div>
+
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Организация:</span>
                     <span style={styles.infoValue}>{currentUser?.organization}</span>
@@ -491,44 +576,7 @@ function Header({ onNavigate }) {
                     </div>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Мобильный телефон:</span>
-                    <div style={styles.infoValueWithCopy}>
-                      {isEditing ? (
-                        <div style={styles.inputContainer}>
-                          <input
-                            type="text"
-                            name="mobile_phone"
-                            value={editableFields.mobile_phone}
-                            onChange={handlePhoneFieldChange}
-                            onFocus={handlePhoneFocus}
-                            placeholder="+7 (XXX) XXX-XX-XX"
-                            style={{
-                              ...styles.editInput,
-                              boxShadow:
-                                showExitWarning && changedFields.mobile_phone
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <span style={styles.infoValue}>{currentUser?.mobile_phone || "Не указан"}</span>
-                      )}
-                      {!isEditing && currentUser?.mobile_phone && (
-                        <button
-                          style={styles.copyButton}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            copyToClipboard(currentUser.mobile_phone, "Мобильный телефон")
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCopy} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
+                  {/* 5. Удаляем блок с мобильным телефоном */}
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Электронная почта:</span>
                     <div style={styles.infoValueWithCopy}>
@@ -654,16 +702,8 @@ function Header({ onNavigate }) {
 
       {/* Уведомление о копировании */}
       {showCopyNotification && <div style={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
-      {showSuccessMessage && (
-        <div style={styles.successMessage}>
-          Профиль успешно обновлен
-        </div>
-      )}
-      {showErrorMessage && (
-        <div style={styles.errorMessage}>
-          Ошибка при обновлении профиля
-        </div>
-      )}
+      {showSuccessMessage && <div style={styles.successMessage}>Профиль успешно обновлен</div>}
+      {showErrorMessage && <div style={styles.errorMessage}>Ошибка при обновлении профиля</div>}
     </>
   )
 }
@@ -815,6 +855,7 @@ const styles = {
     justifyContent: "center",
     overflow: "hidden",
     marginRight: "20px",
+    position: "relative",
   },
   profilePhotoImg: {
     width: "100%",
@@ -950,7 +991,7 @@ const styles = {
     backgroundColor: "#FFFFFF",
     color: "#777",
     border: "1px solid #E0E0E0",
-    borderRadius: "20px", // Скругленные углы как у кнопки "Сохранить"
+    borderRadius: "20px", // Скругле��ные углы как у кнопки "Сохранить"
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: 500,
@@ -1021,6 +1062,24 @@ const styles = {
     padding: "10px 20px",
     borderRadius: "4px",
     zIndex: 1100,
+  },
+  // 6. Добавляем новые стили
+  photoUploadOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+  cameraIcon: {
+    fontSize: "24px",
+    color: "#FFFFFF",
   },
 }
 
