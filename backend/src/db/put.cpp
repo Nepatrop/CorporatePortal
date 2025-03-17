@@ -45,9 +45,7 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
 
         txn.commit();
         return {{"success", true}};
-
     } catch (const std::exception& e) {
-        std::cerr << "Error in putEmployeeWithResponse: " << e.what() << std::endl;
         return {{"success", false}, {"error", e.what()}};
     }
 }
