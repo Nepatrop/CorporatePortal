@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
@@ -84,7 +83,6 @@ int main(int argc, char* argv[]) {
         pqxx::work txn(conn);
 
         // Очищаем только таблицу departments, не затрагивая связанные таблицы
-        std::cout << "Cleaning departments table..." << std::endl;
         txn.exec("DELETE FROM departments;");
         
         // Создаем организацию если её нет
@@ -95,13 +93,10 @@ int main(int argc, char* argv[]) {
         );
 
         // Обрабатываем структуру отделов
-        std::cout << "Processing departments structure..." << std::endl;
         process_department(txn, data);
 
         // Фиксируем изменения
-        std::cout << "Committing changes..." << std::endl;
         txn.commit();
-        std::cout << "Departments import completed successfully" << std::endl;
         return 0;
 
     } catch (const std::exception& e) {

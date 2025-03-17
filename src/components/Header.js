@@ -5,6 +5,7 @@ import logo from "../logo-white.svg"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser, faCopy, faTimes, faPencilAlt, faCheck } from "@fortawesome/free-solid-svg-icons"
 import { useUser } from "../context/UserContext"
+import { api } from "../utils/api"
 
 function Header({ onNavigate }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -14,8 +15,18 @@ function Header({ onNavigate }) {
   const [changedFields, setChangedFields] = useState({})
   const [showCopyNotification, setShowCopyNotification] = useState(false)
   const [copiedText, setCopiedText] = useState("")
-  const { currentUser, logout, updateUser } = useUser()
+  const { currentUser, setCurrentUser, logout, updateUser } = useUser()
   const profileRef = useRef(null)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [editedProfile, setEditedProfile] = useState({
+    full_name: "",
+    position: "",
+    work_phone: "",
+    can_help_with: "",
+    responsibilities: "",
+    makes_decisions: ""
+  });
 
   // Состояние для редактируемых полей
   const [editableFields, setEditableFields] = useState({
@@ -54,6 +65,20 @@ function Header({ onNavigate }) {
       setHasUnsavedChanges(false)
     }
   }, [isEditing, currentUser])
+
+  // Инициализация editedProfile при монтировании и изменении currentUser
+  useEffect(() => {
+    if (currentUser) {
+      setEditedProfile({
+        full_name: currentUser.full_name || "",
+        position: currentUser.position || "",
+        work_phone: currentUser.work_phone || "",
+        can_help_with: currentUser.can_help_with || "",
+        responsibilities: currentUser.responsibilities || "",
+        makes_decisions: currentUser.makes_decisions || ""
+      });
+    }
+  }, [currentUser]);
 
   // Обработчик клика вне модального окна
   useEffect(() => {
@@ -177,16 +202,83 @@ function Header({ onNavigate }) {
   }
 
   // Обработчик сохранения изменений
-  const handleSaveChanges = () => {
-    updateUser({
-      ...currentUser,
-      ...editableFields,
-    })
-    setIsEditing(false)
-    setHasUnsavedChanges(false)
-    setChangedFields({})
-    setShowExitWarning(false)
-  }
+  const handleSaveChanges = async () => {
+    try {
+      console.log('Sending data:', editableFields);
+      
+      // Фильтруем пустые значения и undefined
+      const changedData = {};
+      Object.keys(changedFields).forEach(field => {
+        if (editableFields[field] && editableFields[field].trim() !== '') {
+          changedData[field] = editableFields[field].trim();
+        }
+      });
+
+      console.log('Changed fields to send:', changedData);
+      
+      if (Object.keys(changedData).length === 0) {
+        console.log('No valid fields to update');
+        return;
+      }
+
+      const response = await api.putEmployee(currentUser.id, changedData);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Server response:', data);
+
+        if (data.success) {
+          setCurrentUser(prev => ({
+            ...prev,
+            ...changedData
+          }));
+          
+          setIsEditing(false);
+          setHasUnsavedChanges(false);
+          setChangedFields({});
+          setShowExitWarning(false);
+          setShowSuccessMessage(true);
+          setTimeout(() => setShowSuccessMessage(false), 3000);
+        } else {
+          console.error('Server returned error:', data.error);
+          setShowErrorMessage(true);
+          setTimeout(() => setShowErrorMessage(false), 3000);
+        }
+      } else {
+        throw new Error('Network response was not ok');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setShowErrorMessage(true);
+      setTimeout(() => setShowErrorMessage(false), 3000);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const response = await api.putEmployee(currentUser.id, editedProfile);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentUser(prev => ({
+          ...prev,
+          ...editedProfile
+        }));
+        setIsEditing(false);
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
+      } else {
+        const error = await response.text();
+        console.error('Error saving profile:', error);
+        setShowErrorMessage(true);
+        setTimeout(() => setShowErrorMessage(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setShowErrorMessage(true);
+      setTimeout(() => setShowErrorMessage(false), 3000);
+    }
+  };
 
   // Функция для копирования текста
   const copyToClipboard = (text, label) => {
@@ -562,6 +654,16 @@ function Header({ onNavigate }) {
 
       {/* Уведомление о копировании */}
       {showCopyNotification && <div style={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
+      {showSuccessMessage && (
+        <div style={styles.successMessage}>
+          Профиль успешно обновлен
+        </div>
+      )}
+      {showErrorMessage && (
+        <div style={styles.errorMessage}>
+          Ошибка при обновлении профиля
+        </div>
+      )}
     </>
   )
 }
@@ -899,6 +1001,26 @@ const styles = {
   actionButtons: {
     display: "flex",
     gap: "10px",
+  },
+  successMessage: {
+    position: "fixed",
+    bottom: "20px",
+    right: "20px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    padding: "10px 20px",
+    borderRadius: "4px",
+    zIndex: 1100,
+  },
+  errorMessage: {
+    position: "fixed",
+    bottom: "20px",
+    right: "20px",
+    backgroundColor: "#f44336",
+    color: "white",
+    padding: "10px 20px",
+    borderRadius: "4px",
+    zIndex: 1100,
   },
 }
 

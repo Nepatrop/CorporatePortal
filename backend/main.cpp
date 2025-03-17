@@ -2,6 +2,7 @@
 #include "db/get.h"
 #include "db/post.h"
 #include "db/delete.h"
+#include "db/put.h"
 #include "db/config.h"
 #include "auth/user_auth.h"
 #include "auth/auth_handler.h"
@@ -25,14 +26,14 @@ int main() {
         }
     );
 
-    // Включаем CORS
+    // Изменяем set_default_headers, убирая дублирование CORS заголовков
     svr.set_default_headers({
         {"Access-Control-Allow-Origin", "*"},
-        {"Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS"},
-        {"Access-Control-Allow-Headers", "Content-Type, X-API-Key"}  // Добавляем X-API-Key
+        {"Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"},
+        {"Access-Control-Allow-Headers", "Content-Type, X-API-Key"},
+        {"Access-Control-Max-Age", "86400"} // Кэширование preflight запросов на 24 часа
     });
 
-    // Обработка OPTIONS запросов
     svr.Options(R"(/.*)", [](const httplib::Request&, httplib::Response& res) {
         res.status = 204; // No Content
     });
@@ -121,74 +122,16 @@ int main() {
                 return;
             }
 
-            pqxx::connection conn(Config::getConnectionString());
-            // Устанавливаем временную зону UTC для соединения
-            pqxx::work txn(conn);
-            txn.exec0("SET TIME ZONE 'UTC'");
+            auto response = Post::postNewsWithImage(
+                title.content,
+                content.content,
+                author_id.content,
+                image.content,
+                image_type.content
+            );
 
-            std::string query;
-            pqxx::result result;
+            res.set_content(response.dump(), "application/json");
 
-            if (image.content.empty()) {
-                query = "INSERT INTO news (title, content, author_id) VALUES ($1, $2, $3) RETURNING id";
-                result = txn.exec_params(query, title.content, content.content, std::stoi(author_id.content));
-            } else {
-                query = "INSERT INTO news (title, content, author_id, image_data, image_type) VALUES ($1, $2, $3, $4, $5) RETURNING id";
-                
-                // Преобразуем string в uint8_t* для работы с бинарными данными
-                const uint8_t* binary_data = reinterpret_cast<const uint8_t*>(image.content.data());
-                size_t data_size = image.content.size();
-
-                result = txn.exec_params(
-                    query, 
-                    title.content, 
-                    content.content, 
-                    std::stoi(author_id.content),
-                    pqxx::binary_cast(std::basic_string_view<uint8_t>(binary_data, data_size)),
-                    image_type.content
-                );
-            }
-
-            txn.commit();
-
-            if (!result.empty()) {
-                // После успешного создания новости получаем её полные данные
-                pqxx::work txn2(conn);
-                auto newsId = result[0][0].as<int>();
-
-                auto news = txn2.exec_params(R"(
-                    SELECT 
-                        n.*, 
-                        e.full_name as author_name,
-                        CASE 
-                            WHEN n.image_data IS NOT NULL 
-                            THEN encode(n.image_data, 'base64') 
-                            ELSE NULL 
-                        END as image_data,
-                        TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
-                    FROM news n 
-                    LEFT JOIN employees e ON n.author_id = e.id 
-                    WHERE n.id = $1
-                )", newsId);
-
-                nlohmann::json response = {
-                    {"id", news[0]["id"].as<int>()},
-                    {"title", news[0]["title"].as<std::string>()},
-                    {"content", news[0]["content"].as<std::string>()},
-                    {"formatted_time", news[0]["publication_time"].as<std::string>()},
-                    {"author_name", news[0]["author_name"].as<std::string>()},
-                    {"likes_count", 0},
-                    {"comments", nlohmann::json::array()}
-                };
-
-                if (!image.content.empty()) {
-                    // Используем корректное кодирование base64
-                    response["image_data"] = news[0]["image_data"].as<std::string>();
-                    response["image_type"] = image_type.content;
-                }
-
-                res.set_content(response.dump(), "application/json");
-            }
         } catch (const std::exception& e) {
             std::cerr << "Error creating news: " << e.what() << std::endl;
             res.status = 500;
@@ -212,40 +155,9 @@ int main() {
                 std::stoi(json["employee_id"].get<std::string>()) : 
                 json["employee_id"].get<int>();
 
-            pqxx::connection conn(Config::getConnectionString());
-            pqxx::work txn(conn);
-            txn.exec0("SET TIME ZONE 'UTC';");
+            auto response = Post::postNewsComment(news_id, employee_id, json["text"].get<std::string>());
+            res.set_content(response.dump(), "application/json");
 
-            // Создаем комментарий и получаем данные о нем
-            auto result = txn.exec_params(R"(
-                WITH new_comment AS (
-                    INSERT INTO news_comments (news_id, employee_id, text)
-                    VALUES ($1, $2, $3)
-                    RETURNING id, text, created_at
-                )
-                SELECT 
-                    nc.id,
-                    nc.text,
-                    TO_CHAR(nc.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
-                    e.full_name as author
-                FROM new_comment nc
-                JOIN employees e ON e.id = $2
-            )", news_id, employee_id, json["text"].get<std::string>());
-
-            txn.commit();
-
-            if (!result.empty()) {
-                nlohmann::json response = {
-                    {"id", result[0]["id"].as<int>()},
-                    {"text", result[0]["text"].as<std::string>()},
-                    {"author", result[0]["author"].as<std::string>()},
-                    {"created_at", result[0]["created_at"].as<std::string>()}
-                };
-
-                res.set_content(response.dump(), "application/json");
-            } else {
-                throw std::runtime_error("No rows returned after insert");
-            }
         } catch (const std::exception& e) {
             std::cerr << "Error creating comment: " << e.what() << std::endl;
             res.status = 500;
@@ -253,7 +165,6 @@ int main() {
         }
     });
 
-    // Добавляем POST endpoint для лайков новостей
     svr.Post(R"(/api/news/(\d+)/like)", [](const httplib::Request& req, httplib::Response& res) {
         try {
             auto json = nlohmann::json::parse(req.body);
@@ -269,32 +180,9 @@ int main() {
             // Убеждаемся, что employee_id является числом
             int employee_id = json["employee_id"].get<int>();
 
-            pqxx::connection conn(Config::getConnectionString());
-            pqxx::work txn(conn);
+            auto response = Post::toggleNewsLike(news_id, employee_id);
+            res.set_content(response.dump(), "application/json");
 
-            // Проверяем существует ли уже лайк
-            auto check_result = txn.exec_params(
-                "SELECT id FROM news_likes WHERE news_id = $1 AND employee_id = $2",
-                news_id, employee_id
-            );
-
-            if (check_result.empty()) {
-                // Если лайка нет - добавляем
-                txn.exec_params(
-                    "INSERT INTO news_likes (news_id, employee_id) VALUES ($1, $2)",
-                    news_id, employee_id
-                );
-                txn.commit();
-                res.set_content(R"({"success": true, "action": "liked"})", "application/json");
-            } else {
-                // Если лайк есть - удаляем
-                txn.exec_params(
-                    "DELETE FROM news_likes WHERE news_id = $1 AND employee_id = $2",
-                    news_id, employee_id
-                );
-                txn.commit();
-                res.set_content(R"({"success": true, "action": "unliked"})", "application/json");
-            }
         } catch (const std::exception& e) {
             std::cerr << "Error handling like: " << e.what() << std::endl;
             res.status = 500;
@@ -404,6 +292,22 @@ int main() {
         int id = std::stoi(req.matches[1]);
         bool success = Delete::deleteLink(id);
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
+    });
+
+    // Put endpoint
+    svr.Put(R"(/api/employees/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            auto json = nlohmann::json::parse(req.body);
+            int employee_id = std::stoi(req.matches[1]);
+            
+            auto result = Put::putEmployeeWithResponse(employee_id, json);
+            res.set_content(result.dump(), "application/json");
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Error updating employee: " << e.what() << std::endl;
+            res.status = 500;
+            res.set_content(R"({"error": "Server error"})", "application/json");
+        }
     });
 
     // Запуск сервера

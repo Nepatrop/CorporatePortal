@@ -29,6 +29,42 @@ INSERT INTO employees (
 ('Лебедев Александр Сергеевич', 'Лебедев Александр Сергеевич', 1, 1, 'Начальник управления', '0000-00003', '', '', '', '', false, '+73436896204', 1, '1985-03-15', true),
 ('Аккерман Ксения Эдмундовна', 'Аккерман Ксения Эдмундовна', 1, 2, 'Инженер-программист(2519)', '0000-00004', '', '', '', '', false, '+7 (343) 737-11-37', 2, '1990-04-12', false);
 
+-- -- Добавляем 100 тестовых сотрудников для нагрузочного тестирования
+-- INSERT INTO employees (
+--     full_name, 
+--     physical_person_name,
+--     organization_id,
+--     department_id,
+--     position,
+--     personnel_number,
+--     service,
+--     can_help_with,
+--     responsibilities,
+--     makes_decisions,
+--     is_dismissed,
+--     work_phone,
+--     location_id,
+--     birth_date,
+--     is_admin
+-- )
+-- SELECT 
+--     'Тестовый Сотрудник',
+--     'Тестовый Сотрудник',
+--     1, -- organization_id
+--     1, -- department_id
+--     'Инженер',
+--     'TEST-' || LPAD(generate_series::text, 5, '0'), -- Генерируем уникальные табельные номера TEST-00001, TEST-00002, etc.
+--     '',
+--     '',
+--     '',
+--     '',
+--     false,
+--     '+7 (343) 123-45-67',
+--     1,
+--     '1990-01-01',
+--     false
+-- FROM generate_series(1, 100);
+
 -- Update manager references
 UPDATE employees SET manager_id = (SELECT id FROM employees WHERE personnel_number = '0000-00003') 
 WHERE personnel_number = '0000-00004';
@@ -36,11 +72,11 @@ WHERE personnel_number = '0000-00004';
 -- Добавляем тестовые новости с изображениями
 INSERT INTO news (title, content, image_data, image_type, publication_time, author_id) VALUES 
 ('Новый проект запущен', 'Мы рады сообщить о запуске нового проекта, который поможет оптимизировать рабочие процессы.', 
- pg_read_binary_file('img\1.jpg'), 'image/jpg', '2023-05-15 10:30:00', 1),
+ pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\1.jpg'), 'image/jpg', '2023-05-15 10:30:00', 1),
 ('Корпоративное мероприятие', 'Не забудьте зарегистрироваться на корпоративное мероприятие, которое состоится в конце месяца.',
- pg_read_binary_file('img\2.jpg'), 'image/jpg', '2023-05-10 15:45:00', 1),
+ pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\2.jpg'), 'image/jpg', '2023-05-10 15:45:00', 1),
 ('Новые курсы обучения', 'Доступны новые курсы обучения для всех сотрудников. Успейте записаться!',
- pg_read_binary_file('img\3.jpg'), 'image/jpg', '2023-05-05 09:15:00', 2);
+ pg_read_binary_file('C:\Users\Nepatrop\Desktop\CorporatePortal\database\img\3.jpg'), 'image/jpg', '2023-05-05 09:15:00', 2);
 
 -- Добавляем лайки к новостям (убираем created_at из INSERT)
 INSERT INTO news_likes (news_id, employee_id) VALUES

@@ -189,6 +189,79 @@ bool Post::postNews(const nlohmann::json& data) {
     }
 }
 
+nlohmann::json Post::postNewsWithImage(const std::string& title, 
+                                     const std::string& content, 
+                                     const std::string& author_id,
+                                     const std::string& image_data,
+                                     const std::string& image_type) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+        txn.exec0("SET TIME ZONE 'UTC'");
+
+        pqxx::result result;
+        
+        if (image_data.empty()) {
+            result = txn.exec_params(
+                "INSERT INTO news (title, content, author_id) VALUES ($1, $2, $3) RETURNING id",
+                title, content, std::stoi(author_id)
+            );
+        } else {
+            result = txn.exec_params(
+                "INSERT INTO news (title, content, author_id, image_data, image_type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                title, content, std::stoi(author_id),
+                pqxx::binary_cast(std::basic_string_view<uint8_t>(
+                    reinterpret_cast<const uint8_t*>(image_data.data()), 
+                    image_data.size()
+                )),
+                image_type
+            );
+        }
+
+        txn.commit();
+
+        if (!result.empty()) {
+            pqxx::work txn2(conn);
+            auto newsId = result[0][0].as<int>();
+
+            auto news = txn2.exec_params(R"(
+                SELECT 
+                    n.*, 
+                    e.full_name as author_name,
+                    CASE 
+                        WHEN n.image_data IS NOT NULL 
+                        THEN encode(n.image_data, 'base64') 
+                        ELSE NULL 
+                    END as image_data,
+                    TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
+                FROM news n 
+                LEFT JOIN employees e ON n.author_id = e.id 
+                WHERE n.id = $1
+            )", newsId);
+
+            nlohmann::json response = {
+                {"id", news[0]["id"].as<int>()},
+                {"title", news[0]["title"].as<std::string>()},
+                {"content", news[0]["content"].as<std::string>()},
+                {"formatted_time", news[0]["publication_time"].as<std::string>()},
+                {"author_name", news[0]["author_name"].as<std::string>()},
+                {"likes_count", 0},
+                {"comments", nlohmann::json::array()}
+            };
+
+            if (!image_data.empty()) {
+                response["image_data"] = news[0]["image_data"].as<std::string>();
+                response["image_type"] = image_type;
+            }
+
+            return response;
+        }
+        throw std::runtime_error("No rows returned after insert");
+    } catch (const std::exception& e) {
+        throw;
+    }
+}
+
 bool Post::postNotification(const nlohmann::json& data) {
     try {
         pqxx::connection conn(Config::getConnectionString());
@@ -232,5 +305,73 @@ bool Post::postLink(const nlohmann::json& data) {
         return true;
     } catch (std::exception const& e) {
         return false;
+    }
+}
+
+nlohmann::json Post::postNewsComment(int news_id, int employee_id, const std::string& text) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+        txn.exec0("SET TIME ZONE 'UTC';");
+
+        auto result = txn.exec_params(R"(
+            WITH new_comment AS (
+                INSERT INTO news_comments (news_id, employee_id, text)
+                VALUES ($1, $2, $3)
+                RETURNING id, text, created_at
+            )
+            SELECT 
+                nc.id,
+                nc.text,
+                TO_CHAR(nc.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+                e.full_name as author
+            FROM new_comment nc
+            JOIN employees e ON e.id = $2
+        )", news_id, employee_id, text);
+
+        txn.commit();
+
+        if (!result.empty()) {
+            nlohmann::json response = {
+                {"id", result[0]["id"].as<int>()},
+                {"text", result[0]["text"].as<std::string>()},
+                {"author", result[0]["author"].as<std::string>()},
+                {"created_at", result[0]["created_at"].as<std::string>()}
+            };
+            return response;
+        }
+        throw std::runtime_error("No rows returned after insert");
+    } catch (const std::exception& e) {
+        throw;
+    }
+}
+
+nlohmann::json Post::toggleNewsLike(int news_id, int employee_id) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+
+        auto check_result = txn.exec_params(
+            "SELECT id FROM news_likes WHERE news_id = $1 AND employee_id = $2",
+            news_id, employee_id
+        );
+
+        if (check_result.empty()) {
+            txn.exec_params(
+                "INSERT INTO news_likes (news_id, employee_id) VALUES ($1, $2)",
+                news_id, employee_id
+            );
+            txn.commit();
+            return {{"success", true}, {"action", "liked"}};
+        } else {
+            txn.exec_params(
+                "DELETE FROM news_likes WHERE news_id = $1 AND employee_id = $2",
+                news_id, employee_id
+            );
+            txn.commit();
+            return {{"success", true}, {"action", "unliked"}};
+        }
+    } catch (const std::exception& e) {
+        throw;
     }
 }

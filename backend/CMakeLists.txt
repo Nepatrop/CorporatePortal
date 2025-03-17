@@ -22,6 +22,7 @@ set(SOURCES
     main.cpp
     src/db/get.cpp
     src/db/post.cpp
+    src/db/put.cpp
     src/db/config.cpp
     src/db/delete.cpp
     src/auth/auth_handler.cpp
