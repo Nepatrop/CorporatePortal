@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react"
 import { api } from "../utils/api"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faChevronDown, faChevronUp, faSearch, faCopy } from "@fortawesome/free-solid-svg-icons"
+import {
+  faUser,
+  faChevronDown,
+  faChevronUp,
+  faSearch,
+  faCopy,
+  faChevronRight,
+  faEnvelope,
+} from "@fortawesome/free-solid-svg-icons"
+import { faTelegram, faSkype } from "@fortawesome/free-brands-svg-icons"
 import Header from "./Header"
 
 const EmployeeDirectory = ({ onNavigate }) => {
@@ -11,6 +20,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isFilterOpen, setIsFilterOpen] = useState(true)
+  const [expandedEmployee, setExpandedEmployee] = useState(null)
   const [filters, setFilters] = useState({
     name: "",
     position: "",
@@ -19,6 +29,21 @@ const EmployeeDirectory = ({ onNavigate }) => {
   const [activeButton, setActiveButton] = useState(null)
   const [showCopyNotification, setShowCopyNotification] = useState(false)
   const [copiedText, setCopiedText] = useState("")
+
+  // Функция форматирования телефонного номера
+  const formatPhoneNumber = (phoneNumber) => {
+    if (!phoneNumber) return ""
+
+    // Удаляем все нецифровые символы
+    const numbers = phoneNumber.replace(/\D/g, "")
+
+    if (numbers.length === 0) return ""
+    if (numbers.length <= 1) return `+7`
+    if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`
+    if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`
+    if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`
+    return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
+  }
 
   // Загрузка данных о сотрудниках
   useEffect(() => {
@@ -74,6 +99,15 @@ const EmployeeDirectory = ({ onNavigate }) => {
         setShowCopyNotification(false)
       }, 2000)
     })
+  }
+
+  // Функция для переключения раскрытия информации о сотруднике
+  const toggleEmployeeDetails = (employeeId) => {
+    if (expandedEmployee === employeeId) {
+      setExpandedEmployee(null)
+    } else {
+      setExpandedEmployee(employeeId)
+    }
   }
 
   // Фильтрация сотрудников
@@ -186,42 +220,165 @@ const EmployeeDirectory = ({ onNavigate }) => {
               {/* Список сотрудников */}
               <div style={styles.employeeList}>
                 {filteredEmployees.map((employee, index) => (
-                  <div key={employee.id} style={styles.employeeRow}>
-                    <div style={styles.employeePhotoAndInfo}>
-                      <div style={styles.employeePhoto}>
-                        {employee.photo ? (
-                          <img
-                            src={employee.photo || "/placeholder.svg"}
-                            alt={employee.employee}
-                            style={styles.photo}
-                          />
-                        ) : (
-                          <FontAwesomeIcon icon={faUser} style={{ fontSize: "40px", color: "#13454B" }} />
-                        )}
+                  <div key={employee.id}>
+                    <div style={styles.employeeRow}>
+                      <div style={styles.employeePhotoAndInfo}>
+                        <div style={styles.employeePhoto}>
+                          {employee.photo ? (
+                            <img
+                              src={employee.photo || "/placeholder.svg"}
+                              alt={employee.employee}
+                              style={styles.photo}
+                            />
+                          ) : (
+                            <FontAwesomeIcon icon={faUser} style={{ fontSize: "40px", color: "#13454B" }} />
+                          )}
+                        </div>
+                        <div style={styles.employeeMainInfo}>
+                          <h4 style={styles.employeeName}>{employee.employee}</h4>
+                          <p style={styles.employeePosition}>{employee.position}</p>
+                        </div>
                       </div>
-                      <div style={styles.employeeMainInfo}>
-                        <h4 style={styles.employeeName}>{employee.employee}</h4>
-                        <p style={styles.employeePosition}>{employee.position}</p>
+                      <div style={styles.employeeDepartment}>
+                        <div style={styles.departmentText}>{employee.department}</div>
                       </div>
-                    </div>
-                    <div style={styles.employeeDepartment}>{employee.department}</div>
-                    <div style={styles.employeeContacts}>
-                      <div style={styles.employeePhoneContainer}>
-                        <p style={styles.employeePhone}>{employee.work_phone}</p>
-                        {employee.work_phone && (
+                      <div style={styles.employeeContacts}>
+                        <div style={styles.contactIcons}>
                           <button
-                            style={styles.copyButton}
+                            style={styles.contactIconButton}
                             onClick={(e) => {
                               e.stopPropagation()
-                              copyToClipboard(employee.work_phone, "Телефон")
+                              window.location.href = `mailto:${employee.email || ""}`
                             }}
+                            title="Email"
                           >
-                            <FontAwesomeIcon icon={faCopy} />
+                            <FontAwesomeIcon icon={faEnvelope} />
                           </button>
-                        )}
+                          <button
+                            style={styles.contactIconButton}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.location.href = `https://t.me/${employee.telegram || ""}`
+                            }}
+                            title="Telegram"
+                          >
+                            <FontAwesomeIcon icon={faTelegram} />
+                          </button>
+                          <button
+                            style={styles.contactIconButton}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.location.href = `skype:${employee.skype || ""}?chat`
+                            }}
+                            title="Skype"
+                          >
+                            <FontAwesomeIcon icon={faSkype} />
+                          </button>
+                        </div>
+                        <button
+                          style={styles.expandButton}
+                          onClick={() => toggleEmployeeDetails(employee.id)}
+                          aria-expanded={expandedEmployee === employee.id}
+                        >
+                          <FontAwesomeIcon
+                            icon={faChevronRight}
+                            style={{
+                              ...styles.expandIcon,
+                              transform: expandedEmployee === employee.id ? "rotate(90deg)" : "none",
+                              transition: "transform 0.3s ease",
+                            }}
+                          />
+                        </button>
                       </div>
-                      {employee.email && <p style={styles.employeeEmail}>{employee.email}</p>}
                     </div>
+
+                    {/* Развернутая информация о сотруднике */}
+                    {expandedEmployee === employee.id && (
+                      <div style={styles.employeeDetails}>
+                        <div style={styles.detailsSection}>
+                          <h4 style={styles.detailsTitle}>Основная информация</h4>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Табельный номер:</span>
+                            <span style={styles.detailsValue}>{employee.personnel_number || "Не указан"}</span>
+                          </div>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Дата рождения:</span>
+                            <span style={styles.detailsValue}>{employee.birth_date || "Не указана"}</span>
+                          </div>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Местоположение:</span>
+                            <span style={styles.detailsValue}>{employee.location || "Не указано"}</span>
+                          </div>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Организация:</span>
+                            <span style={styles.detailsValue}>{employee.organization || "Не указана"}</span>
+                          </div>
+                        </div>
+
+                        <div style={styles.detailsSection}>
+                          <h4 style={styles.detailsTitle}>Контактная информация</h4>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Рабочий телефон:</span>
+                            <div style={styles.detailsValueWithCopy}>
+                              <span style={styles.detailsValue}>
+                                {formatPhoneNumber(employee.work_phone) || "Не указан"}
+                              </span>
+                              {employee.work_phone && (
+                                <button
+                                  style={styles.copyButton}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    copyToClipboard(employee.work_phone, "Телефон")
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faCopy} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div style={styles.detailsRow}>
+                            <span style={styles.detailsLabel}>Электронная почта:</span>
+                            <div style={styles.detailsValueWithCopy}>
+                              <span style={styles.detailsValue}>{employee.email || "Не указана"}</span>
+                              {employee.email && (
+                                <button
+                                  style={styles.copyButton}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    copyToClipboard(employee.email, "Email")
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faCopy} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Изменим расположение кнопки "Сообщить об ошибке" в справочнике сотрудников */}
+                        <div style={styles.detailsActions}>
+                          <div style={styles.actionButtons}>
+                            <button style={styles.reportErrorButton}>Сообщить об ошибке</button>
+                            <button
+                              style={styles.downloadContactButton}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = "#EE6B0C"
+                                e.currentTarget.style.color = "#FFFFFF"
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = "#FFFFFF"
+                                e.currentTarget.style.color = "#EE6B0C"
+                              }}
+                            >
+                              Скачать контакт
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Разделитель между сотрудниками */}
+                    {index < filteredEmployees.length - 1 && <div style={styles.employeeDivider}></div>}
                   </div>
                 ))}
               </div>
@@ -334,21 +491,22 @@ const styles = {
     backgroundColor: "#F5F5F5",
     borderRadius: "0",
     fontWeight: 600,
-    color: "#333333",
+    color: "#000000", // Изменено с "#333333" на черный
     fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для заголовков колонок
   },
   nameHeader: {
     flex: "2",
-    paddingLeft: "100px",
+    paddingLeft: "100px", // Выравнивание с содержимым
   },
   departmentHeader: {
-    flex: "1",
+    flex: "1.2", // Увеличиваем ширину для подразделения
     textAlign: "left",
-    paddingLeft: "0", // Изменено с "20px" на "0"
+    paddingLeft: "0", // Выравнивание с содержимым
   },
   contactsHeader: {
-    flex: "1",
+    flex: "0.8", // Уменьшаем ширину для контактов
     textAlign: "left",
+    paddingLeft: "0", // Выравнивание с содержимым
   },
   employeeList: {
     display: "flex",
@@ -360,7 +518,11 @@ const styles = {
     alignItems: "center",
     padding: "1rem 2rem",
     backgroundColor: "#FFFFFF",
-    borderBottom: "1px solid #E0E0E0",
+  },
+  employeeDivider: {
+    height: "1px",
+    backgroundColor: "#E0E0E0",
+    margin: "0 2rem",
   },
   employeePhotoAndInfo: {
     display: "flex",
@@ -373,24 +535,47 @@ const styles = {
     justifyContent: "center",
   },
   employeeDepartment: {
-    flex: "1",
+    flex: "1.2", // Увеличиваем ширину для подразделения
     display: "flex",
     alignItems: "center",
+    paddingLeft: "0", // Выравнивание с заголовком
+  },
+  departmentText: {
     color: "#EE6B0C",
     fontWeight: 500,
-    paddingLeft: "0", // Изменено с "20px" на "0"
-    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для подразделения
+    fontFamily: "'Open Sans', Arial, sans-serif",
+    wordBreak: "break-word", // Перенос длинных слов
+    maxWidth: "100%", // Ограничиваем ширину
   },
   employeeContacts: {
-    flex: "1",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  employeePhoneContainer: {
+    flex: "0.8", // Уменьшаем ширину для контактов
     display: "flex",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: "0", // Выравнивание с заголовком
+  },
+  contactIcons: {
+    display: "flex",
     gap: "10px",
+  },
+  contactIconButton: {
+    background: "none",
+    border: "none",
+    color: "#13454B",
+    cursor: "pointer",
+    padding: "5px",
+    fontSize: "18px",
+  },
+  expandButton: {
+    background: "none",
+    border: "none",
+    color: "#AAAAAA",
+    cursor: "pointer",
+    padding: "5px",
+    fontSize: "16px",
+  },
+  expandIcon: {
+    color: "#AAAAAA",
   },
   employeePhoto: {
     flexShrink: 0,
@@ -410,7 +595,7 @@ const styles = {
     objectFit: "cover",
   },
   employeeName: {
-    color: "#13454B",
+    color: "#000000", // Изменено с "#13454B" на черный
     fontSize: "18px",
     fontWeight: 600,
     margin: 0,
@@ -422,17 +607,70 @@ const styles = {
     margin: "0.25rem 0 0 0",
     fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для должности
   },
-  employeePhone: {
-    color: "#333333",
-    fontWeight: 300,
-    margin: 0,
-    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для телефона
+  employeeDetails: {
+    padding: "1rem 2rem 1rem 8rem",
+    backgroundColor: "#F9F9F9",
+    borderTop: "1px solid #E0E0E0",
+    borderBottom: "1px solid #E0E0E0",
   },
-  employeeEmail: {
-    color: "#333333",
-    fontWeight: 300,
-    margin: 0,
-    fontFamily: "'Open Sans', Arial, sans-serif", // Шрифт для email
+  detailsSection: {
+    marginBottom: "1.5rem",
+  },
+  detailsTitle: {
+    fontSize: "16px",
+    fontWeight: 600,
+    color: "#000000",
+    marginBottom: "0.75rem",
+    fontFamily: "'Open Sans', Arial, sans-serif",
+  },
+  detailsRow: {
+    display: "flex",
+    marginBottom: "0.5rem",
+  },
+  detailsLabel: {
+    width: "180px",
+    fontSize: "14px",
+    color: "#777",
+    fontFamily: "'Open Sans', Arial, sans-serif",
+  },
+  detailsValue: {
+    fontSize: "14px",
+    color: "#333",
+    fontFamily: "'Open Sans', Arial, sans-serif",
+    marginLeft: "0", // Убираем отступ слева
+  },
+  detailsValueWithCopy: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  detailsActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "1.5rem",
+  },
+  reportErrorButton: {
+    padding: "8px 16px",
+    backgroundColor: "#FFFFFF",
+    color: "#777",
+    border: "1px solid #777",
+    borderRadius: "20px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: 500,
+    fontFamily: "'Open Sans', Arial, sans-serif",
+  },
+  downloadContactButton: {
+    padding: "8px 16px",
+    backgroundColor: "#FFFFFF",
+    color: "#EE6B0C",
+    border: "1px solid #EE6B0C",
+    borderRadius: "20px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: 500,
+    fontFamily: "'Open Sans', Arial, sans-serif",
+    transition: "background-color 0.3s, color 0.3s",
   },
   loading: {
     textAlign: "center",
@@ -467,6 +705,10 @@ const styles = {
     zIndex: 1100,
     fontFamily: "'Open Sans', Arial, sans-serif",
     fontSize: "14px",
+  },
+  actionButtons: {
+    display: "flex",
+    gap: "10px",
   },
 }
 

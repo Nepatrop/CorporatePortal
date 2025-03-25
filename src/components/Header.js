@@ -7,7 +7,29 @@ import { faUser, faCopy, faTimes, faPencilAlt, faCheck, faCamera } from "@fortaw
 import { useUser } from "../context/UserContext"
 import { api } from "../utils/api"
 
+// Добавим функцию форматирования телефонного номера
+// Найдем место в компоненте Header, где обрабатываются данные пользователя
+
+// Добавим функцию форматирования телефона после объявления компонента Header
 function Header({ onNavigate }) {
+  // Существующий код...
+
+  // Добавляем функцию форматирования телефона
+  const formatPhoneNumber = (phoneNumber) => {
+    if (!phoneNumber) return ""
+
+    // Удаляем все нецифровые символы
+    const numbers = phoneNumber.replace(/\D/g, "")
+
+    if (numbers.length === 0) return ""
+    if (numbers.length <= 1) return `+7`
+    if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`
+    if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`
+    if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`
+    return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
+  }
+
+  // Остальной код компонента...
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -30,47 +52,38 @@ function Header({ onNavigate }) {
 
   // Состояние для редактируемых полей
   const [editableFields, setEditableFields] = useState({
-    full_name: "",
-    position: "",
-    work_phone: "",
-    mobile_phone: "",
+    interests1: "",
+    interests2: "",
+    interests3: "",
+    projects1: "",
+    projects2: "",
+    projects3: "",
     email: "",
-    birth_date: "",
   })
 
-  // Добавляем возможность изменения фотографии, убираем мобильный номер и добавляем новые поля
-
-  // 1. Добавляем новые состояния для загрузки фото
+  // Добавляем возможность изменения фотографии
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Функция для форматирования номера телефона
-  const formatPhoneNumber = (value) => {
-    const numbers = value.replace(/\D/g, "")
-    if (!numbers) return ""
-    const firstPart = numbers.slice(1, 4)
-    const secondPart = numbers.slice(4, 7)
-    const thirdPart = numbers.slice(7, 9)
-    const fourthPart = numbers.slice(9, 11)
-    return `+7 (${firstPart}) ${secondPart ? `${secondPart}` : ""}${thirdPart ? `-${thirdPart}` : ""}${fourthPart ? `-${fourthPart}` : ""}`
-  }
-
   // Инициализация редактируемых полей при открытии режима редактирования
   useEffect(() => {
     if (isEditing && currentUser) {
       setEditableFields({
-        full_name: currentUser.full_name || "",
-        position: currentUser.position || "",
-        work_phone: currentUser.work_phone || "",
-        mobile_phone: currentUser.mobile_phone || "",
+        interests1: currentUser.interests1 || "",
+        interests2: currentUser.interests2 || "",
+        interests3: currentUser.interests3 || "",
+        projects1: currentUser.projects1 || "",
+        projects2: currentUser.projects2 || "",
+        projects3: currentUser.projects3 || "",
         email: currentUser.email || "",
-        birth_date: currentUser.birth_date || "",
       })
       // Сбрасываем список измененных полей при входе в режим редактирования
       setChangedFields({})
       setHasUnsavedChanges(false)
+      setPhotoPreview(null)
+      setPhotoFile(null)
     }
   }, [isEditing, currentUser])
 
@@ -84,13 +97,9 @@ function Header({ onNavigate }) {
         can_help_with: currentUser.can_help_with || "",
         responsibilities: currentUser.responsibilities || "",
         makes_decisions: currentUser.makes_decisions || "",
-        location: currentUser.location || "",
-        organization: currentUser.organization || "",
-        department: currentUser.department || "",
       })
     }
   }, [currentUser])
-  
 
   // Обработчик клика вне модального окна
   useEffect(() => {
@@ -151,49 +160,7 @@ function Header({ onNavigate }) {
       // Проверяем, остались ли еще измененные поля
       const updatedFields = { ...changedFields }
       delete updatedFields[name]
-      setHasUnsavedChanges(Object.keys(updatedFields).length > 0)
-    }
-  }
-
-  // Обработчик фокуса для полей телефона
-  const handlePhoneFocus = (e) => {
-    const { name, value } = e.target
-    if (!value) {
-      setEditableFields((prev) => ({
-        ...prev,
-        [name]: "+7 (",
-      }))
-    }
-  }
-
-  // Обработчик изменения полей телефона
-  const handlePhoneFieldChange = (e) => {
-    const { name, value } = e.target
-    const formattedValue = formatPhoneNumber(value)
-
-    setEditableFields((prev) => ({
-      ...prev,
-      [name]: formattedValue,
-    }))
-
-    // Проверяем, отличается ли новое значение от исходного
-    const originalValue = currentUser[name] || ""
-    if (formattedValue !== originalValue) {
-      setChangedFields((prev) => ({
-        ...prev,
-        [name]: true,
-      }))
-      setHasUnsavedChanges(true)
-    } else {
-      setChangedFields((prev) => {
-        const newChangedFields = { ...prev }
-        delete newChangedFields[name]
-        return newChangedFields
-      })
-      // Проверяем, остались ли еще измененные поля
-      const updatedFields = { ...changedFields }
-      delete updatedFields[name]
-      setHasUnsavedChanges(Object.keys(updatedFields).length > 0)
+      setHasUnsavedChanges(Object.keys(updatedFields).length > 0 || photoFile !== null)
     }
   }
 
@@ -230,14 +197,21 @@ function Header({ onNavigate }) {
       // Фильтруем пустые значения и undefined
       const changedData = {}
       Object.keys(changedFields).forEach((field) => {
-        if (editableFields[field] && editableFields[field].trim() !== "") {
-          changedData[field] = editableFields[field].trim()
+        if (editableFields[field] !== undefined) {
+          changedData[field] = editableFields[field]
         }
       })
 
+      // Добавляем фото, если оно было изменено
+      if (photoFile) {
+        // Здесь должна быть логика для загрузки фото на сервер
+        // Для примера просто добавим URL в changedData
+        changedData.photo = URL.createObjectURL(photoFile)
+      }
+
       console.log("Changed fields to send:", changedData)
 
-      if (Object.keys(changedData).length === 0) {
+      if (Object.keys(changedData).length === 0 && !photoFile) {
         console.log("No valid fields to update")
         return
       }
@@ -258,6 +232,8 @@ function Header({ onNavigate }) {
           setHasUnsavedChanges(false)
           setChangedFields({})
           setShowExitWarning(false)
+          setPhotoPreview(null)
+          setPhotoFile(null)
           setShowSuccessMessage(true)
           setTimeout(() => setShowSuccessMessage(false), 3000)
         } else {
@@ -267,32 +243,6 @@ function Header({ onNavigate }) {
         }
       } else {
         throw new Error("Network response was not ok")
-      }
-    } catch (error) {
-      console.error("Error saving profile:", error)
-      setShowErrorMessage(true)
-      setTimeout(() => setShowErrorMessage(false), 3000)
-    }
-  }
-
-  const handleSaveProfile = async () => {
-    try {
-      const response = await api.putEmployee(currentUser.id, editedProfile)
-
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentUser((prev) => ({
-          ...prev,
-          ...editedProfile,
-        }))
-        setIsEditing(false)
-        setShowSuccessMessage(true)
-        setTimeout(() => setShowSuccessMessage(false), 3000)
-      } else {
-        const error = await response.text()
-        console.error("Error saving profile:", error)
-        setShowErrorMessage(true)
-        setTimeout(() => setShowErrorMessage(false), 3000)
       }
     } catch (error) {
       console.error("Error saving profile:", error)
@@ -321,10 +271,10 @@ function Header({ onNavigate }) {
 
   // Функция для отображения информации о руководителе
   const showManagerInfo = (managerName) => {
-    alert(`Информация о руководителе: ${managerName}\nВ полной версии здесь будет отображаться ��рофиль руководителя.`)
+    alert(`Информация о руководителе: ${managerName}\nВ полной версии здесь будет отображаться профиль руководителя.`)
   }
 
-  // 2. Добавляем функцию для обработки изменения фото
+  // Функция для обработки изменения фото
   const handlePhotoChange = (e) => {
     const file = e.target.files[0]
     if (file) {
@@ -391,8 +341,8 @@ function Header({ onNavigate }) {
 
       {/* Модальное окно профиля */}
       {isProfileOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.profileModal} ref={profileRef}>
+        <div style={styles.modalOverlay} onClick={handleCloseProfile}>
+          <div style={styles.profileModal} ref={profileRef} onClick={(e) => e.stopPropagation()}>
             <div style={styles.profileHeader}>
               <h2 style={styles.profileTitle}>Профиль сотрудника</h2>
               <button style={styles.closeButton} onClick={handleCloseProfile}>
@@ -403,10 +353,13 @@ function Header({ onNavigate }) {
             <div style={styles.profileContent}>
               {/* Основная информация */}
               <div style={styles.profileMainInfo}>
-                {/* 3. Обновляем блок с фотографией в профиле */}
+                {/* Блок с фотографией в профиле */}
                 <div
-                  style={styles.profilePhoto}
-                  onMouseEnter={() => setShowPhotoUpload(true)}
+                  style={{
+                    ...styles.profilePhoto,
+                    boxShadow: showExitWarning && changedFields.photo ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                  }}
+                  onMouseEnter={() => isEditing && setShowPhotoUpload(true)}
                   onMouseLeave={() => setShowPhotoUpload(false)}
                 >
                   {isEditing ? (
@@ -426,8 +379,14 @@ function Header({ onNavigate }) {
                       ) : (
                         <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
                       )}
-                      {showPhotoUpload && (
-                        <div style={styles.photoUploadOverlay} onClick={() => fileInputRef.current.click()}>
+                      {isEditing && (
+                        <div
+                          style={{
+                            ...styles.photoUploadOverlay,
+                            opacity: showPhotoUpload ? 1 : 0,
+                          }}
+                          onClick={() => fileInputRef.current.click()}
+                        >
                           <FontAwesomeIcon icon={faCamera} style={styles.cameraIcon} />
                         </div>
                       )}
@@ -455,32 +414,18 @@ function Header({ onNavigate }) {
                 </div>
                 <div style={styles.profileNameContainer}>
                   <div style={styles.nameWithEditIcon}>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="full_name"
-                        value={editableFields.full_name}
-                        onChange={handleFieldChange}
-                        style={{
-                          ...styles.editInput,
-                          boxShadow:
-                            showExitWarning && changedFields.full_name ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                    <h3 style={styles.profileName}>{currentUser?.full_name}</h3>
+                    {!isEditing && (
+                      <button
+                        style={styles.editIconButton}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsEditing(true)
                         }}
-                      />
-                    ) : (
-                      <>
-                        <h3 style={styles.profileName}>{currentUser?.full_name}</h3>
-                        <button
-                          style={styles.editIconButton}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setIsEditing(true)
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faPencilAlt} style={styles.editIcon} />
-                          <span style={styles.editText}>изменить</span>
-                        </button>
-                      </>
+                      >
+                        <FontAwesomeIcon icon={faPencilAlt} style={styles.editIcon} />
+                        <span style={styles.editText}>Изменить</span>
+                      </button>
                     )}
                   </div>
                   <p style={styles.profilePosition}>{currentUser?.position}</p>
@@ -498,28 +443,9 @@ function Header({ onNavigate }) {
 
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Дата рождения:</span>
-                    {isEditing ? (
-                      <div style={styles.inputContainer}>
-                        <input
-                          type="date"
-                          name="birth_date"
-                          value={editableFields.birth_date}
-                          onChange={handleFieldChange}
-                          style={{
-                            ...styles.editInput,
-                            boxShadow:
-                              showExitWarning && changedFields.birth_date
-                                ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                : "none",
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <span style={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
-                    )}
+                    <span style={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
                   </div>
 
-                  {/* 4. Обновляем блок с основной информацией - добавляем местоположение и организацию */}
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Местоположение:</span>
                     <span style={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
@@ -541,28 +467,8 @@ function Header({ onNavigate }) {
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Рабочий телефон:</span>
                     <div style={styles.infoValueWithCopy}>
-                      {isEditing ? (
-                        <div style={styles.inputContainer}>
-                          <input
-                            type="text"
-                            name="work_phone"
-                            value={editableFields.work_phone}
-                            onChange={handlePhoneFieldChange}
-                            onFocus={handlePhoneFocus}
-                            placeholder="+7 (XXX) XXX-XX-XX"
-                            style={{
-                              ...styles.editInput,
-                              boxShadow:
-                                showExitWarning && changedFields.work_phone
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <span style={styles.infoValue}>{currentUser?.work_phone}</span>
-                      )}
-                      {!isEditing && currentUser?.work_phone && (
+                      <span style={styles.infoValue}>{formatPhoneNumber(currentUser?.work_phone)}</span>
+                      {currentUser?.work_phone && (
                         <button
                           style={styles.copyButton}
                           onClick={(e) => {
@@ -576,7 +482,6 @@ function Header({ onNavigate }) {
                     </div>
                   </div>
 
-                  {/* 5. Удаляем блок с мобильным телефоном */}
                   <div style={styles.infoRow}>
                     <span style={styles.infoLabel}>Электронная почта:</span>
                     <div style={styles.infoValueWithCopy}>
@@ -615,6 +520,135 @@ function Header({ onNavigate }) {
                         >
                           <FontAwesomeIcon icon={faCopy} />
                         </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={styles.profileSection}>
+                  <h4 style={styles.sectionTitle}>О себе</h4>
+                  <div style={styles.infoRow}>
+                    <span style={styles.infoLabel}>Мои интересы:</span>
+                    <div style={styles.infoValueWithCopy}>
+                      {isEditing ? (
+                        <div style={styles.interestsContainer}>
+                          <input
+                            type="text"
+                            name="interests1"
+                            value={editableFields.interests1 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Интерес 1"
+                            style={{
+                              ...styles.editInput,
+                              marginBottom: "8px",
+                              boxShadow:
+                                showExitWarning && changedFields.interests1
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            name="interests2"
+                            value={editableFields.interests2 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Интерес 2"
+                            style={{
+                              ...styles.editInput,
+                              marginBottom: "8px",
+                              boxShadow:
+                                showExitWarning && changedFields.interests2
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            name="interests3"
+                            value={editableFields.interests3 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Интерес 3"
+                            style={{
+                              ...styles.editInput,
+                              boxShadow:
+                                showExitWarning && changedFields.interests3
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={styles.interestsList}>
+                          {currentUser?.interests1 && <div style={styles.interestItem}>{currentUser.interests1}</div>}
+                          {currentUser?.interests2 && <div style={styles.interestItem}>{currentUser.interests2}</div>}
+                          {currentUser?.interests3 && <div style={styles.interestItem}>{currentUser.interests3}</div>}
+                          {!currentUser?.interests1 && !currentUser?.interests2 && !currentUser?.interests3 && (
+                            <span style={styles.infoValue}>Не указаны</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={styles.infoRow}>
+                    <span style={styles.infoLabel}>Мои проекты:</span>
+                    <div style={styles.infoValueWithCopy}>
+                      {isEditing ? (
+                        <div style={styles.interestsContainer}>
+                          <input
+                            type="text"
+                            name="projects1"
+                            value={editableFields.projects1 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Проект 1"
+                            style={{
+                              ...styles.editInput,
+                              marginBottom: "8px",
+                              boxShadow:
+                                showExitWarning && changedFields.projects1
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            name="projects2"
+                            value={editableFields.projects2 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Проект 2"
+                            style={{
+                              ...styles.editInput,
+                              marginBottom: "8px",
+                              boxShadow:
+                                showExitWarning && changedFields.projects2
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            name="projects3"
+                            value={editableFields.projects3 || ""}
+                            onChange={handleFieldChange}
+                            placeholder="Проект 3"
+                            style={{
+                              ...styles.editInput,
+                              boxShadow:
+                                showExitWarning && changedFields.projects3
+                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
+                                  : "none",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={styles.interestsList}>
+                          {currentUser?.projects1 && <div style={styles.interestItem}>{currentUser.projects1}</div>}
+                          {currentUser?.projects2 && <div style={styles.interestItem}>{currentUser.projects2}</div>}
+                          {currentUser?.projects3 && <div style={styles.interestItem}>{currentUser.projects3}</div>}
+                          {!currentUser?.projects1 && !currentUser?.projects2 && !currentUser?.projects3 && (
+                            <span style={styles.infoValue}>Не указаны</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -930,6 +964,7 @@ const styles = {
     fontSize: "14px",
     color: "#333",
     fontFamily: "'Open Sans', Arial, sans-serif",
+    marginLeft: "0", // Убираем отступ слева
   },
   infoValueWithCopy: {
     display: "flex",
@@ -991,7 +1026,7 @@ const styles = {
     backgroundColor: "#FFFFFF",
     color: "#777",
     border: "1px solid #E0E0E0",
-    borderRadius: "20px", // Скругле��ные углы как у кнопки "Сохранить"
+    borderRadius: "20px", // Скругленные углы как у кнопки "Сохранить"
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: 500,
@@ -1063,7 +1098,6 @@ const styles = {
     borderRadius: "4px",
     zIndex: 1100,
   },
-  // 6. Добавляем новые стили
   photoUploadOverlay: {
     position: "absolute",
     top: 0,
@@ -1076,10 +1110,30 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
+    opacity: 0,
+    transition: "opacity 0.3s ease",
+    "&:hover": {
+      opacity: 1,
+    },
   },
   cameraIcon: {
     fontSize: "24px",
     color: "#FFFFFF",
+  },
+  interestsContainer: {
+    width: "300px",
+    display: "flex",
+    flexDirection: "column",
+  },
+  interestsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+  interestItem: {
+    fontSize: "14px",
+    color: "#333",
+    fontFamily: "'Open Sans', Arial, sans-serif",
   },
 }
 

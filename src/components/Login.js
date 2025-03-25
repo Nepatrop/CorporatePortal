@@ -149,9 +149,9 @@ function Login({ onLogin, onNavigate }) {
         setLoginError("")
 
         // Сохраняем данные пользователя в контекст
-        setCurrentUser(userData)
+        setCurrentUser(userData) // Это обновит isAdmin автоматически через функцию updateUser
 
-        // Сохраняем данные если включено "Запомнить меня"
+        // Сохраняем данные если включео "Запомнить меня"
         if (loginData.rememberMe) {
           localStorage.setItem(
             "rememberedLogin",
@@ -212,7 +212,7 @@ function Login({ onLogin, onNavigate }) {
           const userData = await loginResponse.json()
           console.log("Auto login successful:", userData)
           setCurrentUser(userData) // Сохраняем данные пользователя в контекст
-          onLogin(userData) // Сразу переходим в систему
+          onLogin(userData) // Сразу переходим в систму
         } else {
           // Если автологин не удался, переходим на страницу входа
           setIsRegistration(false)
