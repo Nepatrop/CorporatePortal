@@ -151,7 +151,7 @@ function Login({ onLogin, onNavigate }) {
         // Сохраняем данные пользователя в контекст
         setCurrentUser(userData) // Это обновит isAdmin автоматически через функцию updateUser
 
-        // Сохраняем данные если включео "Запомнить меня"
+        // Со��раняем данные если включео "Запомнить меня"
         if (loginData.rememberMe) {
           localStorage.setItem(
             "rememberedLogin",

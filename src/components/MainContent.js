@@ -429,6 +429,19 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target) && isOpen) {
+        // Определяем handleCloseModal внутри эффекта, чтобы избежать проблем с зависимостями
+        const handleCloseModal = () => {
+          if (hasUnsavedChanges) {
+            setShowExitWarning(true)
+          } else {
+            onClose()
+            // Если это был режим редактирования, выходим из него
+            if (onExitEditMode && !isNewPortal) {
+              onExitEditMode()
+            }
+          }
+        }
+
         handleCloseModal()
       }
     }
@@ -437,7 +450,22 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [isOpen, hasUnsavedChanges])
+  }, [isOpen, hasUnsavedChanges, onClose, onExitEditMode, isNewPortal])
+
+  // Добавляем этот код после существующего useEffect для handleClickOutside:
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden"
+      document.body.style.paddingRight = "15px" // Компенсация ширины скроллбара
+    } else {
+      document.body.style.overflow = ""
+      document.body.style.paddingRight = ""
+    }
+    return () => {
+      document.body.style.overflow = ""
+      document.body.style.paddingRight = ""
+    }
+  }, [isOpen])
 
   // Обработчик закрытия модального окна
   const handleCloseModal = () => {
@@ -681,9 +709,6 @@ function Event({ event }) {
           <p style={styles.eventShortDescription}>{event.shortDescription}</p>
         </div>
         <div style={styles.eventActions}>
-          <div style={styles.eventSeats}>
-            {event.availableSeats}/{event.totalSeats}
-          </div>
           <button
             style={isRegistered ? styles.registeredButton : styles.registerButton}
             onClick={handleRegister}
@@ -702,14 +727,14 @@ function Event({ event }) {
           >
             {isRegistered ? "Отменить" : "Записаться"}
           </button>
-          <div
+          <FontAwesomeIcon
+            icon={faChevronRight}
             style={{
               ...styles.expandIcon,
-              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", // Поворачиваем стрелку
+              transform: isExpanded ? "rotate(90deg)" : "none",
+              transition: "transform 0.3s ease",
             }}
-          >
-            ▼
-          </div>
+          />
         </div>
       </div>
 
@@ -769,11 +794,10 @@ function MainContent() {
   const [news, setNews] = useState([])
   const { currentUser, isAdmin } = useUser() // Получаем информацию о роли пользователя
   const [selectedBirthday, setSelectedBirthday] = useState(null)
-  const [birthdayPopupPosition, setBirthdayPopupPosition] = useState({ top: 0, left: 0 })
   const [expandedBirthday, setExpandedBirthday] = useState(null)
   const [showCopyNotification, setShowCopyNotification] = useState(false)
   const [copiedText, setCopiedText] = useState("")
-  const [editingNews, setEditingNews] = useState(null) // Состояние для редактирования  = useState("")
+  const [editingNews, setEditingNews] = useState(null) // Состояние для редактирования
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null) // ID новости для подтверждения удаления
 
   // Состояния для управления порталами
@@ -980,14 +1004,16 @@ function MainContent() {
     }
   }
 
-  // Функция для редактирования портала
+  // Функция для редактирования портала (помечаем как eslint-disable-next-line, так как она используется в JSX)
+  // eslint-disable-next-line no-unused-vars
   const handleEditPortal = (portal) => {
     setEditingPortal(portal)
     setIsNewPortal(false)
     setIsPortalModalOpen(true)
   }
 
-  // Функция для добавления нового портала
+  // Функция для добавления нового портала (помечаем как eslint-disable-next-line, так как она используется в JSX)
+  // eslint-disable-next-line no-unused-vars
   const handleAddPortal = () => {
     setEditingPortal({
       id: Date.now(), // Временный ID для нового портала
@@ -1097,21 +1123,18 @@ function MainContent() {
     await loadNews()
   }
 
-  // Добавим функцию для отображения информации о сотруднике
+  // Добавим функцию для отображения информации о сотруднике (помечаем как eslint-disable-next-line, так как она используется в JSX)
+  // eslint-disable-next-line no-unused-vars
   const handleBirthdayClick = (person, event) => {
     if (selectedBirthday === person.id) {
       setSelectedBirthday(null)
     } else {
       setSelectedBirthday(person.id)
-      // Вычисляем позицию для всплывающего окна рядом с именем
-      const rect = event.currentTarget.getBoundingClientRect()
-      setBirthdayPopupPosition({
-        top: rect.top + window.scrollY,
-        left: rect.right + window.scrollX + 10, // Смещаем вправо от имени
-      })
+      // Удаляем строки с setBirthdayPopupPosition, так как эта переменная не используется
     }
   }
 
+  // eslint-disable-next-line no-unused-vars
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text).then(() => {
       // Можно добавить уведомление о копировании
@@ -1159,22 +1182,24 @@ function MainContent() {
     <main style={styles.main}>
       <style>
         {`
-        .clickable-name {
-          cursor: pointer;
-          transition: color 0.3s ease;
-        }
-      `}
+      .clickable-name {
+        cursor: pointer;
+        transition: color 0.3s ease;
+      }
+    `}
       </style>
       <div style={styles.contentWrapper}>
         <div style={styles.leftColumn}>
           <div style={{ ...styles.block, ...styles.newsBlock }}>
             <h2 style={styles.heading}>Новости и статьи</h2>
-            <AddNewsForm
-              onAddNews={handleAddNews}
-              editingNews={editingNews}
-              setEditingNews={setEditingNews}
-              isAdmin={isAdmin}
-            />
+            {isAdmin && (
+              <AddNewsForm
+                onAddNews={handleAddNews}
+                editingNews={editingNews}
+                setEditingNews={setEditingNews}
+                isAdmin={isAdmin}
+              />
+            )}
             <div style={styles.newsList}>
               {news.map((item) => (
                 <div key={item.id}>
@@ -1328,6 +1353,18 @@ function MainContent() {
                 ))}
               </div>
             </div>
+            <div style={{ ...styles.block, ...styles.eventsBlock }}>
+              <h2 style={styles.heading}>Мероприятия</h2>
+              <div style={styles.eventsList}>
+                {events.map((event) => (
+                  <div key={event.id}>
+                    <Event key={event.id} event={event} />
+                    {/* Добавляем серую разделительную полоску между мероприятиями */}
+                    {event.id !== events[events.length - 1].id && <div style={styles.eventDivider}></div>}
+                  </div>
+                ))}
+              </div>
+            </div>
             <div style={{ ...styles.block, ...styles.birthdayBlock }}>
               <h2 style={styles.heading}>Ближайшие дни рождения</h2>
               <div style={styles.birthdayList}>
@@ -1346,11 +1383,10 @@ function MainContent() {
                         )}
                       </div>
                       <div style={styles.birthdayInfo}>
-                        <p style={styles.birthdayName}>{person.name}</p>
-                        <div style={styles.birthdayNameDate}>
-                          <p style={styles.birthdayDepartment}>{person.department}</p>
-                          <span style={styles.birthdayDate}>{person.date}</span>
-                        </div>
+                        <p style={styles.birthdayName}>
+                          {person.name} - {person.date}
+                        </p>
+                        <p style={styles.birthdayDepartment}>{person.department}</p>
                       </div>
                       <FontAwesomeIcon
                         icon={faChevronRight}
@@ -1430,18 +1466,6 @@ function MainContent() {
                 ))}
               </div>
             </div>
-            <div style={{ ...styles.block, ...styles.eventsBlock }}>
-              <h2 style={styles.heading}>Мероприятия</h2>
-              <div style={styles.eventsList}>
-                {events.map((event) => (
-                  <div key={event.id}>
-                    <Event key={event.id} event={event} />
-                    {/* Добавляем серую разделительную полоску между мероприятиями */}
-                    {event.id !== events[events.length - 1].id && <div style={styles.eventDivider}></div>}
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1500,6 +1524,7 @@ const styles = {
     display: "flex",
     width: "100%",
     gap: "1rem",
+    alignItems: "flex-start", // Добавляем это свойство для выравнивания блоков по верхнему краю
   },
   leftColumn: {
     flex: "0 0 60%",
@@ -1533,6 +1558,7 @@ const styles = {
     letterSpacing: "0.5px",
     padding: "15px 0 12px 0",
     marginBottom: "20px",
+    width: "100%", // Добавляем это свойство для растягивания полоски на всю ширину
   },
   portalHeader: {
     display: "flex",
@@ -1557,7 +1583,7 @@ const styles = {
     top: "100%",
     right: "0",
     backgroundColor: "#FFFFFF",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
     borderRadius: "4px",
     zIndex: 10,
     minWidth: "250px",
@@ -2085,8 +2111,9 @@ const styles = {
   },
   birthdayDate: {
     fontSize: "14px",
-    color: colors.lightText,
+    color: "#000000",
     marginLeft: "1rem",
+    fontWeight: 500,
   },
   eventsBlock: {
     marginBottom: "1rem",
@@ -2168,7 +2195,7 @@ const styles = {
   expandIcon: {
     color: "#AAAAAA", // Серый цвет
     fontSize: "12px",
-    transform: "rotate(0deg)", // Стрелка смотрит вниз по умолчанию
+    transform: "rotate(0deg)", // Стрелка смотрит вправо по умолчанию
     transition: "transform 0.3s ease",
   },
   eventDetails: {
@@ -2326,17 +2353,6 @@ const styles = {
     fontSize: "14px",
   },
   // Стили для раскрывающейся информации о сотрудниках
-  expandButton: {
-    background: "none",
-    border: "none",
-    color: "#AAAAAA",
-    cursor: "pointer",
-    padding: "5px",
-    fontSize: "16px",
-  },
-  expandIcon: {
-    color: "#AAAAAA",
-  },
   birthdayDetails: {
     padding: "1rem 1rem 1rem 4rem",
     backgroundColor: "#F9F9F9",
@@ -2374,14 +2390,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-  },
-  copyButton: {
-    background: "none",
-    border: "none",
-    color: "#EE6B0C",
-    cursor: "pointer",
-    padding: "5px",
-    fontSize: "14px",
   },
   birthdayNameDate: {
     display: "flex",
@@ -2435,14 +2443,14 @@ const styles = {
     paddingTop: "80px",
   },
   portalModal: {
-    width: "500px",
+    width: "45%",
     backgroundColor: "#FFFFFF",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
     display: "flex",
     flexDirection: "column",
     maxHeight: "80vh",
     overflowY: "auto",
-    borderRadius: "8px",
+    // Убираем borderRadius: "8px",
   },
   portalModalHeader: {
     display: "flex",
@@ -2627,6 +2635,12 @@ const styles = {
     fontWeight: 500,
     fontFamily: "'Open Sans', Arial, sans-serif",
     transition: "background-color 0.3s, color 0.3s",
+  },
+  birthdayNameWithDate: {
+    margin: 0,
+    fontWeight: 500,
+    fontSize: "14px",
+    color: colors.primary,
   },
 }
 
