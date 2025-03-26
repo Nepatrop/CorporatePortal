@@ -218,62 +218,52 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    
+    // Reset validation error
+    setValidationError(false);
+
+    // Check required fields
     if (!title.trim() || !description.trim()) {
-      setValidationError(true)
-      return
+        setValidationError(true);
+        return;
     }
 
     try {
-      const formData = new FormData()
-      formData.append("title", title)
-      formData.append("content", description)
+        // Prepare news data
+        const newsData = {
+            title: title.trim(),
+            content: description.trim(),
+            author_id: currentUser.id.toString()
+        };
 
-      // Если это новая новость, добавляем ID автора
-      if (!editingNews) {
-        formData.append("author_id", currentUser.id.toString())
-        // Если публикует админ, добавляем флаг
-        if (isAdmin) {
-          formData.append("isAdminPost", "true")
+        // Handle image if present
+        if (image) {
+            const reader = new FileReader();
+            const imageBase64 = await new Promise((resolve) => {
+                reader.onloadend = () => {
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.readAsDataURL(image);
+            });
+            newsData.image_data = imageBase64;
+            newsData.image_type = image.type;
         }
-      }
 
-      if (image) {
-        // Получаем содержимое файла как ArrayBuffer
-        const imageBuffer = await image.arrayBuffer()
-        // Создаем Blob из ArrayBuffer
-        const imageBlob = new Blob([imageBuffer], { type: image.type })
-        formData.append("image_data", imageBlob, image.name)
-        formData.append("image_type", image.type)
-      }
+        const response = await api.post("/api/news", newsData);
+        const responseData = await response.json();
 
-      let response
-
-      if (editingNews) {
-        // Обновляем существующую новость
-        response = await api.putFormData(`/api/news/${editingNews.id}`, formData)
-      } else {
-        // Создаем новую новость
-        response = await api.postFormData("/api/news", formData)
-      }
-
-      if (response.ok) {
-        const newsData = await response.json()
-        onAddNews(newsData)
-        resetForm()
-
-        // Если редактировали новость, сбрасываем режим редактирования
-        if (editingNews) {
-          setEditingNews(null)
+        if (response.ok) {
+            onAddNews(responseData);
+            resetForm();
+        } else {
+            throw new Error(responseData.error || 'Failed to save news');
         }
-      } else {
-        const errorText = await response.text()
-        console.error("Error response:", errorText)
-      }
     } catch (error) {
-      console.error("Error creating/updating news:", error)
+        console.error("Error creating/updating news:", error);
     }
-  }
+};
 
   const resetForm = () => {
     setTitle("")
@@ -947,62 +937,89 @@ function MainContent() {
     }
   }
 
-  // Функция для редактирования новости
   const handleEditNews = (newsItem) => {
-    setEditingNews(newsItem)
-    // Прокручиваем страницу к форме редактирования
+    setEditingNews(newsItem);
     window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    })
-  }
+        top: 0,
+        behavior: "smooth",
+    });
+};
 
-  // Функция для удаления новости
-  const handleDeleteNews = async (newsId) => {
+const handleDeleteNews = async (newsId) => {
     if (showDeleteConfirm === newsId) {
-      try {
-        const response = await api.delete(`/api/news/${newsId}`)
-        if (response.ok) {
-          // Удаляем новость из состояния
-          setNews((prevNews) => prevNews.filter((item) => item.id !== newsId))
-          setShowDeleteConfirm(null)
-        } else {
-          console.error("Error deleting news")
+        try {
+            const response = await api.delete(`/api/news/${newsId}`);
+            if (response.ok) {
+                setNews((prevNews) => prevNews.filter((item) => item.id !== newsId));
+                setShowDeleteConfirm(null);
+                // После успешного удаления перезагружаем список новостей
+                await loadNews();
+            } else {
+                console.error("Error deleting news");
+            }
+        } catch (error) {
+            console.error("Error deleting news:", error);
         }
-      } catch (error) {
-        console.error("Error deleting news:", error)
-      }
     } else {
-      // Показываем подтверждение удаления
-      setShowDeleteConfirm(newsId)
+        setShowDeleteConfirm(newsId);
     }
-  }
+};
 
-  // Функция для закрепления/открепления новости
-  const handlePinNews = async (newsId, isPinned) => {
+// Обновляем handleAddNews чтобы он обрабатывал и создание и редактирование
+const handleAddNews = async (formData) => {
     try {
-      const response = await api.post(`/api/news/${newsId}/pin`, {
-        isPinned: isPinned,
-      })
+        let response;
+        if (editingNews) {
+            // Если редактируем существующую новость
+            const newsData = {
+                title: formData.get('title'),
+                content: formData.get('content')
+            };
+            
+            // Если есть изображение, добавляем его данные
+            const imageFile = formData.get('image_data');
+            if (imageFile) {
+                const imageData = await imageFile.arrayBuffer();
+                newsData.image_data = Buffer.from(imageData).toString('base64');
+                newsData.image_type = imageFile.type;
+            }
+            
+            response = await api.put(`/api/news/${editingNews.id}`, newsData);
+        } else {
+            // Если создаем новую новость
+            response = await api.post('/api/news', formData);
+        }
 
-      if (response.ok) {
-        // Обновляем состояние новостей
-        setNews((prevNews) =>
-          prevNews
-            .map((item) => (item.id === newsId ? { ...item, isPinned: isPinned } : item))
-            .sort((a, b) => {
-              if (a.isPinned && !b.isPinned) return -1
-              if (!a.isPinned && b.isPinned) return 1
-              return new Date(b.publication_time) - new Date(a.publication_time)
-            }),
-        )
-      } else {
-        console.error("Error pinning news")
-      }
+        if (response.ok) {
+            await loadNews();
+            setEditingNews(null);
+        }
     } catch (error) {
-      console.error("Error pinning news:", error)
+        console.error("Error saving news:", error);
     }
-  }
+};
+
+const handlePinNews = async (newsId, shouldPin) => {
+    try {
+        const response = await api.put(`/api/news/${newsId}/pin`, {
+            isPinned: shouldPin
+        });
+
+        if (response.ok) {
+            // Обновляем состояние новости локально
+            setNews(prevNews => prevNews.map(item => {
+                if (item.id === newsId) {
+                    return { ...item, isPinned: shouldPin };
+                }
+                return item;
+            }));
+            // Перезагружаем новости для правильной сортировки
+            await loadNews();
+        }
+    } catch (error) {
+        console.error("Error pinning news:", error);
+    }
+};
 
   // Функция для редактирования портала (помечаем как eslint-disable-next-line, так как она используется в JSX)
   // eslint-disable-next-line no-unused-vars
@@ -1118,10 +1135,6 @@ function MainContent() {
       ],
     },
   ]
-
-  const handleAddNews = async (newNews) => {
-    await loadNews()
-  }
 
   // Добавим функцию для отображения информации о сотруднике (помечаем как eslint-disable-next-line, так как она используется в JSX)
   // eslint-disable-next-line no-unused-vars

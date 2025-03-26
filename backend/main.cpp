@@ -310,6 +310,58 @@ int main() {
         }
     });
 
+    // Добавляем PUT endpoint для новостей
+    svr.Put(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            int news_id = std::stoi(req.matches[1]);
+            
+            // Парсим JSON из тела запроса
+            auto json = nlohmann::json::parse(req.body);
+            
+            // Получаем значения из JSON
+            std::string title = json["title"];
+            std::string content = json["content"];
+            std::string image_data = json.value("image_data", "");
+            std::string image_type = json.value("image_type", "");
+
+            // Вызываем метод обновления новости
+            auto response = Put::putNews(news_id, title, content, image_data, image_type);
+            
+            // Отправляем ответ
+            res.set_content(response.dump(), "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(
+                nlohmann::json({
+                    {"success", false},
+                    {"error", e.what()}
+                }).dump(),
+                "application/json"
+            );
+        }
+    });
+
+    // Добавляем PUT endpoint для закрепления новости
+    svr.Put(R"(/api/news/(\d+)/pin)", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            int news_id = std::stoi(req.matches[1]);
+            auto json = nlohmann::json::parse(req.body);
+            bool should_pin = json["isPinned"].get<bool>();
+
+            auto response = Put::pinNews(news_id, should_pin);
+            res.set_content(response.dump(), "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(
+                nlohmann::json({
+                    {"success", false},
+                    {"error", e.what()}
+                }).dump(),
+                "application/json"
+            );
+        }
+    });
+
     // Запуск сервера
     std::cout << "Server is running on http://localhost:8081" << std::endl;
     svr.listen("0.0.0.0", 8081);

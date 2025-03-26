@@ -195,26 +195,35 @@ nlohmann::json Post::postNewsWithImage(const std::string& title,
                                      const std::string& image_data,
                                      const std::string& image_type) {
     try {
+        if (title.empty() || content.empty() || author_id.empty()) {
+            return {{"error", "Missing required fields"}};
+        }
+
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
         txn.exec0("SET TIME ZONE 'UTC'");
+
+        // Verify author exists
+        auto author_check = txn.exec_params(
+            "SELECT id FROM employees WHERE id = $1",
+            std::stoi(author_id)
+        );
+        
+        if (author_check.empty()) {
+            return {{"error", "Author not found"}};
+        }
 
         pqxx::result result;
         
         if (image_data.empty()) {
             result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id) VALUES ($1, $2, $3) RETURNING id",
+                "INSERT INTO news (title, content, author_id, publication_time) VALUES ($1, $2, $3, NOW()) RETURNING id",
                 title, content, std::stoi(author_id)
             );
         } else {
             result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id, image_data, image_type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-                title, content, std::stoi(author_id),
-                pqxx::binary_cast(std::basic_string_view<uint8_t>(
-                    reinterpret_cast<const uint8_t*>(image_data.data()), 
-                    image_data.size()
-                )),
-                image_type
+                "INSERT INTO news (title, content, author_id, publication_time, image_data, image_type) VALUES ($1, $2, $3, NOW(), decode($4, 'base64'), $5) RETURNING id",
+                title, content, std::stoi(author_id), image_data, image_type
             );
         }
 
@@ -233,7 +242,7 @@ nlohmann::json Post::postNewsWithImage(const std::string& title,
                         THEN encode(n.image_data, 'base64') 
                         ELSE NULL 
                     END as image_data,
-                    TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
+                    TO_CHAR(n.publication_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
                 FROM news n 
                 LEFT JOIN employees e ON n.author_id = e.id 
                 WHERE n.id = $1
@@ -243,22 +252,23 @@ nlohmann::json Post::postNewsWithImage(const std::string& title,
                 {"id", news[0]["id"].as<int>()},
                 {"title", news[0]["title"].as<std::string>()},
                 {"content", news[0]["content"].as<std::string>()},
-                {"formatted_time", news[0]["publication_time"].as<std::string>()},
+                {"publication_time", news[0]["publication_time"].as<std::string>()},
                 {"author_name", news[0]["author_name"].as<std::string>()},
                 {"likes_count", 0},
-                {"comments", nlohmann::json::array()}
+                {"comments", nlohmann::json::array()},
+                {"isAdminPost", false}
             };
 
-            if (!image_data.empty()) {
+            if (!news[0]["image_data"].is_null()) {
                 response["image_data"] = news[0]["image_data"].as<std::string>();
-                response["image_type"] = image_type;
+                response["image_type"] = news[0]["image_type"].as<std::string>();
             }
 
             return response;
         }
         throw std::runtime_error("No rows returned after insert");
     } catch (const std::exception& e) {
-        throw;
+        return {{"error", e.what()}};
     }
 }
 

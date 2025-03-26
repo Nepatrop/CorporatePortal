@@ -216,7 +216,7 @@ function Header({ onNavigate }) {
         return
       }
 
-      const response = await api.putEmployee(currentUser.id, changedData)
+      const response = await api.put(`/api/employees/${currentUser.id}`, changedData)
 
       if (response.ok) {
         const data = await response.json()
