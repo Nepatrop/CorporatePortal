@@ -8,11 +8,11 @@ import { useUser } from "../context/UserContext"
 import { api } from "../utils/api"
 
 // Добавим функцию форматирования телефонного номера
-// Найдем место в компоненте Header, где обрабатываются данные пользователя
+
 
 // Добавим функцию форматирования телефона после объявления компонента Header
 function Header({ onNavigate }) {
-  // Существующий код...
+  
 
   // Добавляем функцию форматирования телефона
   const formatPhoneNumber = (phoneNumber) => {
@@ -29,7 +29,7 @@ function Header({ onNavigate }) {
     return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
   }
 
-  // Остальной код компонента...
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
