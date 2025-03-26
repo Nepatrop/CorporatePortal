@@ -1402,7 +1402,7 @@ function MainContent() {
                     {expandedBirthday === person.id && (
                       <div style={styles.birthdayDetails}>
                         <div style={styles.birthdayDetailsSection}>
-                          <h4 style={styles.birthdayDetailsTitle}>Основная ��нформация</h4>
+                          <h4 style={styles.birthdayDetailsTitle}>Основная информация</h4>
                           <div style={styles.birthdayDetailsRow}>
                             <span style={styles.birthdayDetailsLabel}>Табельный номер:</span>
                             <span style={styles.birthdayDetailsValue}>{person.personnel_number || "Не указан"}</span>
