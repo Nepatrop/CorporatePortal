@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react"
 import logo from "../logo.svg"
 import { api } from "../utils/api"
-import { useUser } from "../context/UserContext" // Импортируем useUser
+import { useUser } from "../context/UserContext"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
+import styles from "../styles/Login.module.css"
 
 function Login({ onLogin, onNavigate }) {
-  const { setCurrentUser } = useUser() // Используем контекст пользователя
+  const { setCurrentUser } = useUser()
   const [isRegistration, setIsRegistration] = useState(false)
   const [loginData, setLoginData] = useState({
     personnel_number: "",
@@ -151,7 +154,7 @@ function Login({ onLogin, onNavigate }) {
         // Сохраняем данные пользователя в контекст
         setCurrentUser(userData) // Это обновит isAdmin автоматически через функцию updateUser
 
-        // Со��раняем данные если включео "Запомнить меня"
+        // Сохраняем данные если включео "Запомнить меня"
         if (loginData.rememberMe) {
           localStorage.setItem(
             "rememberedLogin",
@@ -237,27 +240,17 @@ function Login({ onLogin, onNavigate }) {
     setIsRegistration(!isRegistration)
   }
 
-  const handleMouseOver = (e) => {
-    e.target.style.backgroundColor = "#EE6B0C" // Оранжевый фон
-    e.target.style.color = "#FFFFFF" // Белый текст
-  }
-
-  const handleMouseOut = (e) => {
-    e.target.style.backgroundColor = "#FFFFFF" // Белый фон
-    e.target.style.color = "#EE6B0C" // Оранжевый текст
-  }
-
   // Обновляем функции фильтрации
   const filteredOrganizations = organizations.filter((org) => org.name.toLowerCase().includes(searchOrg.toLowerCase()))
 
   const filteredDepartments = departments.filter((dept) => dept.name.toLowerCase().startsWith(searchDept.toLowerCase()))
 
   const renderOrganizationField = () => (
-    <div style={styles.inputGroup}>
-      <label htmlFor="organization" style={styles.label}>
+    <div className={styles.inputGroup}>
+      <label htmlFor="organization" className={styles.label}>
         Организация
       </label>
-      <div style={styles.dropdownContainer} className="dropdown-container">
+      <div className={`${styles.dropdownContainer} dropdown-container`}>
         <input
           type="text"
           id="organization"
@@ -271,15 +264,15 @@ function Login({ onLogin, onNavigate }) {
           }}
           onFocus={() => setShowOrgDropdown(true)}
           placeholder="Выберите организацию"
-          style={styles.input}
+          className={styles.input}
           required
         />
         {showOrgDropdown && filteredOrganizations.length > 0 && (
-          <div style={styles.dropdown}>
+          <div className={styles.dropdown}>
             {filteredOrganizations.map((org) => (
               <div
                 key={org.id}
-                style={{ ...styles.dropdownItem }}
+                className={`${styles.dropdownItem} ${registrationData.organization === org.name ? styles.dropdownItemSelected : ""}`}
                 onClick={() => {
                   setRegistrationData((prev) => ({ ...prev, organization: org.name }))
                   setSearchOrg(org.name)
@@ -296,11 +289,11 @@ function Login({ onLogin, onNavigate }) {
   )
 
   const renderDepartmentField = () => (
-    <div style={styles.inputGroup}>
-      <label htmlFor="department" style={styles.label}>
+    <div className={styles.inputGroup}>
+      <label htmlFor="department" className={styles.label}>
         Отдел/подразделение
       </label>
-      <div style={styles.dropdownContainer} className="dropdown-container">
+      <div className={`${styles.dropdownContainer} dropdown-container`}>
         <input
           type="text"
           id="department"
@@ -314,42 +307,22 @@ function Login({ onLogin, onNavigate }) {
           }}
           onFocus={() => setShowDeptDropdown(true)}
           placeholder="Выберите отдел"
-          style={styles.input}
+          className={styles.input}
           required
         />
-        <span
-          style={{
-            position: "absolute",
-            right: "10px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            cursor: "pointer",
-            color: "#EE6B0C",
-          }}
-          onClick={() => setShowDeptDropdown(!showDeptDropdown)}
-        >
+        <span className={styles.dropdownArrow} onClick={() => setShowDeptDropdown(!showDeptDropdown)}>
           ▼
         </span>
         {showDeptDropdown && filteredDepartments.length > 0 && (
-          <div style={styles.dropdown}>
+          <div className={styles.dropdown}>
             {filteredDepartments.map((dept) => (
               <div
                 key={dept.id}
-                style={{
-                  ...styles.dropdownItem,
-                  backgroundColor: registrationData.department === dept.name ? "#F5F5F5" : "#FFFFFF",
-                }}
+                className={`${styles.dropdownItem} ${registrationData.department === dept.name ? styles.dropdownItemSelected : ""}`}
                 onClick={() => {
                   setRegistrationData((prev) => ({ ...prev, department: dept.name }))
                   setSearchDept(dept.name)
                   setShowDeptDropdown(false)
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F5F5F5"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    registrationData.department === dept.name ? "#F5F5F5" : "#FFFFFF"
                 }}
               >
                 {dept.name}
@@ -362,7 +335,7 @@ function Login({ onLogin, onNavigate }) {
   )
 
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
       <style>
         {`
           input::placeholder {
@@ -372,33 +345,23 @@ function Login({ onLogin, onNavigate }) {
           input:focus {
             outline: none;
           }
-          
-          input:invalid {
-            border-color: #EE6B0C;
-          }
         `}
       </style>
 
       {/* Логотип над блоком авторизации */}
-      <div style={styles.logoContainer}>
-        <img src={logo || "/placeholder.svg"} alt="ИТ-Элемент29 Logo" style={styles.logo} />
+      <div className={styles.logoContainer}>
+        <img src={logo || "/placeholder.svg"} alt="ИТ-Элемент29 Logo" className={styles.logo} />
       </div>
 
       {/* Блок авторизации */}
-      <div style={styles.authBox}>
-        <h2 style={styles.title}>{isRegistration ? "Регистрация" : "Вход в систему"}</h2>
+      <div className={styles.authBox}>
+        <h2 className={styles.title}>{isRegistration ? "Регистрация" : "Вход в систему"}</h2>
 
-        <div style={styles.formContainer}>
+        <div className={styles.formContainer}>
           {!isRegistration ? (
-            <form onSubmit={handleLoginSubmit} style={styles.form}>
-              <div
-                style={{
-                  ...styles.inputGroup,
-                  position: "relative",
-                  marginBottom: loginError ? "20px" : "0",
-                }}
-              >
-                <label htmlFor="personnel_number" style={styles.label}>
+            <form onSubmit={handleLoginSubmit} className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="personnel_number" className={styles.label}>
                   Табельный номер
                 </label>
                 <input
@@ -408,115 +371,66 @@ function Login({ onLogin, onNavigate }) {
                   value={loginData.personnel_number}
                   onChange={handleLoginChange}
                   placeholder="Введите табельный номер"
-                  style={{
-                    ...styles.input,
-                    boxShadow: loginError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
-                    border: loginError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
-                  }}
+                  className={`${styles.input} ${loginError ? styles.inputError : ""}`}
                   required
                 />
               </div>
 
-              <div
-                style={{
-                  ...styles.inputGroup,
-                  position: "relative",
-                  marginBottom: loginError ? "20px" : "0",
-                }}
-              >
-                <label htmlFor="password" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="password" className={styles.label}>
                   Пароль
                 </label>
-                <div style={{ position: "relative" }}>
+                <div className={styles.passwordContainer}>
                   <input
-                    type={showPassword ? "text" : "password"} // Переключаем тип поля
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     value={loginData.password}
                     onChange={handleLoginChange}
                     placeholder="Введите ваш пароль"
-                    style={{
-                      ...styles.input,
-                      boxShadow: loginError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
-                      border: loginError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
-                      paddingRight: "40px", // Добавляем отступ для иконки глаза
-                    }}
+                    className={`${styles.input} ${loginError ? styles.inputError : ""}`}
                     required
                   />
-                  <span
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      cursor: "pointer",
-                      color: "#13454B",
-                    }}
-                    onClick={togglePasswordVisibility}
-                  >
-                    {showPassword ? "👁️" : "👁️‍🗨️"} {/* Иконка глаза */}
+                  <span className={styles.passwordIcon} onClick={togglePasswordVisibility}>
+                    <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
                   </span>
                 </div>
-                {loginError && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "-20px",
-                      left: 0,
-                      color: "#EE6B0C",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {loginError}
-                  </div>
-                )}
+                {loginError && <div className={styles.errorMessage}>{loginError}</div>}
               </div>
 
-              <div style={styles.checkboxGroup}>
+              <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
                   id="rememberMe"
                   name="rememberMe"
                   checked={loginData.rememberMe}
                   onChange={handleLoginChange}
-                  style={styles.checkbox}
+                  className={styles.checkbox}
                 />
-                <label htmlFor="rememberMe" style={styles.checkboxLabel}>
+                <label htmlFor="rememberMe" className={styles.checkboxLabel}>
                   Запомнить меня
                 </label>
               </div>
 
-              <button type="submit" style={styles.button} onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
-                Войти{" "}
+              <button type="submit" className={styles.button}>
+                Войти
               </button>
 
-              <p style={styles.switchText}>
+              <p className={styles.switchText}>
                 Нет аккаунта?{" "}
-                <span style={styles.switchLink} onClick={toggleRegistration}>
+                <span className={styles.switchLink} onClick={toggleRegistration}>
                   Регистрация
                 </span>
               </p>
             </form>
           ) : (
-            <form onSubmit={handleRegistrationSubmit} style={styles.form}>
+            <form onSubmit={handleRegistrationSubmit} className={styles.form}>
               {renderOrganizationField()}
 
               {renderDepartmentField()}
 
-              <div
-                style={{
-                  ...styles.inputGroup,
-                  position: "relative",
-                  marginBottom: personnelNumberError ? "20px" : "0", // Добавляем отступ если есть ошибка
-                }}
-              >
-                <label
-                  htmlFor="personnel_number"
-                  style={{
-                    ...styles.label,
-                    marginBottom: "8px", // Увеличиваем отступ от label до input
-                  }}
-                >
+              <div className={styles.inputGroup}>
+                <label htmlFor="personnel_number" className={styles.label}>
                   Табельный номер
                 </label>
                 <input
@@ -526,30 +440,14 @@ function Login({ onLogin, onNavigate }) {
                   value={registrationData.personnel_number}
                   onChange={handleRegistrationChange}
                   placeholder="Например: 0000-00001"
-                  style={{
-                    ...styles.input,
-                    boxShadow: personnelNumberError ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
-                    border: personnelNumberError ? "1px solid #EE6B0C" : "1px solid #CCCCCC",
-                  }}
+                  className={`${styles.input} ${personnelNumberError ? styles.inputError : ""}`}
                   required
                 />
-                {personnelNumberError && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "-20px", // Размещаем сообщение под полем ввода
-                      left: 0,
-                      color: "#EE6B0C",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {personnelNumberError}
-                  </div>
-                )}
+                {personnelNumberError && <div className={styles.errorMessage}>{personnelNumberError}</div>}
               </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="fullName" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="fullName" className={styles.label}>
                   ФИО
                 </label>
                 <input
@@ -559,47 +457,34 @@ function Login({ onLogin, onNavigate }) {
                   value={registrationData.fullName}
                   onChange={handleRegistrationChange}
                   placeholder="Введите ваше ФИО"
-                  style={styles.input}
+                  className={styles.input}
                   required
                 />
               </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="regPassword" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="regPassword" className={styles.label}>
                   Пароль
                 </label>
-                <div style={{ position: "relative" }}>
+                <div className={styles.passwordContainer}>
                   <input
-                    type={showPassword ? "text" : "password"} // Переключаем тип поля
+                    type={showPassword ? "text" : "password"}
                     id="regPassword"
                     name="password"
                     value={registrationData.password}
                     onChange={handleRegistrationChange}
                     placeholder="Создайте пароль"
-                    style={{
-                      ...styles.input,
-                      paddingRight: "40px", // Добавляем отступ для иконки глаза
-                    }}
+                    className={styles.input}
                     required
                   />
-                  <span
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      cursor: "pointer",
-                      color: "#13454B",
-                    }}
-                    onClick={togglePasswordVisibility}
-                  >
-                    {showPassword ? "👁️" : "👁️‍🗨️"} {/* Иконка глаза */}
+                  <span className={styles.passwordIcon} onClick={togglePasswordVisibility}>
+                    <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
                   </span>
                 </div>
               </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="position" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="position" className={styles.label}>
                   Должность
                 </label>
                 <input
@@ -609,13 +494,13 @@ function Login({ onLogin, onNavigate }) {
                   value={registrationData.position}
                   onChange={handleRegistrationChange}
                   placeholder="Введите вашу должность"
-                  style={styles.input}
+                  className={styles.input}
                   required
                 />
               </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="work_phone" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="work_phone" className={styles.label}>
                   Рабочий телефон
                 </label>
                 <input
@@ -625,13 +510,13 @@ function Login({ onLogin, onNavigate }) {
                   value={registrationData.work_phone}
                   onChange={handlePhoneChange}
                   placeholder="+7 (343) XXX-XX-XX"
-                  style={styles.input}
+                  className={styles.input}
                   required
                 />
               </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="birth_date" style={styles.label}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="birth_date" className={styles.label}>
                   Дата рождения
                 </label>
                 <input
@@ -640,31 +525,20 @@ function Login({ onLogin, onNavigate }) {
                   name="birth_date"
                   value={registrationData.birth_date}
                   onChange={handleRegistrationChange}
-                  style={styles.input}
+                  className={styles.input}
                   required
                 />
               </div>
 
-              <button type="submit" style={styles.button} onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
+              <button type="submit" className={styles.button}>
                 Зарегистрироваться
               </button>
 
-              {registrationError && (
-                <div
-                  style={{
-                    color: "#EE6B0C",
-                    fontSize: "12px",
-                    textAlign: "center",
-                    marginTop: "10px",
-                  }}
-                >
-                  {registrationError}
-                </div>
-              )}
+              {registrationError && <div className={styles.registrationError}>{registrationError}</div>}
 
-              <p style={styles.switchText}>
+              <p className={styles.switchText}>
                 Уже есть аккаунт?{" "}
-                <span style={styles.switchLink} onClick={toggleRegistration}>
+                <span className={styles.switchLink} onClick={toggleRegistration}>
                   Войти
                 </span>
               </p>
@@ -674,140 +548,6 @@ function Login({ onLogin, onNavigate }) {
       </div>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    backgroundColor: "#FFFFFF",
-    fontFamily: "'Manrope', Arial, sans-serif",
-    padding: "20px",
-  },
-  logoContainer: {
-    marginBottom: "30px",
-    display: "flex",
-    justifyContent: "center",
-  },
-  logo: {
-    height: "80px",
-    width: "auto",
-  },
-  authBox: {
-    width: "500px",
-    backgroundColor: "#F5F5F5", // Светло-серый фон
-    borderRadius: "10px",
-    padding: "30px",
-    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-    position: "relative", // Делаем блок статическим
-    maxHeight: "80vh", // Ограничиваем высоту блока
-  },
-  formContainer: {
-    maxHeight: "calc(80vh - 100px)", // Высота с учетом заголовка и отступов
-    overflowY: "auto", // Добавляем прокрутку
-    paddingRight: "10px", // Отступ для полосы прокрутки
-  },
-  title: {
-    color: "#000000", // Черный цвет текста
-    textAlign: "center",
-    marginBottom: "30px",
-    fontSize: "24px",
-    fontWeight: 600,
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  inputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-  },
-  label: {
-    color: "#000000", // Черный цвет текста
-    fontSize: "14px",
-    fontWeight: 500,
-  },
-  input: {
-    padding: "12px 15px",
-    borderRadius: "8px",
-    border: "1px solid #CCCCCC",
-    backgroundColor: "#FFFFFF",
-    fontSize: "16px",
-    color: "#000000", // Черный цвет текста
-    transition: "border-color 0.2s ease",
-    width: "100%",
-  },
-  checkboxGroup: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  checkbox: {
-    accentColor: "#EE6B0C", // Оранжевый цвет для чекбокса
-    width: "16px",
-    height: "16px",
-    cursor: "pointer",
-  },
-  checkboxLabel: {
-    color: "#000000", // Черный цвет текста
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-  button: {
-    padding: "12px 15px",
-    backgroundColor: "#FFFFFF", // Белый фон
-    color: "#EE6B0C", // Оранжевый текст
-    border: "1px solid #EE6B0C",
-    borderRadius: "8px",
-    fontSize: "16px",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "background-color 0.3s, color 0.3s",
-  },
-  switchText: {
-    textAlign: "center",
-    fontSize: "14px",
-    marginTop: "10px",
-    color: "#000000", // Черный цвет текста
-  },
-  switchLink: {
-    color: "#EE6B0C", // Оранжевый цвет для ссылки
-    cursor: "pointer",
-    textDecoration: "underline",
-  },
-  dropdownContainer: {
-    position: "relative",
-    width: "100%",
-    className: "dropdown-container",
-  },
-  dropdown: {
-    position: "absolute",
-    top: "calc(100% + 5px)",
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    border: "1px solid #CCCCCC",
-    borderRadius: "8px",
-    maxHeight: "200px",
-    overflowY: "auto",
-    zIndex: 1000,
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  dropdownItem: {
-    padding: "10px 15px",
-    cursor: "pointer",
-    color: "#000000", // Черный цвет текста
-    fontSize: "14px",
-    transition: "background-color 0.2s",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
 }
 
 export default Login

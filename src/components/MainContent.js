@@ -15,15 +15,16 @@ import {
   faCamera,
   faLink,
 } from "@fortawesome/free-solid-svg-icons"
+import styles from "../styles/MainContent.module.css"
 
 // Компонент Comment
 function Comment({ comment }) {
   return (
-    <div style={styles.comment}>
-      <img src={comment.avatar || "/placeholder.svg"} alt={comment.author} style={styles.avatar} />
-      <div style={styles.commentContent}>
-        <strong style={styles.userName}>{comment.author}</strong>
-        <p style={styles.commentText}>{comment.text}</p>
+    <div className={styles.comment}>
+      <img src={comment.avatar || "/placeholder.svg"} alt={comment.author} className={styles.avatar} />
+      <div className={styles.commentContent}>
+        <strong className={styles.userName}>{comment.author}</strong>
+        <p className={styles.commentText}>{comment.text}</p>
       </div>
     </div>
   )
@@ -70,63 +71,58 @@ function NewsItem({ news, onLike, onAddComment, onEdit, onDelete, onPin, isAdmin
   }
 
   return (
-    <div
-      style={{
-        ...styles.newsItem,
-        ...(news.isPinned ? styles.pinnedNewsItem : {}),
-      }}
-    >
+    <div className={`${styles.newsItem} ${news.isPinned ? styles.pinnedNewsItem : ""}`}>
       {news.isPinned && (
-        <div style={styles.pinnedIndicator}>
-          <FontAwesomeIcon icon={faThumbtack} style={styles.pinnedIcon} />
+        <div className={styles.pinnedIndicator}>
+          <FontAwesomeIcon icon={faThumbtack} className={styles.pinnedIcon} />
           <span>Закрепленная новость</span>
         </div>
       )}
 
-      <div style={styles.authorInfo}>
-        <div style={styles.authorInfoContainer}>
-          <div style={styles.authorAvatar}>
+      <div className={styles.authorInfo}>
+        <div className={styles.authorInfoContainer}>
+          <div className={styles.authorAvatar}>
             <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
           </div>
-          <div style={styles.authorDetails}>
-            <strong style={styles.authorName}>{news.isAdminPost ? "Администрация" : news.author_name}</strong>
-            <span style={styles.newsTime}>{formatDateTime(news.publication_time)}</span>
+          <div className={styles.authorDetails}>
+            <strong className={styles.authorName}>{news.isAdminPost ? "Администрация" : news.author_name}</strong>
+            <span className={styles.newsTime}>{formatDateTime(news.publication_time)}</span>
           </div>
         </div>
 
         {isAdmin && (
-          <div style={styles.adminActions}>
+          <div className={styles.adminActions}>
             <button
               onClick={() => onPin(news.id, !news.isPinned)}
-              style={styles.adminActionButton}
+              className={styles.adminActionButton}
               title={news.isPinned ? "Открепить новость" : "Закрепить новость"}
             >
               <FontAwesomeIcon
                 icon={news.isPinned ? faTimes : faThumbtack}
+                className={styles.adminActionIcon}
                 style={{
-                  ...styles.adminActionIcon,
                   color: news.isPinned ? "#EE6B0C" : "#13454B",
                 }}
               />
             </button>
-            <button onClick={() => onEdit(news)} style={styles.adminActionButton} title="Редактировать новость">
-              <FontAwesomeIcon icon={faEdit} style={styles.adminActionIcon} />
+            <button onClick={() => onEdit(news)} className={styles.adminActionButton} title="Редактировать новость">
+              <FontAwesomeIcon icon={faEdit} className={styles.adminActionIcon} />
             </button>
-            <button onClick={() => onDelete(news.id)} style={styles.adminActionButton} title="Удалить новость">
-              <FontAwesomeIcon icon={faTrash} style={styles.adminActionIcon} />
+            <button onClick={() => onDelete(news.id)} className={styles.adminActionButton} title="Удалить новость">
+              <FontAwesomeIcon icon={faTrash} className={styles.adminActionIcon} />
             </button>
           </div>
         )}
       </div>
 
-      <h3 style={styles.newsTitle}>{news.title}</h3>
-      <p style={styles.newsDescription}>{news.content}</p>
+      <h3 className={styles.newsTitle}>{news.title}</h3>
+      <p className={styles.newsDescription}>{news.content}</p>
 
       {news.image_data && news.image_type && (
         <img
           src={`data:${news.image_type};base64,${news.image_data}`}
           alt={news.title}
-          style={styles.newsImage}
+          className={styles.newsImage}
           onError={(e) => {
             console.error("Image loading error:", e)
             e.target.style.display = "none"
@@ -134,10 +130,10 @@ function NewsItem({ news, onLike, onAddComment, onEdit, onDelete, onPin, isAdmin
         />
       )}
 
-      <div style={styles.newsFooter}>
+      <div className={styles.newsFooter}>
         <button
           onClick={() => onLike(news.id)}
-          style={styles.likeButton}
+          className={styles.likeButton}
           aria-label={news.liked ? "Убрать лайк" : "Поставить лайк"}
         >
           <svg
@@ -150,26 +146,26 @@ function NewsItem({ news, onLike, onAddComment, onEdit, onDelete, onPin, isAdmin
           >
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
           </svg>
-          <span style={styles.likeCount}>{news.likes_count}</span>
+          <span className={styles.likeCount}>{news.likes_count}</span>
         </button>
       </div>
 
-      <div style={styles.commentsSection}>
-        <h4 style={styles.commentsHeader}>Комментарии ({news.comments?.length || 0})</h4>
+      <div className={styles.commentsSection}>
+        <h4 className={styles.commentsHeader}>Комментарии ({news.comments?.length || 0})</h4>
 
         {comments.map((comment, index) => (
           <Comment key={index} comment={comment} />
         ))}
 
-        <form onSubmit={handleSubmitComment} style={styles.commentForm}>
+        <form onSubmit={handleSubmitComment} className={styles.commentForm}>
           <input
             type="text"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Написать комментарий..."
-            style={styles.commentInput}
+            className={styles.commentInput}
           />
-          <button type="submit" style={styles.commentSubmit}>
+          <button type="submit" className={styles.commentSubmit}>
             Отправить
           </button>
         </form>
@@ -306,17 +302,17 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
   }
 
   return (
-    <div style={styles.addNewsFormContainer}>
-      <form onSubmit={handleSubmit} style={styles.addNewsForm}>
+    <div className={styles.addNewsFormContainer}>
+      <form onSubmit={handleSubmit} className={styles.addNewsForm}>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onClick={handleInputClick}
           placeholder={isExpanded ? "Заголовок новости" : "Что у вас нового?"}
+          className={styles.addNewsInput}
           style={{
-            ...styles.addNewsInput,
-            borderColor: validationError && !title.trim() ? colors.secondary : "#e0e0e0",
+            borderColor: validationError && !title.trim() ? "#EE6B0C" : "#e0e0e0",
           }}
         />
 
@@ -326,20 +322,20 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Текст новости..."
+              className={styles.addNewsTextarea}
               style={{
-                ...styles.addNewsTextarea,
-                borderColor: validationError && !description.trim() ? colors.secondary : "#e0e0e0",
+                borderColor: validationError && !description.trim() ? "#EE6B0C" : "#e0e0e0",
               }}
               rows={3}
             />
 
             {validationError && (!title.trim() || !description.trim()) && (
-              <p style={styles.validationError}>Не все поля заполнены</p>
+              <p className={styles.validationError}>Не все поля заполнены</p>
             )}
 
-            <div style={styles.addNewsActions}>
-              <div style={styles.attachmentContainer}>
-                <button onClick={handleAttachClick} style={styles.attachButton} type="button">
+            <div className={styles.addNewsActions}>
+              <div className={styles.attachmentContainer}>
+                <button onClick={handleAttachClick} className={styles.attachButton} type="button">
                   <svg
                     width="16"
                     height="16"
@@ -352,30 +348,30 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
                   >
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                   </svg>
-                  <span style={styles.attachText}>Прикрепить файл</span>
+                  <span className={styles.attachText}>Прикрепить файл</span>
                 </button>
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleImageChange}
-                  style={styles.fileInput}
+                  className={styles.fileInput}
                   accept="image/*"
                 />
               </div>
 
-              <div style={styles.formButtons}>
-                <button type="button" onClick={handleCancel} style={styles.cancelButton}>
+              <div className={styles.formButtons}>
+                <button type="button" onClick={handleCancel} className={styles.cancelButton}>
                   Отмена
                 </button>
-                <button type="submit" style={styles.publishButton}>
+                <button type="submit" className={styles.publishButton}>
                   {editingNews ? "Сохранить" : "Опубликовать"}
                 </button>
               </div>
             </div>
 
             {imagePreview && (
-              <div style={styles.imagePreviewContainer}>
-                <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" style={styles.imagePreview} />
+              <div className={styles.imagePreviewContainer}>
+                <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" className={styles.imagePreview} />
                 <button
                   type="button"
                   onClick={() => {
@@ -383,7 +379,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
                     setImagePreview(null)
                     if (fileInputRef.current) fileInputRef.current.value = ""
                   }}
-                  style={styles.removeImageButton}
+                  className={styles.removeImageButton}
                 >
                   ✕
                 </button>
@@ -530,39 +526,39 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
   }
 
   return isOpen ? (
-    <div style={styles.modalOverlay}>
-      <div style={styles.portalModal} ref={modalRef}>
-        <div style={styles.portalModalHeader}>
-          <h2 style={styles.portalModalTitle}>{isNewPortal ? "Добавление портала" : "Редактирование портала"}</h2>
-          <button style={styles.closeButton} onClick={handleCloseModal}>
+    <div className={styles.modalOverlay}>
+      <div className={styles.portalModal} ref={modalRef}>
+        <div className={styles.portalModalHeader}>
+          <h2 className={styles.portalModalTitle}>{isNewPortal ? "Добавление портала" : "Редактирование портала"}</h2>
+          <button className={styles.closeButton} onClick={handleCloseModal}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
 
-        <div style={styles.portalModalContent}>
+        <div className={styles.portalModalContent}>
           {/* Блок с иконкой */}
-          <div style={styles.portalIconEditContainer}>
+          <div className={styles.portalIconEditContainer}>
             <div
-              style={styles.portalIconEdit}
+              className={styles.portalIconEdit}
               onMouseEnter={() => setShowIconUpload(true)}
               onMouseLeave={() => setShowIconUpload(false)}
               onClick={() => fileInputRef.current.click()}
             >
               {iconPreview ? (
-                <img src={iconPreview || "/placeholder.svg"} alt="Иконка портала" style={styles.portalIconImage} />
+                <img src={iconPreview || "/placeholder.svg"} alt="Иконка портала" className={styles.portalIconImage} />
               ) : icon ? (
-                <span style={styles.portalIconEmoji}>{icon}</span>
+                <span className={styles.portalIconEmoji}>{icon}</span>
               ) : (
-                <span style={styles.portalIconPlaceholder}>🔗</span>
+                <span className={styles.portalIconPlaceholder}>🔗</span>
               )}
 
               <div
+                className={styles.photoUploadOverlay}
                 style={{
-                  ...styles.photoUploadOverlay,
                   opacity: showIconUpload ? 1 : 0,
                 }}
               >
-                <FontAwesomeIcon icon={faCamera} style={styles.cameraIcon} />
+                <FontAwesomeIcon icon={faCamera} className={styles.cameraIcon} />
               </div>
             </div>
             <input
@@ -573,9 +569,9 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
               accept="image/*"
             />
             {!iconPreview && (
-              <div style={styles.emojiSelector}>
-                <p style={styles.emojiLabel}>Или выберите эмодзи:</p>
-                <div style={styles.emojiGrid}>
+              <div className={styles.emojiSelector}>
+                <p className={styles.emojiLabel}>Или выберите эмодзи:</p>
+                <div className={styles.emojiGrid}>
                   {["🔗", "📚", "👥", "🖥️", "📄", "🎓", "📊", "📱", "🔍", "📝"].map((emoji) => (
                     <button
                       key={emoji}
@@ -586,10 +582,7 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
                         setIconFile(null)
                         setHasUnsavedChanges(true)
                       }}
-                      style={{
-                        ...styles.emojiButton,
-                        backgroundColor: icon === emoji ? "#f0f0f0" : "transparent",
-                      }}
+                      className={`${styles.emojiButton} ${icon === emoji ? styles.emojiButtonSelected : ""}`}
                     >
                       {emoji}
                     </button>
@@ -600,42 +593,42 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
           </div>
 
           {/* Поля формы */}
-          <div style={styles.portalFormFields}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Название портала*</label>
+          <div className={styles.portalFormFields}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Название портала*</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => handleFieldChange(setName, e.target.value, "name")}
+                className={styles.formInput}
                 style={{
-                  ...styles.formInput,
-                  borderColor: validationError && !name.trim() ? colors.secondary : "#e0e0e0",
+                  borderColor: validationError && !name.trim() ? "#EE6B0C" : "#e0e0e0",
                 }}
                 placeholder="Введите название портала"
               />
-              {validationError && !name.trim() && <p style={styles.fieldError}>Название портала обязательно</p>}
+              {validationError && !name.trim() && <p className={styles.fieldError}>Название портала обязательно</p>}
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Описание</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Описание</label>
               <textarea
                 value={description}
                 onChange={(e) => handleFieldChange(setDescription, e.target.value, "description")}
-                style={styles.formTextarea}
+                className={styles.formTextarea}
                 placeholder="Введите описание портала"
                 rows={3}
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Ссылка</label>
-              <div style={styles.urlInputContainer}>
-                <FontAwesomeIcon icon={faLink} style={styles.urlIcon} />
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Ссылка</label>
+              <div className={styles.urlInputContainer}>
+                <FontAwesomeIcon icon={faLink} className={styles.urlIcon} />
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => handleFieldChange(setUrl, e.target.value, "url")}
-                  style={styles.urlInput}
+                  className={styles.urlInput}
                   placeholder="https://example.com"
                 />
               </div>
@@ -643,28 +636,28 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
           </div>
 
           {/* Кнопки действий */}
-          <div style={styles.portalModalActions}>
+          <div className={styles.portalModalActions}>
             {showExitWarning ? (
               <>
-                <div style={styles.warningContainer}>
-                  <span style={styles.warningText}>У вас есть несохраненные изменения</span>
+                <div className={styles.warningContainer}>
+                  <span className={styles.warningText}>У вас есть несохраненные изменения</span>
                 </div>
-                <div style={styles.actionButtons}>
-                  <button style={styles.cancelButton} onClick={confirmExit}>
+                <div className={styles.actionButtons}>
+                  <button className={styles.cancelButton} onClick={confirmExit}>
                     Выйти без сохранения
                   </button>
-                  <button style={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
+                  <button className={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
                     Вернуться к редактированию
                   </button>
                 </div>
               </>
             ) : (
-              <div style={styles.actionButtons}>
-                <button style={styles.cancelButton} onClick={handleCloseModal}>
+              <div className={styles.actionButtons}>
+                <button className={styles.cancelButton} onClick={handleCloseModal}>
                   Отмена
                 </button>
                 <button
-                  style={styles.saveButton}
+                  className={styles.saveButton}
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = "#EE6B0C"
                     e.currentTarget.style.color = "#FFFFFF"
@@ -702,15 +695,15 @@ function Event({ event }) {
   }
 
   return (
-    <div style={styles.eventItem}>
-      <div style={styles.eventHeader} onClick={toggleExpand}>
-        <div style={styles.eventInfo}>
-          <h3 style={styles.eventTitle}>{event.title}</h3>
-          <p style={styles.eventShortDescription}>{event.shortDescription}</p>
+    <div className={styles.eventItem}>
+      <div className={styles.eventHeader} onClick={toggleExpand}>
+        <div className={styles.eventInfo}>
+          <h3 className={styles.eventTitle}>{event.title}</h3>
+          <p className={styles.eventShortDescription}>{event.shortDescription}</p>
         </div>
-        <div style={styles.eventActions}>
+        <div className={styles.eventActions}>
           <button
-            style={isRegistered ? styles.registeredButton : styles.registerButton}
+            className={isRegistered ? styles.registeredButton : styles.registerButton}
             onClick={handleRegister}
             onMouseOver={(e) => {
               if (!isRegistered) {
@@ -729,8 +722,8 @@ function Event({ event }) {
           </button>
           <FontAwesomeIcon
             icon={faChevronRight}
+            className={styles.expandIcon}
             style={{
-              ...styles.expandIcon,
               transform: isExpanded ? "rotate(90deg)" : "none",
               transition: "transform 0.3s ease",
             }}
@@ -739,45 +732,49 @@ function Event({ event }) {
       </div>
 
       {isExpanded && (
-        <div style={styles.eventDetails}>
-          <p style={styles.eventFullDescription}>{event.fullDescription}</p>
+        <div className={styles.eventDetails}>
+          <p className={styles.eventFullDescription}>{event.fullDescription}</p>
 
-          <div style={styles.eventMetadata}>
-            <div style={styles.eventMetaItem}>
-              <span style={styles.eventMetaLabel}>Свободных мест:</span>
-              <span style={styles.eventMetaValue}>
+          <div className={styles.eventMetadata}>
+            <div className={styles.eventMetaItem}>
+              <span className={styles.eventMetaLabel}>Свободных мест:</span>
+              <span className={styles.eventMetaValue}>
                 {event.availableSeats} из {event.totalSeats}
               </span>
             </div>
-            <div style={styles.eventMetaItem}>
-              <span style={styles.eventMetaLabel}>Дата:</span>
-              <span style={styles.eventMetaValue}>{event.date}</span>
+            <div className={styles.eventMetaItem}>
+              <span className={styles.eventMetaLabel}>Дата:</span>
+              <span className={styles.eventMetaValue}>{event.date}</span>
             </div>
-            <div style={styles.eventMetaItem}>
-              <span style={styles.eventMetaLabel}>Время:</span>
-              <span style={styles.eventMetaValue}>{event.time}</span>
+            <div className={styles.eventMetaItem}>
+              <span className={styles.eventMetaLabel}>Время:</span>
+              <span className={styles.eventMetaValue}>{event.time}</span>
             </div>
-            <div style={styles.eventMetaItem}>
-              <span style={styles.eventMetaLabel}>Место:</span>
-              <span style={styles.eventMetaValue}>{event.location}</span>
+            <div className={styles.eventMetaItem}>
+              <span className={styles.eventMetaLabel}>Место:</span>
+              <span className={styles.eventMetaValue}>{event.location}</span>
             </div>
           </div>
 
-          <div style={styles.speakersSection}>
-            <h4 style={styles.speakersTitle}>Спикеры:</h4>
-            <div style={styles.speakersList}>
+          <div className={styles.speakersSection}>
+            <h4 className={styles.speakersTitle}>Спикеры:</h4>
+            <div className={styles.speakersList}>
               {event.speakers.map((speaker) => (
-                <div key={speaker.id} style={styles.speakerItem}>
-                  <div style={styles.speakerAvatar}>
+                <div key={speaker.id} className={styles.speakerItem}>
+                  <div className={styles.speakerAvatar}>
                     {speaker.photo ? (
-                      <img src={speaker.photo || "/placeholder.svg"} alt={speaker.name} style={styles.speakerPhoto} />
+                      <img
+                        src={speaker.photo || "/placeholder.svg"}
+                        alt={speaker.name}
+                        className={styles.speakerPhoto}
+                      />
                     ) : (
                       <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
                     )}
                   </div>
-                  <div style={styles.speakerInfo}>
-                    <p style={styles.speakerName}>{speaker.name}</p>
-                    <p style={styles.speakerPosition}>{speaker.position}</p>
+                  <div className={styles.speakerInfo}>
+                    <p className={styles.speakerName}>{speaker.name}</p>
+                    <p className={styles.speakerPosition}>{speaker.position}</p>
                   </div>
                 </div>
               ))}
@@ -793,6 +790,7 @@ function Event({ event }) {
 function MainContent() {
   const [news, setNews] = useState([])
   const { currentUser, isAdmin } = useUser() // Получаем информацию о роли пользователя
+
   const [selectedBirthday, setSelectedBirthday] = useState(null)
   const [expandedBirthday, setExpandedBirthday] = useState(null)
   const [showCopyNotification, setShowCopyNotification] = useState(false)
@@ -1090,7 +1088,7 @@ function MainContent() {
         },
         {
           id: 2,
-          name: "Елена Сидорова",
+          name: "Елена ��идорова",
           position: "Специалист по защите данных",
           photo: null,
         },
@@ -1179,19 +1177,19 @@ function MainContent() {
 
   // Добавим CSS для подчеркивания имени при наведении
   return (
-    <main style={styles.main}>
+    <main className={styles.main}>
       <style>
         {`
-      .clickable-name {
-        cursor: pointer;
-        transition: color 0.3s ease;
-      }
-    `}
+        .clickable-name {
+          cursor: pointer;
+          transition: color 0.3s ease;
+        }
+      `}
       </style>
-      <div style={styles.contentWrapper}>
-        <div style={styles.leftColumn}>
-          <div style={{ ...styles.block, ...styles.newsBlock }}>
-            <h2 style={styles.heading}>Новости и статьи</h2>
+      <div className={styles.contentWrapper}>
+        <div className={styles.leftColumn}>
+          <div className={styles.block}>
+            <h2 className={styles.heading}>Новости и статьи</h2>
             {isAdmin && (
               <AddNewsForm
                 onAddNews={handleAddNews}
@@ -1200,17 +1198,17 @@ function MainContent() {
                 isAdmin={isAdmin}
               />
             )}
-            <div style={styles.newsList}>
+            <div className={styles.newsList}>
               {news.map((item) => (
                 <div key={item.id}>
                   {showDeleteConfirm === item.id && (
-                    <div style={styles.deleteConfirmation}>
+                    <div className={styles.deleteConfirmation}>
                       <p>Вы уверены, что хотите удалить эту новость?</p>
-                      <div style={styles.deleteConfirmButtons}>
-                        <button onClick={() => handleDeleteNews(item.id)} style={styles.confirmDeleteButton}>
+                      <div className={styles.deleteConfirmButtons}>
+                        <button onClick={() => handleDeleteNews(item.id)} className={styles.confirmDeleteButton}>
                           Удалить
                         </button>
-                        <button onClick={() => setShowDeleteConfirm(null)} style={styles.cancelDeleteButton}>
+                        <button onClick={() => setShowDeleteConfirm(null)} className={styles.cancelDeleteButton}>
                           Отмена
                         </button>
                       </div>
@@ -1232,24 +1230,24 @@ function MainContent() {
           </div>
         </div>
 
-        <div style={styles.rightColumn}>
-          <div style={styles.rightColumnFixed}>
-            <div style={{ ...styles.block, ...styles.portalBlock }}>
-              <div style={styles.portalHeader}>
-                <h2 style={styles.heading}>Внутренние порталы</h2>
+        <div className={styles.rightColumn}>
+          <div className={styles.rightColumnFixed}>
+            <div className={styles.block}>
+              <div className={styles.portalHeader}>
+                <h2 className={styles.heading}>Внутренние порталы</h2>
                 {isAdmin && (
-                  <div style={styles.portalAdminControls}>
+                  <div className={styles.portalAdminControls}>
                     <button
                       onClick={() => setShowPortalMenu(!showPortalMenu)}
-                      style={styles.editPortalsButton}
+                      className={styles.editPortalsButton}
                       title="Управление порталами"
                     >
-                      <FontAwesomeIcon icon={faEdit} style={styles.editPortalsIcon} />
+                      <FontAwesomeIcon icon={faEdit} className={styles.editPortalsIcon} />
                     </button>
                     {showPortalMenu && (
-                      <div style={styles.portalMenu}>
+                      <div className={styles.portalMenu}>
                         <button
-                          style={styles.portalMenuItem}
+                          className={styles.portalMenuItem}
                           onClick={() => {
                             setEditMode(true)
                             setShowPortalMenu(false)
@@ -1258,7 +1256,7 @@ function MainContent() {
                           Редактировать существующий портал
                         </button>
                         <button
-                          style={styles.portalMenuItem}
+                          className={styles.portalMenuItem}
                           onClick={() => {
                             setEditingPortal({
                               id: Date.now(),
@@ -1280,21 +1278,18 @@ function MainContent() {
                 )}
               </div>
               {editMode && (
-                <div style={styles.editModeNotification}>
+                <div className={styles.editModeNotification}>
                   <span>Режим редактирования. Нажмите на портал для изменения.</span>
-                  <button style={styles.exitEditModeButton} onClick={() => setEditMode(false)}>
+                  <button className={styles.exitEditModeButton} onClick={() => setEditMode(false)}>
                     Выйти из режима редактирования
                   </button>
                 </div>
               )}
-              <div style={styles.portalGrid}>
+              <div className={styles.portalGrid}>
                 {portals.map((portal) => (
                   <div
                     key={portal.id}
-                    style={{
-                      ...styles.portalContainer,
-                      ...(editMode ? styles.portalContainerEditable : {}),
-                    }}
+                    className={`${styles.portalContainer} ${editMode ? styles.portalContainerEditable : ""}`}
                     onClick={() => {
                       if (editMode) {
                         setEditingPortal(portal)
@@ -1305,7 +1300,7 @@ function MainContent() {
                   >
                     <a
                       href={portal.url}
-                      style={styles.portalLink}
+                      className={styles.portalLink}
                       onClick={(e) => {
                         if (editMode) {
                           e.preventDefault()
@@ -1324,74 +1319,72 @@ function MainContent() {
                         }
                       }}
                     >
-                      <div style={styles.portalContent}>
-                        <div style={styles.portalIcon}>
+                      <div className={styles.portalContent}>
+                        <div className={styles.portalIcon}>
                           {portal.iconPreview ? (
                             <img
                               src={portal.iconPreview || "/placeholder.svg"}
                               alt={portal.name}
-                              style={styles.portalIconImg}
+                              className={styles.portalIconImg}
                             />
                           ) : (
-                            <span style={styles.portalIconText}>{portal.icon}</span>
+                            <span className={styles.portalIconText}>{portal.icon}</span>
                           )}
                         </div>
-                        <div style={styles.portalInfo}>
-                          <span className="portalName" style={styles.portalName}>
-                            {portal.name}
-                          </span>
-                          <p style={styles.portalDescription}>{portal.description}</p>
+                        <div className={styles.portalInfo}>
+                          <span className={`portalName ${styles.portalName}`}>{portal.name}</span>
+                          <p className={styles.portalDescription}>{portal.description}</p>
                         </div>
                       </div>
                     </a>
                     {editMode && (
-                      <div style={styles.editModeIndicator}>
-                        <FontAwesomeIcon icon={faEdit} style={styles.editModeIcon} />
+                      <div className={styles.editModeIndicator}>
+                        <FontAwesomeIcon icon={faEdit} className={styles.editModeIcon} />
                       </div>
                     )}
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{ ...styles.block, ...styles.eventsBlock }}>
-              <h2 style={styles.heading}>Мероприятия</h2>
-              <div style={styles.eventsList}>
+            <div className={styles.block}>
+              <h2 className={styles.heading}>Мероприятия</h2>
+              <div className={styles.eventsList}>
                 {events.map((event) => (
                   <div key={event.id}>
                     <Event key={event.id} event={event} />
                     {/* Добавляем серую разделительную полоску между мероприятиями */}
-                    {event.id !== events[events.length - 1].id && <div style={styles.eventDivider}></div>}
+                    {event.id !== events[events.length - 1].id && <div className={styles.eventDivider}></div>}
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{ ...styles.block, ...styles.birthdayBlock }}>
-              <h2 style={styles.heading}>Ближайшие дни рождения</h2>
-              <div style={styles.birthdayList}>
+            <div className={styles.block}>
+              <h2 className={styles.heading}>Ближайшие дни рождения</h2>
+              <div className={styles.birthdayList}>
                 {birthdays.map((person) => (
                   <div key={person.id}>
-                    <div style={styles.birthdayItem} onClick={() => toggleBirthdayDetails(person.id)}>
-                      <div style={styles.birthdayAvatar}>
+                    <div className={styles.birthdayItem} onClick={() => toggleBirthdayDetails(person.id)}>
+                      <div className={styles.birthdayAvatar}>
                         {person.photo ? (
                           <img
                             src={person.photo || "/placeholder.svg"}
                             alt={person.name}
-                            style={styles.birthdayPhoto}
+                            className={styles.birthdayPhoto}
                           />
                         ) : (
                           <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
                         )}
                       </div>
-                      <div style={styles.birthdayInfo}>
-                        <p style={styles.birthdayName}>
+                      <div className={styles.birthdayInfo}>
+                        <p className={styles.birthdayName}>
                           {person.name} - {person.date}
                         </p>
-                        <p style={styles.birthdayDepartment}>{person.department}</p>
+                        <p className={styles.birthdayDepartment}>{person.department}</p>
                       </div>
                       <FontAwesomeIcon
                         icon={faChevronRight}
+                        className={styles.expandIcon}
                         style={{
-                          ...styles.expandIcon,
                           transform: expandedBirthday === person.id ? "rotate(90deg)" : "none",
                           transition: "transform 0.3s ease",
                         }}
@@ -1400,38 +1393,40 @@ function MainContent() {
 
                     {/* Развернутая информация о сотруднике */}
                     {expandedBirthday === person.id && (
-                      <div style={styles.birthdayDetails}>
-                        <div style={styles.birthdayDetailsSection}>
-                          <h4 style={styles.birthdayDetailsTitle}>Основная информация</h4>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Табельный номер:</span>
-                            <span style={styles.birthdayDetailsValue}>{person.personnel_number || "Не указан"}</span>
+                      <div className={styles.birthdayDetails}>
+                        <div className={styles.birthdayDetailsSection}>
+                          <h4 className={styles.birthdayDetailsTitle}>Основная информация</h4>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Табельный номер:</span>
+                            <span className={styles.birthdayDetailsValue}>
+                              {person.personnel_number || "Не указан"}
+                            </span>
                           </div>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Дата рождения:</span>
-                            <span style={styles.birthdayDetailsValue}>{person.date}</span>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Дата рождения:</span>
+                            <span className={styles.birthdayDetailsValue}>{person.date}</span>
                           </div>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Местоположение:</span>
-                            <span style={styles.birthdayDetailsValue}>{person.location || "Не указано"}</span>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Местоположение:</span>
+                            <span className={styles.birthdayDetailsValue}>{person.location || "Не указано"}</span>
                           </div>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Организация:</span>
-                            <span style={styles.birthdayDetailsValue}>{person.organization || "Не указана"}</span>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Организация:</span>
+                            <span className={styles.birthdayDetailsValue}>{person.organization || "Не указана"}</span>
                           </div>
                         </div>
 
-                        <div style={styles.birthdayDetailsSection}>
-                          <h4 style={styles.birthdayDetailsTitle}>Контактная информация</h4>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Рабочий телефон:</span>
-                            <div style={styles.birthdayDetailsValueWithCopy}>
-                              <span style={styles.birthdayDetailsValue}>
+                        <div className={styles.birthdayDetailsSection}>
+                          <h4 className={styles.birthdayDetailsTitle}>Контактная информация</h4>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Рабочий телефон:</span>
+                            <div className={styles.birthdayDetailsValueWithCopy}>
+                              <span className={styles.birthdayDetailsValue}>
                                 {formatPhoneNumber(person.phone) || "Не указан"}
                               </span>
                               {person.phone && (
                                 <button
-                                  style={styles.copyButton}
+                                  className={styles.copyButton}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     copyToClipboardHandler(person.phone, "Телефон")
@@ -1442,13 +1437,13 @@ function MainContent() {
                               )}
                             </div>
                           </div>
-                          <div style={styles.birthdayDetailsRow}>
-                            <span style={styles.birthdayDetailsLabel}>Электронная почта:</span>
-                            <div style={styles.birthdayDetailsValueWithCopy}>
-                              <span style={styles.birthdayDetailsValue}>{person.email || "Не указана"}</span>
+                          <div className={styles.birthdayDetailsRow}>
+                            <span className={styles.birthdayDetailsLabel}>Электронная почта:</span>
+                            <div className={styles.birthdayDetailsValueWithCopy}>
+                              <span className={styles.birthdayDetailsValue}>{person.email || "Не указана"}</span>
                               {person.email && (
                                 <button
-                                  style={styles.copyButton}
+                                  className={styles.copyButton}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     copyToClipboardHandler(person.email, "Email")
@@ -1470,7 +1465,7 @@ function MainContent() {
         </div>
       </div>
       {/* Уведомление о копировании */}
-      {showCopyNotification && <div style={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
+      {showCopyNotification && <div className={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
 
       {/* Модальное окно редактирования портала */}
       <PortalEditModal
@@ -1488,1160 +1483,6 @@ function MainContent() {
       />
     </main>
   )
-}
-
-// Стили
-const colors = {
-  primary: "#13454B",
-  secondary: "#EE6B0C",
-  background: "#F5F5F5",
-  blockBackground: "#FFFFFF",
-  text: "#333",
-  lightText: "#B3B3B3",
-}
-
-const fonts = {
-  main: "'Manrope', Arial, sans-serif",
-  secondary: "'Arial', sans-serif",
-}
-
-const baseBlockStyles = {
-  backgroundColor: colors.blockBackground,
-  borderRadius: "8px",
-  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-  padding: "1.5rem",
-}
-
-const styles = {
-  main: {
-    minHeight: "calc(100vh - 72px)",
-    fontFamily: fonts.main,
-    backgroundColor: colors.background,
-    padding: "1rem",
-    // Удаляем overflowY: "auto", чтобы оставить только одну прокрутку на уровне body
-  },
-  contentWrapper: {
-    display: "flex",
-    width: "100%",
-    gap: "1rem",
-    alignItems: "flex-start", // Добавляем это свойство для выравнивания блоков по верхнему краю
-  },
-  leftColumn: {
-    flex: "0 0 60%",
-    padding: "1rem",
-    boxSizing: "border-box",
-  },
-  rightColumn: {
-    flex: "0 0 40%",
-    position: "relative",
-    boxSizing: "border-box",
-  },
-  rightColumnFixed: {
-    position: "sticky",
-    top: "1rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    paddingRight: "1rem",
-  },
-  block: {
-    ...baseBlockStyles,
-    marginBottom: "1rem",
-  },
-  heading: {
-    color: "#000000", // Изменено с colors.primary на черный
-    borderBottom: `2px solid ${colors.secondary}`,
-    fontFamily: fonts.main,
-    fontWeight: 600,
-    fontSize: "36px",
-    lineHeight: "45px",
-    letterSpacing: "0.5px",
-    padding: "15px 0 12px 0",
-    marginBottom: "20px",
-    width: "100%", // Добавляем это свойство для растягивания полоски на всю ширину
-  },
-  portalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    position: "relative",
-  },
-  editPortalsButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: colors.primary,
-    fontSize: "20px",
-    padding: "5px",
-    marginTop: "15px",
-  },
-  editPortalsIcon: {
-    fontSize: "20px",
-  },
-  portalMenu: {
-    position: "absolute",
-    top: "100%",
-    right: "0",
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
-    borderRadius: "4px",
-    zIndex: 10,
-    minWidth: "250px",
-  },
-  portalMenuItem: {
-    display: "block",
-    width: "100%",
-    textAlign: "left",
-    padding: "10px 15px",
-    border: "none",
-    backgroundColor: "transparent",
-    cursor: "pointer",
-    fontSize: "14px",
-    color: "#333",
-    transition: "background-color 0.2s",
-    "&:hover": {
-      backgroundColor: "#f5f5f5",
-    },
-  },
-  portalContainerEditable: {
-    cursor: "pointer",
-    backgroundColor: "#f9f9f9",
-    transition: "background-color 0.2s",
-    "&:hover": {
-      backgroundColor: "#f0f0f0",
-    },
-  },
-  editModeIndicator: {
-    padding: "0 10px",
-    color: colors.secondary,
-  },
-  editModeIcon: {
-    fontSize: "16px",
-  },
-  editModeNotification: {
-    backgroundColor: "#FFF8E1",
-    padding: "10px 15px",
-    borderRadius: "4px",
-    marginBottom: "15px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    fontSize: "14px",
-    color: "#856404",
-  },
-  exitEditModeButton: {
-    backgroundColor: "transparent",
-    border: "1px solid #856404",
-    color: "#856404",
-    padding: "5px 10px",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "12px",
-    "&:hover": {
-      backgroundColor: "#856404",
-      color: "#FFFFFF",
-    },
-  },
-  portalAdminControls: {
-    position: "relative",
-  },
-  addPortalButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: colors.secondary,
-    fontSize: "24px",
-    padding: "5px",
-    marginTop: "15px",
-  },
-  addPortalIcon: {
-    fontSize: "24px",
-  },
-  portalGrid: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  portalContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: "1px solid #e0e0e0",
-  },
-  portalLink: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    textDecoration: "none",
-    color: "#000000",
-    transition: "transform 0.2s",
-    fontFamily: "'Manrope', Arial, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    padding: "0.5rem 0",
-    flex: 1,
-  },
-  portalContent: {
-    display: "flex",
-    alignItems: "flex-start",
-    width: "100%",
-  },
-  portalIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#f0f0f0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "15px",
-    flexShrink: 0,
-    overflow: "hidden",
-  },
-  portalIconText: {
-    fontSize: "20px",
-  },
-  portalIconImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  portalInfo: {
-    display: "flex",
-    flexDirection: "column",
-    flex: 1,
-  },
-  portalName: {
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-    fontWeight: 500,
-    fontSize: "16px",
-    marginBottom: "5px",
-    transition: "color 0.3s ease",
-    color: "#000000", // Черный цвет текста
-  },
-  portalDescription: {
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-    fontSize: "14px",
-    color: "#999999", // Оставляем серый для описания
-    margin: 0,
-    lineHeight: "1.4",
-  },
-  editPortalButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: colors.primary,
-    padding: "5px",
-  },
-  editPortalIcon: {
-    fontSize: "16px",
-  },
-  list: {
-    listStyle: "none",
-    padding: 0,
-    margin: 0,
-  },
-  listItem: {
-    marginBottom: "1rem",
-    fontFamily: fonts.main,
-    fontWeight: 300,
-  },
-  date: {
-    color: colors.lightText,
-    fontSize: "0.9em",
-    fontFamily: fonts.secondary,
-    fontWeight: 400,
-  },
-  newsBlock: {
-    backgroundColor: colors.blockBackground,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-    display: "flex",
-    flexDirection: "column",
-  },
-  newsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
-    marginTop: "1.5rem",
-  },
-  newsItem: {
-    padding: "1.5rem",
-    marginBottom: "1rem",
-    backgroundColor: colors.blockBackground,
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-    border: "1px solid #e0e0e0",
-    position: "relative",
-  },
-  pinnedNewsItem: {
-    borderLeft: `4px solid ${colors.secondary}`,
-    backgroundColor: "#FFFAF5",
-  },
-  pinnedIndicator: {
-    display: "flex",
-    alignItems: "center",
-    gap: "5px",
-    color: colors.secondary,
-    fontSize: "14px",
-    fontWeight: 500,
-    marginBottom: "10px",
-  },
-  pinnedIcon: {
-    fontSize: "14px",
-  },
-  newsHeader: {
-    marginBottom: "1rem",
-  },
-  authorInfo: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  authorInfoContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-  },
-  authorAvatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  authorDetails: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-  },
-  authorName: {
-    color: colors.primary,
-    fontSize: "1rem",
-    fontWeight: 600,
-  },
-  newsTime: {
-    color: colors.lightText,
-    fontSize: "0.85rem",
-  },
-  adminActions: {
-    display: "flex",
-    gap: "10px",
-  },
-  adminActionButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: "5px",
-    borderRadius: "4px",
-    transition: "background-color 0.2s",
-    "&:hover": {
-      backgroundColor: "#f0f0f0",
-    },
-  },
-  adminActionIcon: {
-    fontSize: "16px",
-    color: "#13454B",
-  },
-  newsImage: {
-    width: "100%",
-    height: "auto",
-    objectFit: "cover",
-    borderRadius: "4px",
-    marginTop: "1rem",
-    marginBottom: "1rem",
-  },
-  newsTitle: {
-    color: colors.primary,
-    fontFamily: fonts.main,
-    fontWeight: 500,
-    fontSize: "1.2rem",
-    marginBottom: "0.5rem",
-  },
-  newsDescription: {
-    fontFamily: fonts.main,
-    fontWeight: 300,
-    fontSize: "1rem",
-    color: colors.text,
-    marginBottom: "1rem",
-    lineHeight: "1.5",
-  },
-  newsFooter: {
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginBottom: "1rem",
-    borderTop: "1px solid #e0e0e0",
-    paddingTop: "1rem",
-  },
-  likeButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    padding: "0.5rem",
-    transition: "transform 0.2s",
-  },
-  likeCount: {
-    marginLeft: "0.5rem",
-    color: colors.primary,
-    fontFamily: fonts.main,
-    fontWeight: 500,
-  },
-  commentsSection: {
-    marginTop: "1rem",
-    borderTop: `1px solid #e0e0e0`,
-    paddingTop: "1rem",
-  },
-  commentsHeader: {
-    fontSize: "1.1rem",
-    fontWeight: 500,
-    marginBottom: "0.5rem",
-    color: colors.primary,
-  },
-  comment: {
-    display: "flex",
-    alignItems: "flex-start",
-    marginBottom: "1rem",
-  },
-  avatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    marginRight: "1rem",
-  },
-  commentContent: {
-    flex: 1,
-  },
-  userName: {
-    fontWeight: 500,
-    marginBottom: "0.25rem",
-    display: "block",
-  },
-  commentText: {
-    margin: 0,
-    fontSize: "0.9rem",
-  },
-  commentForm: {
-    display: "flex",
-    marginTop: "1rem",
-  },
-  commentInput: {
-    flex: 1,
-    padding: "0.5rem",
-    border: `1px solid #e0e0e0`,
-    borderRadius: "4px",
-    marginRight: "0.5rem",
-  },
-  commentSubmit: {
-    padding: "0.5rem 1rem",
-    backgroundColor: colors.secondary,
-    color: colors.blockBackground,
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  portalBlock: {
-    marginBottom: "1rem",
-  },
-  birthdayBlock: {
-    marginBottom: "1rem",
-    height: "calc(100% - 400px)",
-  },
-  addNewsFormContainer: {
-    marginTop: "1rem",
-    marginBottom: "1.5rem",
-  },
-  addNewsForm: {
-    backgroundColor: colors.blockBackground,
-    borderRadius: "8px",
-    padding: "1rem",
-    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-    border: "1px solid #e0e0e0",
-  },
-  addNewsInput: {
-    width: "100%",
-    padding: "0.75rem",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-    fontSize: "16px",
-    fontFamily: fonts.main,
-    marginBottom: "0.75rem",
-  },
-  addNewsTextarea: {
-    width: "100%",
-    padding: "0.75rem",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-    fontSize: "16px",
-    fontFamily: fonts.main,
-    resize: "vertical",
-    marginBottom: "0.75rem",
-  },
-  addNewsActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "0.75rem",
-  },
-  attachmentContainer: {
-    display: "flex",
-    alignItems: "center",
-  },
-  attachButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    background: "none",
-    border: "none",
-    color: "#777",
-    cursor: "pointer",
-    padding: "0.5rem",
-    fontSize: "14px",
-  },
-  attachText: {
-    color: "#777",
-  },
-  fileInput: {
-    display: "none",
-  },
-  formButtons: {
-    display: "flex",
-    gap: "0.75rem",
-  },
-  cancelButton: {
-    padding: "0.5rem 1rem",
-    background: "none",
-    border: "none",
-    color: "#777",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-  },
-  publishButton: {
-    padding: "0.5rem 1rem",
-    background: "none",
-    border: "none",
-    color: colors.secondary,
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-  },
-  imagePreviewContainer: {
-    position: "relative",
-    marginTop: "0.75rem",
-    marginBottom: "0.75rem",
-    display: "inline-block",
-  },
-  imagePreview: {
-    maxWidth: "100%",
-    maxHeight: "200px",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-  },
-  removeImageButton: {
-    position: "absolute",
-    top: "5px",
-    right: "5px",
-    width: "24px",
-    height: "24px",
-    borderRadius: "50%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    color: "#fff",
-    border: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: "12px",
-  },
-  validationError: {
-    color: colors.secondary,
-    fontSize: "0.9rem",
-    marginBottom: "0.75rem",
-  },
-  // Стили для блока "ближайшие дни рождения"
-  birthdayList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  birthdayItem: {
-    display: "flex",
-    alignItems: "center",
-    padding: "0.5rem 0",
-    borderBottom: "1px solid #e0e0e0",
-    cursor: "pointer", // Добавляем курсор pointer
-  },
-  birthdayAvatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "1rem",
-    overflow: "hidden",
-  },
-  birthdayPhoto: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  birthdayInfo: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-  },
-  birthdayName: {
-    margin: 0,
-    fontWeight: 500,
-    fontSize: "14px",
-    color: "#000000", // Изменено на черный
-    cursor: "pointer",
-  },
-  birthdayDepartment: {
-    margin: 0,
-    fontSize: "12px",
-    color: "#777",
-  },
-  birthdayDate: {
-    fontSize: "14px",
-    color: "#000000",
-    marginLeft: "1rem",
-    fontWeight: 500,
-  },
-  eventsBlock: {
-    marginBottom: "1rem",
-  },
-  eventsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  eventItem: {
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    padding: "0", // Убираем внутренние отступы
-    border: "none", // Убираем границу
-  },
-  eventDivider: {
-    height: "1px",
-    backgroundColor: "#e0e0e0",
-    margin: "0",
-    width: "100%",
-  },
-  eventHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "1rem",
-    cursor: "pointer",
-    borderBottom: "1px solid #e0e0e0",
-  },
-  eventInfo: {
-    flex: 1,
-  },
-  eventTitle: {
-    margin: 0,
-    marginBottom: "0.5rem",
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  eventShortDescription: {
-    margin: 0,
-    fontSize: "14px",
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  eventActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-  },
-  eventSeats: {
-    fontSize: "14px",
-    color: colors.primary,
-    fontWeight: 500,
-  },
-  registerButton: {
-    padding: "8px 16px",
-    backgroundColor: "#FFFFFF",
-    color: "#EE6B0C",
-    border: "1px solid #EE6B0C",
-    borderRadius: "20px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    transition: "background-color 0.3s, color 0.3s",
-  },
-  registeredButton: {
-    padding: "8px 16px",
-    backgroundColor: "#4CAF50",
-    color: "#FFFFFF",
-    border: "1px solid #4CAF50",
-    borderRadius: "20px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  expandIcon: {
-    color: "#AAAAAA", // Серый цвет
-    fontSize: "12px",
-    transform: "rotate(0deg)", // Стрелка смотрит вправо по умолчанию
-    transition: "transform 0.3s ease",
-  },
-  eventDetails: {
-    padding: "1rem",
-    backgroundColor: "#f9f9f9",
-  },
-  eventFullDescription: {
-    margin: "0 0 1rem 0",
-    fontSize: "14px",
-    lineHeight: "1.5",
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  eventMetadata: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-  },
-  eventMetaItem: {
-    display: "flex",
-    fontSize: "14px",
-  },
-  eventMetaLabel: {
-    fontWeight: 600,
-    width: "150px",
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  eventMetaValue: {
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  speakersSection: {
-    marginTop: "1rem",
-  },
-  speakersTitle: {
-    margin: "0 0 0.5rem 0",
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#000000", // Изменено на черный
-    fontFamily: "'Open Sans', Arial, sans-serif", // Такой же шрифт как в блоке дней рождения
-  },
-  speakersList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  speakerItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-  },
-  speakerAvatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  speakerPhoto: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  speakerInfo: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  speakerName: {
-    margin: 0,
-    fontWeight: 500,
-    fontSize: "14px",
-    color: colors.primary,
-  },
-  speakerPosition: {
-    margin: 0,
-    fontSize: "12px",
-    color: "#777",
-  },
-  birthdayPopup: {
-    position: "absolute",
-    width: "300px",
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-    borderRadius: "8px",
-    zIndex: 100,
-  },
-  birthdayPopupHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 15px",
-    borderBottom: "1px solid #E0E0E0",
-  },
-  birthdayPopupTitle: {
-    margin: 0,
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#000000",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  birthdayPopupClose: {
-    background: "none",
-    border: "none",
-    fontSize: "16px",
-    color: "#777",
-    cursor: "pointer",
-  },
-  birthdayPopupContent: {
-    padding: "15px",
-  },
-  popupRow: {
-    display: "flex",
-    marginBottom: "10px",
-  },
-  popupLabel: {
-    width: "120px",
-    fontSize: "14px",
-    color: "#777",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  popupValue: {
-    fontSize: "14px",
-    color: "#333",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  popupValueWithCopy: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  copyButton: {
-    background: "none",
-    border: "none",
-    color: "#EE6B0C",
-    cursor: "pointer",
-    padding: "5px",
-    fontSize: "14px",
-  },
-  copyNotification: {
-    position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    backgroundColor: "#13454B",
-    color: "#FFFFFF",
-    padding: "10px 20px",
-    borderRadius: "4px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-    zIndex: 1100,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    fontSize: "14px",
-  },
-  // Стили для раскрывающейся информации о сотрудниках
-  birthdayDetails: {
-    padding: "1rem 1rem 1rem 4rem",
-    backgroundColor: "#F9F9F9",
-    borderTop: "1px solid #E0E0E0",
-    borderBottom: "1px solid #E0E0E0",
-    marginBottom: "0.5rem",
-  },
-  birthdayDetailsSection: {
-    marginBottom: "1rem",
-  },
-  birthdayDetailsTitle: {
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#000000",
-    marginBottom: "0.75rem",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  birthdayDetailsRow: {
-    display: "flex",
-    marginBottom: "0.5rem",
-  },
-  birthdayDetailsLabel: {
-    width: "180px",
-    fontSize: "14px",
-    color: "#777",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  birthdayDetailsValue: {
-    fontSize: "14px",
-    color: "#333",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    marginLeft: "0",
-  },
-  birthdayDetailsValueWithCopy: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  birthdayNameDate: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  // Стили для подтверждения удаления новости
-  deleteConfirmation: {
-    backgroundColor: "#FFF8F8",
-    border: "1px solid #FFCDD2",
-    borderRadius: "8px",
-    padding: "1rem",
-    marginBottom: "1rem",
-  },
-  deleteConfirmButtons: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "10px",
-  },
-  confirmDeleteButton: {
-    padding: "8px 16px",
-    backgroundColor: "#F44336",
-    color: "#FFFFFF",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "14px",
-  },
-  cancelDeleteButton: {
-    padding: "8px 16px",
-    backgroundColor: "#FFFFFF",
-    color: "#333333",
-    border: "1px solid #E0E0E0",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "14px",
-  },
-  // Стили для модального окна редактирования портала
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    zIndex: 1000,
-    paddingTop: "80px",
-  },
-  portalModal: {
-    width: "45%",
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-    display: "flex",
-    flexDirection: "column",
-    maxHeight: "80vh",
-    overflowY: "auto",
-    // Убираем borderRadius: "8px",
-  },
-  portalModalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px",
-    borderBottom: "1px solid #E0E0E0",
-  },
-  portalModalTitle: {
-    margin: 0,
-    fontSize: "20px",
-    fontWeight: 600,
-    color: "#13454B",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    fontSize: "20px",
-    color: "#777",
-    cursor: "pointer",
-    padding: "5px",
-  },
-  portalModalContent: {
-    padding: "20px",
-  },
-  portalIconEditContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  portalIconEdit: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "50%",
-    backgroundColor: "#f0f0f0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    position: "relative",
-    overflow: "hidden",
-    marginBottom: "10px",
-  },
-  portalIconEmoji: {
-    fontSize: "40px",
-  },
-  portalIconPlaceholder: {
-    fontSize: "40px",
-    color: "#999",
-  },
-  portalIconImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  photoUploadOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    opacity: 0,
-    transition: "opacity 0.3s ease",
-  },
-  cameraIcon: {
-    fontSize: "24px",
-    color: "#FFFFFF",
-  },
-  emojiSelector: {
-    width: "100%",
-    marginTop: "10px",
-  },
-  emojiLabel: {
-    fontSize: "14px",
-    color: "#777",
-    marginBottom: "5px",
-    textAlign: "center",
-  },
-  emojiGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(5, 1fr)",
-    gap: "5px",
-  },
-  emojiButton: {
-    width: "40px",
-    height: "40px",
-    fontSize: "20px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid #e0e0e0",
-    borderRadius: "4px",
-    cursor: "pointer",
-    background: "transparent",
-  },
-  portalFormFields: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px",
-  },
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-  },
-  formLabel: {
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#333",
-  },
-  formInput: {
-    padding: "10px 12px",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-    fontSize: "14px",
-  },
-  formTextarea: {
-    padding: "10px 12px",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-    fontSize: "14px",
-    resize: "vertical",
-    minHeight: "80px",
-  },
-  urlInputContainer: {
-    position: "relative",
-  },
-  urlIcon: {
-    position: "absolute",
-    left: "10px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#777",
-  },
-  urlInput: {
-    padding: "10px 12px 10px 30px",
-    borderRadius: "4px",
-    border: "1px solid #e0e0e0",
-    fontSize: "14px",
-    width: "100%",
-  },
-  fieldError: {
-    color: colors.secondary,
-    fontSize: "12px",
-    marginTop: "2px",
-  },
-  portalModalActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "30px",
-    borderTop: "1px solid #E0E0E0",
-    paddingTop: "20px",
-  },
-  warningContainer: {
-    flex: 1,
-  },
-  warningText: {
-    color: "#EE6B0C",
-    fontSize: "14px",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  actionButtons: {
-    display: "flex",
-    gap: "10px",
-  },
-  saveButton: {
-    padding: "10px 20px",
-    backgroundColor: "#FFFFFF",
-    color: "#EE6B0C",
-    border: "1px solid #EE6B0C",
-    borderRadius: "20px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    transition: "background-color 0.3s, color 0.3s",
-  },
-  birthdayNameWithDate: {
-    margin: 0,
-    fontWeight: 500,
-    fontSize: "14px",
-    color: colors.primary,
-  },
 }
 
 export default MainContent

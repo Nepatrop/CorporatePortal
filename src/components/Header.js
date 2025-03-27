@@ -6,14 +6,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser, faCopy, faTimes, faPencilAlt, faCheck, faCamera } from "@fortawesome/free-solid-svg-icons"
 import { useUser } from "../context/UserContext"
 import { api } from "../utils/api"
+import styles from "../styles/Header.module.css"
 
-// Добавим функцию форматирования телефонного номера
-
-
-// Добавим функцию форматирования телефона после объявления компонента Header
 function Header({ onNavigate }) {
-  
-
   // Добавляем функцию форматирования телефона
   const formatPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return ""
@@ -29,7 +24,7 @@ function Header({ onNavigate }) {
     return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
   }
 
-  
+  // Остальной код компонента...
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -271,7 +266,8 @@ function Header({ onNavigate }) {
 
   // Функция для отображения информации о руководителе
   const showManagerInfo = (managerName) => {
-    alert(`Информация о руководителе: ${managerName}\nВ полной версии здесь будет отображаться профиль руководителя.`)
+    alert(`Информация о руководителе: ${managerName}
+В полной версии здесь будет отображаться профиль руководителя.`)
   }
 
   // Функция для обработки изменения фото
@@ -295,25 +291,25 @@ function Header({ onNavigate }) {
 
   return (
     <>
-      <header style={styles.header}>
+      <header className={styles.header}>
         {/* Левая часть с логотипом */}
-        <div style={styles.logoContainer}>
+        <div className={styles.logoContainer}>
           <a
             href="/"
-            style={styles.logoLink}
+            className={styles.logoLink}
             onClick={(e) => {
               e.preventDefault()
               if (onNavigate) onNavigate("home")
             }}
           >
-            <img src={logo || "/placeholder.svg"} alt="ИТ-Элемент29 Logo" style={styles.logo} />
+            <img src={logo || "/placeholder.svg"} alt="ИТ-Элемент29 Logo" className={styles.logo} />
           </a>
         </div>
 
         {/* Центральная часть с навигацией */}
-        <div style={styles.centerNav}>
+        <div className={styles.centerNav}>
           <button
-            style={styles.textButton}
+            className={styles.textButton}
             onClick={(e) => {
               e.preventDefault()
               if (onNavigate) onNavigate("directory")
@@ -324,39 +320,39 @@ function Header({ onNavigate }) {
         </div>
 
         {/* Правая часть с информацией о пользователе */}
-        <div style={styles.userInfoContainer} onClick={() => setIsProfileOpen(true)}>
-          <div style={styles.userPhoto}>
+        <div className={styles.userInfoContainer} onClick={() => setIsProfileOpen(true)}>
+          <div className={styles.userPhoto}>
             {currentUser?.photo ? (
-              <img src={currentUser.photo || "/placeholder.svg"} alt={currentUser.full_name} style={styles.photo} />
+              <img src={currentUser.photo || "/placeholder.svg"} alt={currentUser.full_name} className={styles.photo} />
             ) : (
-              <FontAwesomeIcon icon={faUser} style={styles.userIcon} />
+              <FontAwesomeIcon icon={faUser} className={styles.userIcon} />
             )}
           </div>
-          <div style={styles.userDetails}>
-            <div style={styles.userName}>{currentUser ? currentUser.full_name : "Гость"}</div>
-            <div style={styles.userPosition}>{currentUser?.position}</div>
+          <div className={styles.userDetails}>
+            <div className={styles.userName}>{currentUser ? currentUser.full_name : "Гость"}</div>
+            <div className={styles.userPosition}>{currentUser?.position}</div>
           </div>
         </div>
       </header>
 
       {/* Модальное окно профиля */}
       {isProfileOpen && (
-        <div style={styles.modalOverlay} onClick={handleCloseProfile}>
-          <div style={styles.profileModal} ref={profileRef} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.profileHeader}>
-              <h2 style={styles.profileTitle}>Профиль сотрудника</h2>
-              <button style={styles.closeButton} onClick={handleCloseProfile}>
+        <div className={styles.modalOverlay} onClick={handleCloseProfile}>
+          <div className={styles.profileModal} ref={profileRef} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.profileHeader}>
+              <h2 className={styles.profileTitle}>Профиль сотрудника</h2>
+              <button className={styles.closeButton} onClick={handleCloseProfile}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
 
-            <div style={styles.profileContent}>
+            <div className={styles.profileContent}>
               {/* Основная информация */}
-              <div style={styles.profileMainInfo}>
+              <div className={styles.profileMainInfo}>
                 {/* Блок с фотографией в профиле */}
                 <div
+                  className={styles.profilePhoto}
                   style={{
-                    ...styles.profilePhoto,
                     boxShadow: showExitWarning && changedFields.photo ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
                   }}
                   onMouseEnter={() => isEditing && setShowPhotoUpload(true)}
@@ -368,26 +364,26 @@ function Header({ onNavigate }) {
                         <img
                           src={photoPreview || "/placeholder.svg"}
                           alt={currentUser.full_name}
-                          style={styles.profilePhotoImg}
+                          className={styles.profilePhotoImg}
                         />
                       ) : currentUser?.photo ? (
                         <img
                           src={currentUser.photo || "/placeholder.svg"}
                           alt={currentUser.full_name}
-                          style={styles.profilePhotoImg}
+                          className={styles.profilePhotoImg}
                         />
                       ) : (
-                        <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
+                        <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
                       )}
                       {isEditing && (
                         <div
+                          className={styles.photoUploadOverlay}
                           style={{
-                            ...styles.photoUploadOverlay,
                             opacity: showPhotoUpload ? 1 : 0,
                           }}
                           onClick={() => fileInputRef.current.click()}
                         >
-                          <FontAwesomeIcon icon={faCamera} style={styles.cameraIcon} />
+                          <FontAwesomeIcon icon={faCamera} className={styles.cameraIcon} />
                         </div>
                       )}
                       <input
@@ -404,73 +400,73 @@ function Header({ onNavigate }) {
                         <img
                           src={currentUser.photo || "/placeholder.svg"}
                           alt={currentUser.full_name}
-                          style={styles.profilePhotoImg}
+                          className={styles.profilePhotoImg}
                         />
                       ) : (
-                        <FontAwesomeIcon icon={faUser} style={styles.profilePhotoIcon} />
+                        <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
                       )}
                     </>
                   )}
                 </div>
-                <div style={styles.profileNameContainer}>
-                  <div style={styles.nameWithEditIcon}>
-                    <h3 style={styles.profileName}>{currentUser?.full_name}</h3>
+                <div className={styles.profileNameContainer}>
+                  <div className={styles.nameWithEditIcon}>
+                    <h3 className={styles.profileName}>{currentUser?.full_name}</h3>
                     {!isEditing && (
                       <button
-                        style={styles.editIconButton}
+                        className={styles.editIconButton}
                         onClick={(e) => {
                           e.stopPropagation()
                           setIsEditing(true)
                         }}
                       >
-                        <FontAwesomeIcon icon={faPencilAlt} style={styles.editIcon} />
-                        <span style={styles.editText}>Изменить</span>
+                        <FontAwesomeIcon icon={faPencilAlt} className={styles.editIcon} />
+                        <span className={styles.editText}>Изменить</span>
                       </button>
                     )}
                   </div>
-                  <p style={styles.profilePosition}>{currentUser?.position}</p>
+                  <p className={styles.profilePosition}>{currentUser?.position}</p>
                 </div>
               </div>
 
               {/* Детальная информация */}
-              <div style={styles.profileDetails}>
-                <div style={styles.profileSection}>
-                  <h4 style={styles.sectionTitle}>Основная информация</h4>
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Табельный номер:</span>
-                    <span style={styles.infoValue}>{currentUser?.personnel_number}</span>
+              <div className={styles.profileDetails}>
+                <div className={styles.profileSection}>
+                  <h4 className={styles.sectionTitle}>Основная информация</h4>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Табельный номер:</span>
+                    <span className={styles.infoValue}>{currentUser?.personnel_number}</span>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Дата рождения:</span>
-                    <span style={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Дата рождения:</span>
+                    <span className={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Местоположение:</span>
-                    <span style={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Местоположение:</span>
+                    <span className={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Организация:</span>
-                    <span style={styles.infoValue}>{currentUser?.organization}</span>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Организация:</span>
+                    <span className={styles.infoValue}>{currentUser?.organization}</span>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Подразделение:</span>
-                    <span style={styles.infoValue}>{currentUser?.department}</span>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Подразделение:</span>
+                    <span className={styles.infoValue}>{currentUser?.department}</span>
                   </div>
                 </div>
 
-                <div style={styles.profileSection}>
-                  <h4 style={styles.sectionTitle}>Контактная информация</h4>
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Рабочий телефон:</span>
-                    <div style={styles.infoValueWithCopy}>
-                      <span style={styles.infoValue}>{formatPhoneNumber(currentUser?.work_phone)}</span>
+                <div className={styles.profileSection}>
+                  <h4 className={styles.sectionTitle}>Контактная информация</h4>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Рабочий телефон:</span>
+                    <div className={styles.infoValueWithCopy}>
+                      <span className={styles.infoValue}>{formatPhoneNumber(currentUser?.work_phone)}</span>
                       {currentUser?.work_phone && (
                         <button
-                          style={styles.copyButton}
+                          className={styles.copyButton}
                           onClick={(e) => {
                             e.stopPropagation()
                             copyToClipboard(currentUser.work_phone, "Рабочий телефон")
@@ -482,18 +478,18 @@ function Header({ onNavigate }) {
                     </div>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Электронная почта:</span>
-                    <div style={styles.infoValueWithCopy}>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Электронная почта:</span>
+                    <div className={styles.infoValueWithCopy}>
                       {isEditing ? (
-                        <div style={styles.inputContainer}>
+                        <div className={styles.inputContainer}>
                           <input
                             type="email"
                             name="email"
                             value={editableFields.email}
                             onChange={handleFieldChange}
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               boxShadow:
                                 showExitWarning && changedFields.email ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
                             }}
@@ -501,7 +497,7 @@ function Header({ onNavigate }) {
                         </div>
                       ) : (
                         <span
-                          style={styles.clickableValue}
+                          className={styles.clickableValue}
                           onClick={(e) => {
                             e.stopPropagation()
                             window.location.href = `mailto:${currentUser?.email}`
@@ -512,7 +508,7 @@ function Header({ onNavigate }) {
                       )}
                       {!isEditing && currentUser?.email && (
                         <button
-                          style={styles.copyButton}
+                          className={styles.copyButton}
                           onClick={(e) => {
                             e.stopPropagation()
                             copyToClipboard(currentUser.email, "Email")
@@ -525,21 +521,21 @@ function Header({ onNavigate }) {
                   </div>
                 </div>
 
-                <div style={styles.profileSection}>
-                  <h4 style={styles.sectionTitle}>О себе</h4>
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Мои интересы:</span>
-                    <div style={styles.infoValueWithCopy}>
+                <div className={styles.profileSection}>
+                  <h4 className={styles.sectionTitle}>О себе</h4>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Мои интересы:</span>
+                    <div className={styles.infoValueWithCopy}>
                       {isEditing ? (
-                        <div style={styles.interestsContainer}>
+                        <div className={styles.interestsContainer}>
                           <input
                             type="text"
                             name="interests1"
                             value={editableFields.interests1 || ""}
                             onChange={handleFieldChange}
                             placeholder="Интерес 1"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               marginBottom: "8px",
                               boxShadow:
                                 showExitWarning && changedFields.interests1
@@ -553,8 +549,8 @@ function Header({ onNavigate }) {
                             value={editableFields.interests2 || ""}
                             onChange={handleFieldChange}
                             placeholder="Интерес 2"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               marginBottom: "8px",
                               boxShadow:
                                 showExitWarning && changedFields.interests2
@@ -568,8 +564,8 @@ function Header({ onNavigate }) {
                             value={editableFields.interests3 || ""}
                             onChange={handleFieldChange}
                             placeholder="Интерес 3"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               boxShadow:
                                 showExitWarning && changedFields.interests3
                                   ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
@@ -578,31 +574,37 @@ function Header({ onNavigate }) {
                           />
                         </div>
                       ) : (
-                        <div style={styles.interestsList}>
-                          {currentUser?.interests1 && <div style={styles.interestItem}>{currentUser.interests1}</div>}
-                          {currentUser?.interests2 && <div style={styles.interestItem}>{currentUser.interests2}</div>}
-                          {currentUser?.interests3 && <div style={styles.interestItem}>{currentUser.interests3}</div>}
+                        <div className={styles.interestsList}>
+                          {currentUser?.interests1 && (
+                            <div className={styles.interestItem}>{currentUser.interests1}</div>
+                          )}
+                          {currentUser?.interests2 && (
+                            <div className={styles.interestItem}>{currentUser.interests2}</div>
+                          )}
+                          {currentUser?.interests3 && (
+                            <div className={styles.interestItem}>{currentUser.interests3}</div>
+                          )}
                           {!currentUser?.interests1 && !currentUser?.interests2 && !currentUser?.interests3 && (
-                            <span style={styles.infoValue}>Не указаны</span>
+                            <span className={styles.infoValue}>Не указаны</span>
                           )}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div style={styles.infoRow}>
-                    <span style={styles.infoLabel}>Мои проекты:</span>
-                    <div style={styles.infoValueWithCopy}>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Мои проекты:</span>
+                    <div className={styles.infoValueWithCopy}>
                       {isEditing ? (
-                        <div style={styles.interestsContainer}>
+                        <div className={styles.interestsContainer}>
                           <input
                             type="text"
                             name="projects1"
                             value={editableFields.projects1 || ""}
                             onChange={handleFieldChange}
                             placeholder="Проект 1"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               marginBottom: "8px",
                               boxShadow:
                                 showExitWarning && changedFields.projects1
@@ -616,8 +618,8 @@ function Header({ onNavigate }) {
                             value={editableFields.projects2 || ""}
                             onChange={handleFieldChange}
                             placeholder="Проект 2"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               marginBottom: "8px",
                               boxShadow:
                                 showExitWarning && changedFields.projects2
@@ -631,8 +633,8 @@ function Header({ onNavigate }) {
                             value={editableFields.projects3 || ""}
                             onChange={handleFieldChange}
                             placeholder="Проект 3"
+                            className={styles.editInput}
                             style={{
-                              ...styles.editInput,
                               boxShadow:
                                 showExitWarning && changedFields.projects3
                                   ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
@@ -641,12 +643,12 @@ function Header({ onNavigate }) {
                           />
                         </div>
                       ) : (
-                        <div style={styles.interestsList}>
-                          {currentUser?.projects1 && <div style={styles.interestItem}>{currentUser.projects1}</div>}
-                          {currentUser?.projects2 && <div style={styles.interestItem}>{currentUser.projects2}</div>}
-                          {currentUser?.projects3 && <div style={styles.interestItem}>{currentUser.projects3}</div>}
+                        <div className={styles.interestsList}>
+                          {currentUser?.projects1 && <div className={styles.interestItem}>{currentUser.projects1}</div>}
+                          {currentUser?.projects2 && <div className={styles.interestItem}>{currentUser.projects2}</div>}
+                          {currentUser?.projects3 && <div className={styles.interestItem}>{currentUser.projects3}</div>}
                           {!currentUser?.projects1 && !currentUser?.projects2 && !currentUser?.projects3 && (
-                            <span style={styles.infoValue}>Не указаны</span>
+                            <span className={styles.infoValue}>Не указаны</span>
                           )}
                         </div>
                       )}
@@ -654,12 +656,12 @@ function Header({ onNavigate }) {
                   </div>
                 </div>
 
-                <div style={styles.profileSection}>
-                  <h4 style={styles.sectionTitle}>Руководитель</h4>
-                  <div style={styles.infoRow}>
+                <div className={styles.profileSection}>
+                  <h4 className={styles.sectionTitle}>Руководитель</h4>
+                  <div className={styles.infoRow}>
                     {currentUser?.manager ? (
                       <span
-                        style={styles.clickableValue}
+                        className={styles.clickableValue}
                         onClick={(e) => {
                           e.stopPropagation()
                           showManagerInfo(currentUser.manager)
@@ -668,40 +670,34 @@ function Header({ onNavigate }) {
                         {currentUser.manager}
                       </span>
                     ) : (
-                      <span style={styles.infoValue}>Не указан</span>
+                      <span className={styles.infoValue}>Не указан</span>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Кнопки действий */}
-              <div style={styles.profileActions}>
+              <div className={styles.profileActions}>
                 {isEditing ? (
                   <>
-                    <div style={styles.warningContainer}>
-                      {showExitWarning && <span style={styles.warningText}>У вас есть несохраненные изменения</span>}
+                    <div className={styles.warningContainer}>
+                      {showExitWarning && (
+                        <span className={styles.warningText}>У вас есть несохраненные изменения</span>
+                      )}
                     </div>
-                    <div style={styles.actionButtons}>
-                      <button style={styles.cancelButton} onClick={showExitWarning ? confirmExit : handleCancelEditing}>
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={styles.cancelButton}
+                        onClick={showExitWarning ? confirmExit : handleCancelEditing}
+                      >
                         {showExitWarning ? "Выйти без сохранения" : "Отмена"}
                       </button>
                       {showExitWarning ? (
-                        <button style={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
+                        <button className={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
                           Вернуться к редактированию
                         </button>
                       ) : (
-                        <button
-                          style={styles.saveButton}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = "#EE6B0C"
-                            e.currentTarget.style.color = "#FFFFFF"
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = "#FFFFFF"
-                            e.currentTarget.style.color = "#EE6B0C"
-                          }}
-                          onClick={handleSaveChanges}
-                        >
+                        <button className={styles.saveButton} onClick={handleSaveChanges}>
                           <FontAwesomeIcon icon={faCheck} style={{ marginRight: "5px" }} />
                           Сохранить
                         </button>
@@ -710,15 +706,7 @@ function Header({ onNavigate }) {
                   </>
                 ) : (
                   <button
-                    style={styles.logoutButton}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#EE6B0C"
-                      e.currentTarget.style.color = "#FFFFFF"
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "#FFFFFF"
-                      e.currentTarget.style.color = "#EE6B0C"
-                    }}
+                    className={styles.logoutButton}
                     onClick={() => {
                       logout()
                       handleCloseProfile()
@@ -735,406 +723,11 @@ function Header({ onNavigate }) {
       )}
 
       {/* Уведомление о копировании */}
-      {showCopyNotification && <div style={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
-      {showSuccessMessage && <div style={styles.successMessage}>Профиль успешно обновлен</div>}
-      {showErrorMessage && <div style={styles.errorMessage}>Ошибка при обновлении профиля</div>}
+      {showCopyNotification && <div className={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
+      {showSuccessMessage && <div className={styles.successMessage}>Профиль успешно обновлен</div>}
+      {showErrorMessage && <div className={styles.errorMessage}>Ошибка при обновлении профиля</div>}
     </>
   )
-}
-
-const styles = {
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "1rem",
-    backgroundColor: "#13454B", // ИЗУМРУДНЫЙ
-    color: "#FFFFFF", // БЕЛЫЙ
-    fontFamily: "'Manrope', Arial, sans-serif", // Основной шрифт
-  },
-  userInfoContainer: {
-    display: "flex",
-    alignItems: "center",
-    position: "relative",
-    cursor: "pointer",
-    padding: "5px 10px",
-    borderRadius: "4px",
-    transition: "background-color 0.2s",
-    "&:hover": {
-      backgroundColor: "rgba(255, 255, 255, 0.1)",
-    },
-  },
-  userPhoto: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#FFFFFF", // Белый фон для кружочка
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    marginRight: "12px",
-  },
-  photo: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  userIcon: {
-    fontSize: "20px",
-    color: "#333333", // Темно-серый цвет для иконки пользователя
-  },
-  userDetails: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  userName: {
-    fontSize: "16px",
-    fontWeight: 500,
-    color: "#FFFFFF",
-    marginBottom: "2px",
-  },
-  userPosition: {
-    fontSize: "12px",
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  logoContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start", // Логотип слева
-    flex: 1,
-  },
-  logoLink: {
-    cursor: "pointer",
-  },
-  logo: {
-    height: "40px",
-  },
-  centerNav: {
-    display: "flex",
-    justifyContent: "center", // Справочник сотрудников по центру
-    flex: 1,
-  },
-  textButton: {
-    background: "none",
-    border: "none",
-    color: "#FFFFFF",
-    cursor: "pointer",
-    fontFamily: "'Manrope', Arial, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    padding: "0.5rem 1rem",
-  },
-
-  // Стили для модального окна профиля
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    zIndex: 1000,
-    paddingTop: "80px",
-  },
-  profileModal: {
-    width: "45%",
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-    display: "flex",
-    flexDirection: "column",
-    maxHeight: "80vh",
-    overflowY: "auto",
-  },
-  profileHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px",
-    borderBottom: "1px solid #E0E0E0",
-  },
-  profileTitle: {
-    margin: 0,
-    fontSize: "20px",
-    fontWeight: 600,
-    color: "#13454B",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    fontSize: "20px",
-    color: "#777",
-    cursor: "pointer",
-    padding: "5px",
-  },
-  profileContent: {
-    padding: "20px",
-  },
-  profileMainInfo: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "30px",
-  },
-  profilePhoto: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "50%",
-    backgroundColor: "#E0E0E0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    marginRight: "20px",
-    position: "relative",
-  },
-  profilePhotoImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  profilePhotoIcon: {
-    fontSize: "40px",
-    color: "#777",
-  },
-  profileNameContainer: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px", // Добавляем отступ между ФИО и должностью
-  },
-  nameWithEditIcon: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  editIconButton: {
-    background: "none",
-    border: "none",
-    padding: "5px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "5px",
-  },
-  editIcon: {
-    fontSize: "16px",
-    color: "#999", // Светло-серый цвет для иконки карандаша
-  },
-  editText: {
-    fontSize: "14px",
-    color: "#999",
-  },
-  profilePosition: {
-    margin: 0,
-    fontSize: "16px",
-    color: "#777",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  profileDetails: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "25px",
-  },
-  profileSection: {
-    marginBottom: "15px",
-  },
-  sectionTitle: {
-    fontSize: "18px",
-    fontWeight: 600,
-    color: "#13454B",
-    marginBottom: "15px",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  infoRow: {
-    display: "flex",
-    marginBottom: "12px",
-    alignItems: "center",
-  },
-  infoLabel: {
-    width: "180px",
-    fontSize: "14px",
-    color: "#777",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  infoValue: {
-    fontSize: "14px",
-    color: "#333",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    marginLeft: "0", // Убираем отступ слева
-  },
-  infoValueWithCopy: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  copyButton: {
-    background: "none",
-    border: "none",
-    color: "#EE6B0C", // Изменено на оранжевый
-    cursor: "pointer",
-    padding: "5px",
-    fontSize: "14px",
-  },
-  profileActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "30px",
-    borderTop: "1px solid #E0E0E0",
-    paddingTop: "20px",
-  },
-  editButton: {
-    padding: "10px 20px",
-    backgroundColor: "#13454B",
-    color: "#FFFFFF",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  logoutButton: {
-    padding: "10px 20px",
-    backgroundColor: "#FFFFFF",
-    color: "#EE6B0C",
-    border: "1px solid #EE6B0C",
-    borderRadius: "20px", // Скругленные углы как у полей ввода
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    transition: "background-color 0.3s, color 0.3s",
-  },
-  saveButton: {
-    padding: "10px 20px",
-    backgroundColor: "#FFFFFF",
-    color: "#EE6B0C",
-    border: "1px solid #EE6B0C",
-    borderRadius: "20px", // Скругленные углы как у полей ввода
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    transition: "background-color 0.3s, color 0.3s",
-  },
-  cancelButton: {
-    padding: "10px 20px",
-    backgroundColor: "#FFFFFF",
-    color: "#777",
-    border: "1px solid #E0E0E0",
-    borderRadius: "20px", // Скругленные углы как у кнопки "Сохранить"
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  editInput: {
-    width: "100%",
-    padding: "10px 12px",
-    border: "1px solid #e0e0e0",
-    borderRadius: "20px", // Скругленные углы как в справочнике
-    fontSize: "14px",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  inputContainer: {
-    width: "300px", // Фиксированная ширина для всех полей ввода
-  },
-  copyNotification: {
-    position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    backgroundColor: "#13454B",
-    color: "#FFFFFF",
-    padding: "10px 20px",
-    borderRadius: "4px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-    zIndex: 1100,
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    fontSize: "14px",
-  },
-  clickableValue: {
-    fontSize: "14px",
-    color: "#EE6B0C", // Оранжевый цвет
-    fontFamily: "'Open Sans', Arial, sans-serif",
-    cursor: "pointer",
-    textDecoration: "none",
-    "&:hover": {
-      textDecoration: "underline",
-    },
-  },
-  warningContainer: {
-    flex: 1,
-  },
-  warningText: {
-    color: "#EE6B0C",
-    fontSize: "14px",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
-  actionButtons: {
-    display: "flex",
-    gap: "10px",
-  },
-  successMessage: {
-    position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "10px 20px",
-    borderRadius: "4px",
-    zIndex: 1100,
-  },
-  errorMessage: {
-    position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    backgroundColor: "#f44336",
-    color: "white",
-    padding: "10px 20px",
-    borderRadius: "4px",
-    zIndex: 1100,
-  },
-  photoUploadOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    opacity: 0,
-    transition: "opacity 0.3s ease",
-    "&:hover": {
-      opacity: 1,
-    },
-  },
-  cameraIcon: {
-    fontSize: "24px",
-    color: "#FFFFFF",
-  },
-  interestsContainer: {
-    width: "300px",
-    display: "flex",
-    flexDirection: "column",
-  },
-  interestsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-  },
-  interestItem: {
-    fontSize: "14px",
-    color: "#333",
-    fontFamily: "'Open Sans', Arial, sans-serif",
-  },
 }
 
 export default Header
