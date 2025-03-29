@@ -7,12 +7,9 @@ const defaultHeaders = {
 };
 
 export const api = {
-    // Базовые методы
     get: async (endpoint) => {
         const response = await fetch(`${API_URL}${endpoint}`, {
-            headers: {
-                'X-API-Key': API_KEY
-            }
+            headers: defaultHeaders
         });
         return response.json();
     },
@@ -26,7 +23,24 @@ export const api = {
         return response;
     },
 
-    // Специальные методы для работы с формами и файлами
+    put: async (endpoint, data) => {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PUT',
+            headers: defaultHeaders,
+            body: JSON.stringify(data)
+        });
+        return response;
+    },
+
+    delete: async (endpoint) => {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'DELETE',
+            headers: defaultHeaders
+        });
+        return response;
+    },
+
+    // Специальные методы для работы с формами и файлами где не нужен Content-Type: application/json
     postFormData: async (endpoint, formData) => {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
@@ -38,24 +52,14 @@ export const api = {
         return response;
     },
 
-    // PUT методы
-    putEmployee: async (employeeId, data) => {
-        const response = await fetch(`${API_URL}/api/employees/${employeeId}`, {
-            method: 'PUT',
-            headers: defaultHeaders,
-            body: JSON.stringify(data)
-        });
-        return response;
-    },
-
-    // DELETE методы
-    delete: async (endpoint) => {
+    putFormData: async (endpoint, formData) => {
         const response = await fetch(`${API_URL}${endpoint}`, {
-            method: 'DELETE',
+            method: 'PUT',
             headers: {
                 'X-API-Key': API_KEY
-            }
+            },
+            body: formData
         });
-        return response.json();
+        return response;
     }
 };

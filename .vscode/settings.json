@@ -130,6 +130,11 @@
     "xtree": "cpp",
     "xutility": "cpp",
     "ranges": "cpp",
-    "span": "cpp"
+    "span": "cpp",
+    "chrono": "cpp",
+    "deque": "cpp",
+    "filesystem": "cpp",
+    "forward_list": "cpp",
+    "queue": "cpp"
   }
 }

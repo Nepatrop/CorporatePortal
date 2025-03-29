@@ -189,7 +189,6 @@ function Header({ onNavigate }) {
     try {
       console.log("Sending data:", editableFields)
 
-      // Фильтруем пустые значения и undefined
       const changedData = {}
       Object.keys(changedFields).forEach((field) => {
         if (editableFields[field] !== undefined) {
@@ -197,21 +196,16 @@ function Header({ onNavigate }) {
         }
       })
 
-      // Добавляем фото, если оно было изменено
       if (photoFile) {
-        // Здесь должна быть логика для загрузки фото на сервер
-        // Для примера просто добавим URL в changedData
         changedData.photo = URL.createObjectURL(photoFile)
       }
-
-      console.log("Changed fields to send:", changedData)
 
       if (Object.keys(changedData).length === 0 && !photoFile) {
         console.log("No valid fields to update")
         return
       }
 
-      const response = await api.putEmployee(currentUser.id, changedData)
+      const response = await api.put(`/api/employees/${currentUser.id}`, changedData)
 
       if (response.ok) {
         const data = await response.json()

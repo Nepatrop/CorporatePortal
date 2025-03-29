@@ -69,14 +69,31 @@ bool Delete::deleteEmployee(int id) {
     }
 }
 
-bool Delete::deleteNews(int id) {
+bool Delete::deleteNews(int news_id) {
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
-        txn.exec_params("DELETE FROM news WHERE id = $1", id);
+
+        // Проверяем существование новости
+        auto result = txn.exec_params(
+            "SELECT id FROM news WHERE id = $1",
+            news_id
+        );
+
+        if (result.empty()) {
+            return false;
+        }
+
+        // Удаляем все связанные лайки и комментарии
+        txn.exec_params("DELETE FROM news_likes WHERE news_id = $1", news_id);
+        txn.exec_params("DELETE FROM news_comments WHERE news_id = $1", news_id);
+        
+        // Удаляем саму новость
+        txn.exec_params("DELETE FROM news WHERE id = $1", news_id);
+        
         txn.commit();
         return true;
-    } catch (std::exception const& e) {
+    } catch (const std::exception& e) {
         return false;
     }
 }

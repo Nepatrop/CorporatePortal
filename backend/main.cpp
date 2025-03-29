@@ -107,39 +107,33 @@ int main() {
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
     });
 
-    // POST /api/news для создания новостей
     svr.Post("/api/news", [](const httplib::Request& req, httplib::Response& res) {
-        try {           
-            auto title = req.get_file_value("title");
-            auto content = req.get_file_value("content");
-            auto author_id = req.get_file_value("author_id");
-            auto image = req.has_file("image_data") ? req.get_file_value("image_data") : httplib::MultipartFormData{};
-            auto image_type = req.get_file_value("image_type");
-
-            if (title.content.empty() || content.content.empty() || author_id.content.empty()) {
+        try {
+            auto json = nlohmann::json::parse(req.body);
+            
+            // Проверяем обязательные поля
+            if (!json.contains("title") || !json.contains("content") || !json.contains("author_id")) {
                 res.status = 400;
-                res.set_content(R"({"error": "Missing required fields"})", "application/json");
+                res.set_content(R"({"error":"Missing required fields"})", "application/json");
                 return;
             }
 
-            auto response = Post::postNewsWithImage(
-                title.content,
-                content.content,
-                author_id.content,
-                image.content,
-                image_type.content
+            // Используем postNewsWithImage вместо postNews
+            auto result = Post::postNewsWithImage(
+                json["title"].get<std::string>(),
+                json["content"].get<std::string>(),
+                json["author_id"].get<std::string>(),
+                json.value("image_data", ""),
+                json.value("image_type", "")
             );
 
-            res.set_content(response.dump(), "application/json");
-
+            res.set_content(result.dump(), "application/json");
         } catch (const std::exception& e) {
-            std::cerr << "Error creating news: " << e.what() << std::endl;
             res.status = 500;
-            res.set_content(R"({"error": "Server error"})", "application/json");
+            res.set_content(R"({"error":"Internal server error"})", "application/json");
         }
     });
 
-    // POST /api/news/{id}/comments для добавления комментариев
     svr.Post(R"(/api/news/(\d+)/comments)", [](const httplib::Request& req, httplib::Response& res) {
         try {
             auto json = nlohmann::json::parse(req.body);
@@ -202,10 +196,8 @@ int main() {
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
     });
 
-    // Auth endpoints
     svr.Post("/api/auth/login", [](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
-        // Используем personnel_number вместо email
         bool success = UserAuth::validateCredentials(
             json["personnel_number"].get<std::string>(),
             json["password"].get<std::string>()
@@ -277,9 +269,18 @@ int main() {
     });
 
     svr.Delete(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
-        int id = std::stoi(req.matches[1]);
-        bool success = Delete::deleteNews(id);
-        res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
+        try {
+            auto news_id = std::stoi(req.matches[1]);
+            if (Delete::deleteNews(news_id)) {
+                res.set_content("{\"success\":true}", "application/json");
+            } else {
+                res.status = 404;
+                res.set_content("{\"error\":\"News not found\"}", "application/json");
+            }
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content("{\"error\":\"Internal server error\"}", "application/json");
+        }
     });
 
     svr.Delete(R"(/api/notifications/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
@@ -294,7 +295,7 @@ int main() {
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
     });
 
-    // Put endpoint
+    // Put endpoints
     svr.Put(R"(/api/employees/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
         try {
             auto json = nlohmann::json::parse(req.body);
@@ -307,6 +308,31 @@ int main() {
             std::cerr << "Error updating employee: " << e.what() << std::endl;
             res.status = 500;
             res.set_content(R"({"error": "Server error"})", "application/json");
+        }
+    });
+
+    svr.Put(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            auto news_id = std::stoi(req.matches[1]);
+            auto json = nlohmann::json::parse(req.body);
+            
+            auto result = Put::updateNews(
+                news_id,
+                json["title"].get<std::string>(), 
+                json["content"].get<std::string>(),
+                json.value("image_data", ""),
+                json.value("image_type", "")
+            );
+
+            if (result["error"].is_null()) {
+                res.set_content(result.dump(), "application/json");
+            } else {
+                res.status = 404;
+                res.set_content(result.dump(), "application/json");
+            }
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(R"({"error":"Internal server error"})", "application/json");
         }
     });
 

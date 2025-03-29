@@ -175,7 +175,7 @@ function NewsItem({ news, onLike, onAddComment, onEdit, onDelete, onPin, isAdmin
 }
 
 // Компонент для добавления/редактирования новости
-function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
+function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -214,60 +214,83 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!title.trim() || !description.trim()) {
-      setValidationError(true)
-      return
+        setValidationError(true);
+        return;
     }
 
     try {
-      const formData = new FormData()
-      formData.append("title", title)
-      formData.append("content", description)
+        // Создаем объект с обязательными полями
+        const newsData = {
+            title: title.trim(),
+            content: description.trim(),
+            author_id: currentUser.id.toString()
+        };
 
-      // Если это новая новость, добавляем ID автора
-      if (!editingNews) {
-        formData.append("author_id", currentUser.id.toString())
-        // Если публикует админ, добавляем флаг
-        if (isAdmin) {
-          formData.append("isAdminPost", "true")
-        }
-      }
-
-      if (image) {
-        // Получаем содержимое файла как ArrayBuffer
-        const imageBuffer = await image.arrayBuffer()
-        // Создаем Blob из ArrayBuffer
-        const imageBlob = new Blob([imageBuffer], { type: image.type })
-        formData.append("image_data", imageBlob, image.name)
-        formData.append("image_type", image.type)
-      }
-
-      let response
-
-      if (editingNews) {
-        // Обновляем существующую новость
-        response = await api.putFormData(`/api/news/${editingNews.id}`, formData)
-      } else {
-        // Создаем новую новость
-        response = await api.postFormData("/api/news", formData)
-      }
-
-      if (response.ok) {
-        const newsData = await response.json()
-        onAddNews(newsData)
-        resetForm()
-
-        // Если редактировали новость, сбрасываем режим редактирования
+        // Обработка изображения при редактировании
         if (editingNews) {
-          setEditingNews(null)
+            if (image) {
+                // Если выбрано новое изображение
+                const reader = new FileReader();
+                const imageBase64 = await new Promise((resolve) => {
+                    reader.onloadend = () => {
+                        const base64String = reader.result.split(',')[1];
+                        resolve(base64String);
+                    };
+                    reader.readAsDataURL(image);
+                });
+                newsData.image_data = imageBase64;
+                newsData.image_type = image.type;
+            } else if (imagePreview === null) {
+                // Если изображение было удалено
+                newsData.image_data = "null";
+                newsData.image_type = "";
+            }
+            // Если imagePreview есть, но image нет - значит изображение не менялось
+        } else {
+            // Для новой новости
+            if (image) {
+                const reader = new FileReader();
+                const imageBase64 = await new Promise((resolve) => {
+                    reader.onloadend = () => {
+                        const base64String = reader.result.split(',')[1];
+                        resolve(base64String);
+                    };
+                    reader.readAsDataURL(image);
+                });
+                newsData.image_data = imageBase64;
+                newsData.image_type = image.type;
+            }
         }
-      } else {
-        const errorText = await response.text()
-        console.error("Error response:", errorText)
-      }
+
+        let response;
+
+        if (editingNews) {
+            response = await api.put(`/api/news/${editingNews.id}`, newsData);
+        } else {
+            response = await api.post("/api/news", newsData);
+        }
+
+        if (response.ok) {
+            const responseData = await response.json();
+            console.log("Server response:", responseData);
+            
+            onAddNews(responseData);
+            resetForm();
+            setEditingNews(null);
+
+            // Перезагружаем список новостей
+            if (onUpdate) {
+                await onUpdate();
+            }
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save news');
+        }
     } catch (error) {
-      console.error("Error creating/updating news:", error)
+        console.error("Error creating/updating news:", error);
+        alert(`Ошибка при ${editingNews ? 'обновлении' : 'создании'} новости: ${error.message}`);
     }
   }
 
@@ -358,7 +381,6 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
                   accept="image/*"
                 />
               </div>
-
               <div className={styles.formButtons}>
                 <button type="button" onClick={handleCancel} className={styles.cancelButton}>
                   Отмена
@@ -438,7 +460,7 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
           }
         }
 
-        handleCloseModal()
+        handleClickOutside()
       }
     }
 
@@ -964,6 +986,8 @@ function MainContent() {
           // Удаляем новость из состояния
           setNews((prevNews) => prevNews.filter((item) => item.id !== newsId))
           setShowDeleteConfirm(null)
+          // После удаления перезагружаем список новостей
+          await loadNews()
         } else {
           console.error("Error deleting news")
         }
@@ -1088,7 +1112,7 @@ function MainContent() {
         },
         {
           id: 2,
-          name: "Елена ��идорова",
+          name: "Елена Сидорова",
           position: "Специалист по защите данных",
           photo: null,
         },
@@ -1196,6 +1220,7 @@ function MainContent() {
                 editingNews={editingNews}
                 setEditingNews={setEditingNews}
                 isAdmin={isAdmin}
+                onUpdate={loadNews}
               />
             )}
             <div className={styles.newsList}>
