@@ -1,1215 +1,1269 @@
 /* Основные стили */
 .main {
-    min-height: calc(100vh - 72px);
-    font-family: "Manrope", Arial, sans-serif;
-    background-color: #f5f5f5;
-    padding: 1rem;
-  }
-  
-  .contentWrapper {
-    display: flex;
-    width: 100%;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .leftColumn {
-    flex: 0 0 60%;
-    padding: 1rem;
-    box-sizing: border-box;
-  }
-  
-  .rightColumn {
-    flex: 0 0 40%;
-    position: relative;
-    box-sizing: border-box;
-  }
-  
-  .rightColumnFixed {
-    position: sticky;
-    top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .block {
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .heading {
-    color: #000000;
-    border-bottom: 2px solid #ee6b0c;
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 600;
-    font-size: 36px;
-    line-height: 45px;
-    letter-spacing: 0.5px;
-    padding: 15px 0 12px 0;
-    margin-bottom: 20px;
-    width: 100%;
-  }
-  
-  /* Стили для новостей */
-  .newsBlock {
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .newsList {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-  
-  .newsItem {
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e0e0e0;
-    position: relative;
-  }
-  
-  .pinnedNewsItem {
-    border-left: 4px solid #ee6b0c;
-    background-color: #fffaf5;
-  }
-  
-  .pinnedIndicator {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #ee6b0c;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 10px;
-  }
-  
-  .pinnedIcon {
-    font-size: 14px;
-  }
-  
-  .authorInfo {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .authorInfoContainer {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .authorAvatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .authorDetails {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .authorName {
-    color: #13454b;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  
-  .newsTime {
-    color: #b3b3b3;
-    font-size: 0.85rem;
-  }
-  
-  .adminActions {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .adminActionButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-  }
-  
-  .adminActionButton:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .adminActionIcon {
-    font-size: 16px;
-    color: #13454b;
-  }
-  
-  .newsImage {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .newsTitle {
-    color: #13454b;
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 500;
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .newsDescription {
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 300;
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 1rem;
-    line-height: 1.5;
-  }
-  
-  .newsFooter {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-bottom: 1rem;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 1rem;
-  }
-  
-  .likeButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    transition: transform 0.2s;
-  }
-  
-  .likeCount {
-    margin-left: 0.5rem;
-    color: #13454b;
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 500;
-  }
-  
-  /* Стили для комментариев */
-  .commentsSection {
-    margin-top: 1rem;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 1rem;
-  }
-  
-  .commentsHeader {
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: #13454b;
-  }
-  
-  .comment {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-  }
-  
-  .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 1rem;
-  }
-  
-  .commentContent {
-    flex: 1;
-  }
-  
-  .userName {
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-    display: block;
-  }
-  
-  .commentText {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-  
-  .commentForm {
-    display: flex;
-    margin-top: 1rem;
-  }
-  
-  .commentInput {
-    flex: 1;
-    padding: 0.5rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    margin-right: 0.5rem;
-  }
-  
-  .commentSubmit {
-    padding: 0.5rem 1rem;
-    background-color: #ee6b0c;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  /* Стили для добавления новостей */
-  .addNewsFormContainer {
-    margin-top: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .addNewsForm {
-    background-color: #ffffff;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0e0e0;
-  }
-  
-  .addNewsInput {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    font-size: 16px;
-    font-family: "Manrope", Arial, sans-serif;
-    margin-bottom: 0.75rem;
-  }
-  
-  .addNewsTextarea {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    font-size: 16px;
-    font-family: "Manrope", Arial, sans-serif;
-    resize: vertical;
-    margin-bottom: 0.75rem;
-  }
-  
-  .addNewsActions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-  
-  .attachmentContainer {
-    display: flex;
-    align-items: center;
-  }
-  
-  .attachButton {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: none;
-    color: #777;
-    cursor: pointer;
-    padding: 0.5rem;
-    font-size: 14px;
-  }
-  
-  .attachText {
-    color: #777;
-  }
-  
-  .fileInput {
-    display: none;
-  }
-  
-  .formButtons {
-    display: flex;
-    gap: 0.75rem;
-  }
-  
-  .cancelButton {
-    padding: 0.5rem 1rem;
-    background: none;
-    border: none;
-    color: #777;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .publishButton {
-    padding: 0.5rem 1rem;
-    background: none;
-    border: none;
-    color: #ee6b0c;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .imagePreviewContainer {
-    position: relative;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-    display: inline-block;
-  }
-  
-  .imagePreview {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-  }
-  
-  .removeImageButton {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  
-  .validationError {
-    color: #ee6b0c;
-    font-size: 0.9rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  /* Стили для порталов */
-  .portalBlock {
-    margin-bottom: 1rem;
-  }
-  
-  .portalHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-  }
-  
-  .portalAdminControls {
-    position: relative;
-  }
-  
-  .editPortalsButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #ee6b0c;
-    font-size: 20px;
-    padding: 5px;
-  }
-  
-  .editPortalsIcon {
-    font-size: 20px;
-  }
-  
-  .portalMenu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-    padding: 8px 0;
-    z-index: 1000;
-    min-width: 250px;
-  }
-  
-  .portalMenuItem {
-    background: none;
-    border: none;
-    color: #333333;
-    cursor: pointer;
-    padding: 10px 16px;
-    font-size: 14px;
-    width: 100%;
-    text-align: left;
-    transition: background-color 0.2s;
-  }
-  
-  .portalMenuItem:hover {
-    background-color: #f5f5f5;
-  }
-  
-  .editModeNotification {
-    background-color: #fff8e1;
-    padding: 10px 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-    color: #856404;
-  }
-  
-  .exitEditModeButton {
-    background-color: transparent;
-    border: 1px solid #856404;
-    color: #856404;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  
-  .exitEditModeButton:hover {
-    background-color: #856404;
-    color: #ffffff;
-  }
-  
-  .portalGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .portalContainer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .portalContainerEditable {
-    cursor: pointer;
-    background-color: #f9f9f9;
-    transition: background-color 0.2s;
-  }
-  
-  .portalContainerEditable:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .portalLink {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-decoration: none;
-    color: #000000;
-    transition: transform 0.2s;
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 500;
-    font-size: 16px;
-    padding: 0.5rem 0;
-    flex: 1;
-  }
-  
-  .portalContent {
-    display: flex;
-    align-items: flex-start;
-    width: 100%;
-  }
-  
-  .portalIcon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  
-  .portalIconText {
-    font-size: 20px;
-  }
-  
-  .portalIconImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .portalInfo {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-  
-  .portalName {
-    font-family: "Open Sans", Arial, sans-serif;
-    font-weight: 500;
-    font-size: 16px;
-    margin-bottom: 5px;
-    transition: color 0.3s ease;
-    color: #000000;
-  }
-  
-  .portalDescription {
-    font-family: "Open Sans", Arial, sans-serif;
-    font-size: 14px;
-    color: #999999;
-    margin: 0;
-    line-height: 1.4;
-  }
-  
-  .editModeIndicator {
-    padding: 0 10px;
-    color: #ee6b0c;
-  }
-  
-  .editModeIcon {
-    font-size: 16px;
-  }
-  
-  /* Стили для мероприятий */
-  .eventsBlock {
-    margin-bottom: 1rem;
-  }
-  
-  .eventsList {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .eventItem {
-    overflow: hidden;
-    background-color: #ffffff;
-    padding: 0;
-    border: none;
-  }
-  
-  .eventDivider {
-    height: 1px;
-    background-color: #e0e0e0;
-    margin: 0;
-    width: 100%;
-  }
-  
-  .eventHeader {
-    display: flex;
-    justify-content: space-between;
-    padding: 1rem;
-    cursor: pointer;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .eventInfo {
-    flex: 1;
-  }
-  
-  .eventTitle {
-    margin: 0;
-    margin-bottom: 0.5rem;
-    font-size: 16px;
-    font-weight: 600;
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .eventShortDescription {
-    margin: 0;
-    font-size: 14px;
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .eventActions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .eventSeats {
-    font-size: 14px;
-    color: #13454b;
-    font-weight: 500;
-  }
-  
-  .registerButton {
-    padding: 8px 16px;
-    background-color: #ffffff;
-    color: #ee6b0c;
-    border: 1px solid #ee6b0c;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .registerButton:hover {
-    background-color: #ee6b0c;
-    color: #ffffff;
-  }
-  
-  .registeredButton {
-    padding: 8px 16px;
-    background-color: #4caf50;
-    color: #ffffff;
-    border: 1px solid #4caf50;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .expandIcon {
-    color: #aaaaaa;
-    font-size: 12px;
-    transform: rotate(0deg);
-    transition: transform 0.3s ease;
-  }
-  
-  .eventDetails {
-    padding: 1rem;
-    background-color: #f9f9f9;
-  }
-  
-  .eventFullDescription {
-    margin: 0 0 1rem 0;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .eventMetadata {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .eventMetaItem {
-    display: flex;
-    font-size: 14px;
-  }
-  
-  .eventMetaLabel {
-    font-weight: 600;
-    width: 150px;
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .eventMetaValue {
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .speakersSection {
-    margin-top: 1rem;
-  }
-  
-  .speakersTitle {
-    margin: 0 0 0.5rem 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #000000;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .speakersList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .speakerItem {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .speakerAvatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  
-  .speakerPhoto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .speakerInfo {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .speakerName {
-    margin: 0;
-    font-weight: 500;
-    font-size: 14px;
-    color: #13454b;
-  }
-  
-  .speakerPosition {
-    margin: 0;
-    font-size: 12px;
-    color: #777;
-  }
-  
-  /* Стили для дней рождения */
-  .birthdayBlock {
-    margin-bottom: 1rem;
-    height: calc(100% - 400px);
-  }
-  
-  .birthdayList {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .birthdayItem {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e0e0e0;
-    cursor: pointer;
-  }
-  
-  .birthdayAvatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-    overflow: hidden;
-  }
-  
-  .birthdayPhoto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .birthdayInfo {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .birthdayName {
-    margin: 0;
-    font-weight: 500;
-    font-size: 14px;
-    color: #000000;
-    cursor: pointer;
-  }
-  
-  .birthdayDepartment {
-    margin: 0;
-    font-size: 12px;
-    color: #777;
-  }
-  
-  .birthdayDetails {
-    padding: 1rem 1rem 1rem 4rem;
-    background-color: #f9f9f9;
-    border-top: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 0.5rem;
-  }
-  
-  .birthdayDetailsSection {
-    margin-bottom: 1rem;
-  }
-  
-  .birthdayDetailsTitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #000000;
-    margin-bottom: 0.75rem;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .birthdayDetailsRow {
-    display: flex;
-    margin-bottom: 0.5rem;
-  }
-  
-  .birthdayDetailsLabel {
-    width: 180px;
-    font-size: 14px;
-    color: #777;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .birthdayDetailsValue {
-    font-size: 14px;
-    color: #333;
-    font-family: "Open Sans", Arial, sans-serif;
-    margin-left: 0;
-  }
-  
-  .birthdayDetailsValueWithCopy {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .copyButton {
-    background: none;
-    border: none;
-    color: #ee6b0c;
-    cursor: pointer;
-    padding: 5px;
-    font-size: 14px;
-  }
-  
-  .copyNotification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #13454b;
-    color: #ffffff;
-    padding: 10px 20px;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1100;
-    font-family: "Open Sans", Arial, sans-serif;
-    font-size: 14px;
-  }
-  
-  /* Стили для модального окна редактирования портала */
-  .modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    z-index: 1000;
-    padding-top: 80px;
-  }
-  
-  .portalModal {
-    width: 45%;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .portalModalHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .portalModalTitle {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #13454b;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .closeButton {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #777;
-    cursor: pointer;
-    padding: 5px;
-  }
-  
-  .portalModalContent {
-    padding: 20px;
-  }
-  
-  .portalIconEditContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .portalIconEdit {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 10px;
-  }
-  
-  .portalIconEmoji {
-    font-size: 40px;
-  }
-  
-  .portalIconPlaceholder {
-    font-size: 40px;
-    color: #999;
-  }
-  
-  .portalIconImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .photoUploadOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .photoUploadOverlay:hover {
-    opacity: 1;
-  }
-  
-  .cameraIcon {
-    font-size: 24px;
-    color: #ffffff;
-  }
-  
-  .emojiSelector {
-    width: 100%;
-    margin-top: 10px;
-  }
-  
-  .emojiLabel {
-    font-size: 14px;
-    color: #777;
-    margin-bottom: 5px;
-    text-align: center;
-  }
-  
-  .emojiGrid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
-  }
-  
-  .emojiButton {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    cursor: pointer;
-    background: transparent;
-  }
-  
-  .emojiButtonSelected {
-    background-color: #f0f0f0;
-  }
-  
-  .portalFormFields {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .formGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .formLabel {
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-  }
-  
-  .formInput {
-    padding: 10px 12px;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    font-size: 14px;
-  }
-  
-  .formTextarea {
-    padding: 10px 12px;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    font-size: 14px;
-    resize: vertical;
-    min-height: 80px;
-  }
-  
-  .urlInputContainer {
-    position: relative;
-  }
-  
-  .urlIcon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #777;
-  }
-  
-  .urlInput {
-    padding: 10px 12px 10px 30px;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    font-size: 14px;
-    width: 100%;
-  }
-  
-  .fieldError {
-    color: #ee6b0c;
-    font-size: 12px;
-    margin-top: 2px;
-  }
-  
-  .portalModalActions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 20px;
-  }
-  
-  .warningContainer {
-    flex: 1;
-  }
-  
-  .warningText {
-    color: #ee6b0c;
-    font-size: 14px;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .actionButtons {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .saveButton {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #ee6b0c;
-    border: 1px solid #ee6b0c;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .saveButton:hover {
-    background-color: #ee6b0c;
-    color: #ffffff;
-  }
-  
-  .cancelButton {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #777;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  /* Стили для подтверждения удаления новости */
-  .deleteConfirmation {
-    background-color: #fff8f8;
-    border: 1px solid #ffcdd2;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .deleteConfirmButtons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  
-  .confirmDeleteButton {
-    padding: 8px 16px;
-    background-color: #f44336;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  
-  .cancelDeleteButton {
-    padding: 8px 16px;
-    background-color: #ffffff;
-    color: #333333;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  
-  
+  min-height: calc(100vh - 72px);
+  font-family: "Manrope", Arial, sans-serif;
+  background-color: #f5f5f5;
+  padding: 1rem;
+}
+
+.contentWrapper {
+  display: flex;
+  width: 100%;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.leftColumn {
+  flex: 0 0 60%;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.rightColumn {
+  flex: 0 0 40%;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.rightColumnFixed {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.block {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.heading {
+  color: #000000;
+  border-bottom: 2px solid #ee6b0c;
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 45px;
+  letter-spacing: 0.5px;
+  padding: 15px 0 12px 0;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* Стили для новостей */
+.newsBlock {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.newsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.newsItem {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.pinnedNewsItem {
+  border-left: 4px solid #ee6b0c;
+  background-color: #fffaf5;
+}
+
+.pinnedIndicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #ee6b0c;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.pinnedIcon {
+  font-size: 14px;
+}
+
+.authorInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.authorInfoContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.authorAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.authorDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.authorName {
+  color: #13454b;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.newsTime {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+}
+
+.adminActions {
+  display: flex;
+  gap: 10px;
+}
+
+.adminActionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.adminActionButton:hover {
+  background-color: #f0f0f0;
+}
+
+.adminActionIcon {
+  font-size: 16px;
+  color: #13454b;
+}
+
+.newsImage {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.newsTitle {
+  color: #13454b;
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.newsDescription {
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 300;
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.newsFooter {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1rem;
+}
+
+.likeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.likeCount {
+  margin-left: 0.5rem;
+  color: #13454b;
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 500;
+}
+
+/* Стили для комментариев */
+.commentsSection {
+  margin-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1rem;
+}
+
+.commentsHeader {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #13454b;
+}
+
+.comment {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 1rem;
+}
+
+.commentContent {
+  flex: 1;
+}
+
+.userName {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.commentText {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.commentForm {
+  display: flex;
+  margin-top: 1rem;
+}
+
+.commentInput {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+
+.commentSubmit {
+  padding: 0.5rem 1rem;
+  background-color: #ee6b0c;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Стили для добавления новостей */
+.addNewsFormContainer {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.addNewsForm {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.addNewsInput {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-size: 16px;
+  font-family: "Manrope", Arial, sans-serif;
+  margin-bottom: 0.75rem;
+}
+
+.addNewsTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-size: 16px;
+  font-family: "Manrope", Arial, sans-serif;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
+.addNewsActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.attachmentContainer {
+  display: flex;
+  align-items: center;
+}
+
+.attachButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 14px;
+}
+
+.attachText {
+  color: #777;
+}
+
+.fileInput {
+  display: none;
+}
+
+.formButtons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cancelButton {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.cancelButton:hover {
+  color: #777777;
+}
+
+.publishButton {
+  padding: 0.5rem 1rem;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.publishButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+.imagePreviewContainer {
+  position: relative;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+.imagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.validationError {
+  color: #ee6b0c;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Стили для порталов */
+.portalBlock {
+  margin-bottom: 1rem;
+}
+
+.portalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.portalAdminControls {
+  position: relative;
+}
+
+.editPortalsButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ee6b0c;
+  font-size: 20px;
+  padding: 5px;
+}
+
+.editPortalsIcon {
+  font-size: 20px;
+}
+
+.portalMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 8px 0;
+  z-index: 1000;
+  min-width: 250px;
+}
+
+.portalMenuItem {
+  background: none;
+  border: none;
+  color: #333333;
+  cursor: pointer;
+  padding: 10px 16px;
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.portalMenuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.editModeNotification {
+  background-color: #fff8e1;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #856404;
+}
+
+.exitEditModeButton {
+  background-color: transparent;
+  border: 1px solid #856404;
+  color: #856404;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.exitEditModeButton:hover {
+  background-color: #856404;
+  color: #ffffff;
+}
+
+.portalGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.portalContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.portalContainerEditable {
+  cursor: pointer;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s;
+}
+
+.portalContainerEditable:hover {
+  background-color: #f0f0f0;
+}
+
+.portalLink {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-decoration: none;
+  color: #000000;
+  transition: transform 0.2s;
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 0.5rem 0;
+  flex: 1;
+}
+
+.portalContent {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.portalIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.portalIconText {
+  font-size: 20px;
+}
+
+.portalIconImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portalInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.portalName {
+  font-family: "Open Sans", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  margin-bottom: 5px;
+  transition: color 0.3s ease;
+  color: #000000;
+}
+
+.portalDescription {
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 14px;
+  color: #999999;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.editModeIndicator {
+  padding: 0 10px;
+  color: #ee6b0c;
+}
+
+.editModeIcon {
+  font-size: 16px;
+}
+
+/* Стили для мероприятий */
+.eventsBlock {
+  margin-bottom: 1rem;
+}
+
+.eventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.eventItem {
+  overflow: hidden;
+  background-color: #ffffff;
+  padding: 0;
+  border: none;
+}
+
+.eventDivider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0;
+  width: 100%;
+}
+
+.eventHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.eventInfo {
+  flex: 1;
+}
+
+.eventTitle {
+  margin: 0;
+  margin-bottom: 0.5rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.eventShortDescription {
+  margin: 0;
+  font-size: 14px;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.eventActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eventSeats {
+  font-size: 14px;
+  color: #13454b;
+  font-weight: 500;
+}
+
+.registerButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.registerButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+.registeredButton {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: #ffffff;
+  border: 1px solid #4caf50;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.expandIcon {
+  color: #aaaaaa;
+  font-size: 12px;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+.eventDetails {
+  padding: 1rem;
+  background-color: #f9f9f9;
+}
+
+.eventFullDescription {
+  margin: 0 0 1rem 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.eventMetadata {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.eventMetaItem {
+  display: flex;
+  font-size: 14px;
+}
+
+.eventMetaLabel {
+  font-weight: 600;
+  width: 150px;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.eventMetaValue {
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.speakersSection {
+  margin-top: 1rem;
+}
+
+.speakersTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.speakersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.speakerItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.speakerAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.speakerPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.speakerInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.speakerName {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+  color: #13454b;
+}
+
+.speakerPosition {
+  margin: 0;
+  font-size: 12px;
+  color: #777;
+}
+
+/* Стили для дней рождения */
+.birthdayBlock {
+  margin-bottom: 1rem;
+  height: calc(100% - 400px);
+}
+
+.birthdayList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.birthdayItem {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+}
+
+.birthdayAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  overflow: hidden;
+}
+
+.birthdayPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.birthdayInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.birthdayName {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+  color: #000000;
+  cursor: pointer;
+}
+
+.birthdayDepartment {
+  margin: 0;
+  font-size: 12px;
+  color: #777;
+}
+
+.birthdayDetails {
+  padding: 1rem 1rem 1rem 4rem;
+  background-color: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 0.5rem;
+}
+
+.birthdayDetailsSection {
+  margin-bottom: 1rem;
+}
+
+.birthdayDetailsTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.75rem;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.birthdayDetailsRow {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.birthdayDetailsLabel {
+  width: 180px;
+  font-size: 14px;
+  color: #777;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.birthdayDetailsValue {
+  font-size: 14px;
+  color: #333;
+  font-family: "Open Sans", Arial, sans-serif;
+  margin-left: 0;
+}
+
+.birthdayDetailsValueWithCopy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.copyButton {
+  background: none;
+  border: none;
+  color: #ee6b0c;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.copyNotification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #13454b;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1100;
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* Стили для модального окна редактирования портала */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding-top: 80px;
+}
+
+.portalModal {
+  width: 45%;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.portalModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.portalModalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #13454b;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #777;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.portalModalContent {
+  padding: 20px;
+}
+
+.portalIconEditContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.portalIconEdit {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.portalIconEmoji {
+  font-size: 40px;
+}
+
+.portalIconPlaceholder {
+  font-size: 40px;
+  color: #999;
+}
+
+.portalIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoUploadOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.photoUploadOverlay:hover {
+  opacity: 1;
+}
+
+.cameraIcon {
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.emojiSelector {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.emojiLabel {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.emojiButton {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.emojiButtonSelected {
+  background-color: #f0f0f0;
+}
+
+.portalFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.formInput {
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.formTextarea {
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.urlInputContainer {
+  position: relative;
+}
+
+.urlIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #777;
+}
+
+.urlInput {
+  padding: 10px 12px 10px 30px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  width: 100%;
+}
+
+.fieldError {
+  color: #ee6b0c;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.portalModalActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.warningContainer {
+  flex: 1;
+}
+
+.warningText {
+  color: #ee6b0c;
+  font-size: 14px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.saveButton {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.saveButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #777;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+/* Стили для подтверждения удаления новости */
+.deleteConfirmation {
+  background-color: #fff8f8;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.deleteConfirmButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.confirmDeleteButton {
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancelDeleteButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #333333;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancelWarning {
+  background-color: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.cancelWarningButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cancelWarningBackButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #777777;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cancelWarningConfirmButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.cancelWarningConfirmButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
