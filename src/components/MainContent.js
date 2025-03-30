@@ -184,6 +184,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
   const [validationError, setValidationError] = useState(false)
   const fileInputRef = useRef(null)
   const { currentUser } = useUser()
+  const [showCancelWarning, setShowCancelWarning] = useState(false)
 
   // Инициализация формы при редактировании
   useEffect(() => {
@@ -295,15 +296,40 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
   }
 
   const handleCancel = () => {
+    if (title.trim() || description.trim() || imagePreview) {
+      setShowCancelWarning(true)
+    } else {
+      if (editingNews) {
+        setEditingNews(null)
+      }
+      resetForm()
+    }
+  }
+
+  const confirmCancel = () => {
     if (editingNews) {
       setEditingNews(null)
     }
     resetForm()
+    setShowCancelWarning(false)
   }
 
   return (
     <div className={styles.addNewsFormContainer}>
       <form onSubmit={handleSubmit} className={styles.addNewsForm}>
+        {showCancelWarning && (
+          <div className={styles.cancelWarning}>
+            <p>Вы уверены, что хотите отменить? Все несохраненные изменения будут потеряны.</p>
+            <div className={styles.cancelWarningButtons}>
+              <button onClick={() => setShowCancelWarning(false)} className={styles.cancelWarningBackButton}>
+                Вернуться к редактированию
+              </button>
+              <button onClick={confirmCancel} className={styles.cancelWarningConfirmButton}>
+                Да, отменить
+              </button>
+            </div>
+          </div>
+        )}
         <input
           type="text"
           value={title}
@@ -363,7 +389,18 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin }) {
                 <button type="button" onClick={handleCancel} className={styles.cancelButton}>
                   Отмена
                 </button>
-                <button type="submit" className={styles.publishButton}>
+                <button
+                  type="submit"
+                  className={styles.publishButton}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ee6b0c"
+                    e.currentTarget.style.color = "#ffffff"
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ffffff"
+                    e.currentTarget.style.color = "#ee6b0c"
+                  }}
+                >
                   {editingNews ? "Сохранить" : "Опубликовать"}
                 </button>
               </div>
@@ -1088,7 +1125,7 @@ function MainContent() {
         },
         {
           id: 2,
-          name: "Елена ��идорова",
+          name: "Елена Сидорова",
           position: "Специалист по защите данных",
           photo: null,
         },
