@@ -3,6 +3,7 @@
 #include <pqxx/pqxx>
 #include <vector>
 #include <string>
+#include "../../include/websocket/ws_server.h"
 
 // Вспомогательная функция для объединения строк с разделителем
 std::string join(const std::vector<std::string>& elements, const std::string& delimiter) {
@@ -115,6 +116,13 @@ nlohmann::json Put::updateNews(int news_id,
             response["image_data"] = result[0]["image_data"].as<std::string>();
             response["image_type"] = result[0]["image_type"].as<std::string>();
         }
+
+        // Отправляем только одно сообщение WebSocket в правильном формате
+        nlohmann::json wsMessage = {
+            {"type", "news_updated"},
+            {"data", response}
+        };
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
 
         return response;
     } catch (const std::exception& e) {

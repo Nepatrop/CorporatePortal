@@ -152,25 +152,26 @@ int main() {
     svr.Post(R"(/api/news/(\d+)/comments)", [](const httplib::Request& req, httplib::Response& res) {
         try {
             auto json = nlohmann::json::parse(req.body);
-            int news_id = std::stoi(req.matches[1]);
+            int newsId = std::stoi(req.matches[1].str());
+            int employeeId = json["employee_id"].get<int>();
+            std::string text = json["text"].get<std::string>();
+
+            auto result = Post::postNewsComment(newsId, employeeId, text);
             
-            if (!json.contains("employee_id") || !json.contains("text")) {
-                res.status = 400;
-                res.set_content(R"({"error": "Missing required fields"})", "application/json");
-                return;
-            }
-
-            int employee_id = json["employee_id"].is_string() ? 
-                std::stoi(json["employee_id"].get<std::string>()) : 
-                json["employee_id"].get<int>();
-
-            auto response = Post::postNewsComment(news_id, employee_id, json["text"].get<std::string>());
-            res.set_content(response.dump(), "application/json");
-
+            // Отправляем уведомление всем подключенным клиентам
+            WebSocketServer::getInstance().broadcast(
+                nlohmann::json({
+                    {"type", "comment_added"},
+                    {"newsId", newsId},
+                    {"data", result}
+                }).dump()
+            );
+            
+            res.set_content(result.dump(), "application/json");
         } catch (const std::exception& e) {
-            std::cerr << "Error creating comment: " << e.what() << std::endl;
+            std::cerr << "Error posting comment: " << e.what() << std::endl;
             res.status = 500;
-            res.set_content(R"({"error": "Server error", "details": ")" + std::string(e.what()) + R"("})", "application/json");
+            res.set_content(nlohmann::json({{"error", e.what()}}).dump(), "application/json");
         }
     });
 
@@ -285,8 +286,18 @@ int main() {
 
     svr.Delete(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
         try {
-            auto news_id = std::stoi(req.matches[1]);
-            if (Delete::deleteNews(news_id)) {
+            int newsId = std::stoi(req.matches[1].str());
+            bool success = Delete::deleteNews(newsId);
+            
+            if (success) {
+                // Отправляем уведомление через WebSocket в формате JSON
+                WebSocketServer::getInstance().broadcast(
+                    nlohmann::json({
+                        {"type", "news_updated"}
+                    }).dump()
+                );
+                
+                res.status = 200;
                 res.set_content("{\"success\":true}", "application/json");
             } else {
                 res.status = 404;
@@ -328,18 +339,20 @@ int main() {
 
     svr.Put(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
         try {
-            auto news_id = std::stoi(req.matches[1]);
             auto json = nlohmann::json::parse(req.body);
+            int newsId = std::stoi(req.matches[1].str());
             
             auto result = Put::updateNews(
-                news_id,
-                json["title"].get<std::string>(), 
+                newsId,
+                json["title"].get<std::string>(),
                 json["content"].get<std::string>(),
-                json.value("image_data", ""),
-                json.value("image_type", "")
+                json.contains("image_data") ? json["image_data"].get<std::string>() : "",
+                json.contains("image_type") ? json["image_type"].get<std::string>() : ""
             );
 
-            if (result["error"].is_null()) {
+            if (!result.contains("error")) {
+                // Отправляем уведомление всем подключенным клиентам
+                WebSocketServer::getInstance().broadcast("news_updated");
                 res.set_content(result.dump(), "application/json");
             } else {
                 res.status = 404;

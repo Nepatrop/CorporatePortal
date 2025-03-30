@@ -3,6 +3,7 @@ class WebSocketClient {
         this.connect();
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
+        this.messageHandler = null;
     }
 
     connect() {
@@ -30,13 +31,41 @@ class WebSocketClient {
             this.ws.onerror = (error) => {
                 console.error('WebSocket Error:', error);
             };
+
+            this.ws.onmessage = (event) => {
+                try {
+                    // Добавляем дополнительную проверку
+                    if (typeof event.data !== 'string') {
+                        console.error('Invalid message format: data is not a string');
+                        return;
+                    }
+
+                    console.log('Received WebSocket message:', event.data);
+                    
+                    const data = JSON.parse(event.data);
+                    
+                    // Проверяем структуру данных
+                    if (!data || typeof data !== 'object' || !data.type) {
+                        console.error('Invalid message format: missing required fields');
+                        return;
+                    }
+                    
+                    // Вызываем обработчик только с валидными данными
+                    if (this.messageHandler) {
+                        this.messageHandler(data);
+                    }
+                } catch (error) {
+                    console.error('Error processing WebSocket message:', error);
+                    console.error('Raw message data:', event.data);
+                }
+            };
         } catch (error) {
             console.error('Error creating WebSocket connection:', error);
         }
     }
 
     setMessageHandler(handler) {
-        this.ws.onmessage = handler;
+        this.messageHandler = handler;
     }
 }
 

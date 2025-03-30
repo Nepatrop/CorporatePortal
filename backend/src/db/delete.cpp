@@ -2,7 +2,8 @@
 #include "db/config.h"
 #include <pqxx/pqxx>
 #include <iostream>
-
+#include <nlohmann/json.hpp>
+#include "../../include/websocket/ws_server.h"
 
 bool Delete::deleteOrganization(int id) {
     try {
@@ -90,6 +91,13 @@ bool Delete::deleteNews(int news_id) {
         
         // Удаляем саму новость
         txn.exec_params("DELETE FROM news WHERE id = $1", news_id);
+        
+        // Отправляем только одно сообщение WebSocket в правильном формате
+        nlohmann::json wsMessage = {
+            {"type", "news_deleted"},
+            {"data", {{"id", news_id}}}
+        };
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
         
         txn.commit();
         return true;

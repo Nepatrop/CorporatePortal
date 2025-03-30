@@ -2,6 +2,7 @@
 #include "db/config.h"
 #include <pqxx/pqxx>
 #include <iostream>
+#include "../../include/websocket/ws_server.h"
 
 bool Post::postOrganization(const nlohmann::json& data) {
     try {
@@ -253,6 +254,15 @@ nlohmann::json Post::postNewsWithImage(const std::string& title,
                 response["image_type"] = news[0]["image_type"].as<std::string>();
             }
 
+            // Отправляем только одно сообщение WebSocket в правильном формате
+            nlohmann::json wsMessage = {
+                {"type", "news_updated"},
+                {"data", response}
+            };
+            
+            std::string messageStr = wsMessage.dump();
+            WebSocketServer::getInstance().broadcast(messageStr);
+
             return response;
         }
         throw std::runtime_error("No rows returned after insert");
@@ -311,12 +321,30 @@ nlohmann::json Post::postNewsComment(int news_id, int employee_id, const std::st
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
+
+        // Добавляем проверку корректности ID
+        if (news_id <= 0 || employee_id <= 0) {
+            throw std::runtime_error("Invalid ID values");
+        }
+
+        // Проверяем существование новости
+        auto news_check = txn.exec_params("SELECT id FROM news WHERE id = $1", news_id);
+        if (news_check.empty()) {
+            throw std::runtime_error("News not found");
+        }
+
+        // Проверяем существование сотрудника
+        auto emp_check = txn.exec_params("SELECT id FROM employees WHERE id = $1", employee_id);
+        if (emp_check.empty()) {
+            throw std::runtime_error("Employee not found");
+        }
+
         txn.exec0("SET TIME ZONE 'UTC';");
 
         auto result = txn.exec_params(R"(
             WITH new_comment AS (
-                INSERT INTO news_comments (news_id, employee_id, text)
-                VALUES ($1, $2, $3)
+                INSERT INTO news_comments (news_id, employee_id, text, created_at)
+                VALUES ($1, $2, $3, NOW())
                 RETURNING id, text, created_at
             )
             SELECT 
@@ -337,10 +365,20 @@ nlohmann::json Post::postNewsComment(int news_id, int employee_id, const std::st
                 {"author", result[0]["author"].as<std::string>()},
                 {"created_at", result[0]["created_at"].as<std::string>()}
             };
+
+            // Отправляем только одно сообщение WebSocket в правильном формате
+            nlohmann::json wsMessage = {
+                {"type", "comment_added"},
+                {"data", response},
+                {"newsId", news_id}
+            };
+            WebSocketServer::getInstance().broadcast(wsMessage.dump());
+
             return response;
         }
-        throw std::runtime_error("No rows returned after insert");
+        throw std::runtime_error("Failed to create comment");
     } catch (const std::exception& e) {
+        std::cerr << "Error in postNewsComment: " << e.what() << std::endl;
         throw;
     }
 }
@@ -355,21 +393,46 @@ nlohmann::json Post::toggleNewsLike(int news_id, int employee_id) {
             news_id, employee_id
         );
 
+        bool isLiked;
         if (check_result.empty()) {
             txn.exec_params(
                 "INSERT INTO news_likes (news_id, employee_id) VALUES ($1, $2)",
                 news_id, employee_id
             );
-            txn.commit();
-            return {{"success", true}, {"action", "liked"}};
+            isLiked = true;
         } else {
             txn.exec_params(
                 "DELETE FROM news_likes WHERE news_id = $1 AND employee_id = $2",
                 news_id, employee_id
             );
-            txn.commit();
-            return {{"success", true}, {"action", "unliked"}};
+            isLiked = false;
         }
+
+        // Получаем обновленное количество лайков
+        auto likes_count = txn.exec_params(
+            "SELECT COUNT(*) as count FROM news_likes WHERE news_id = $1",
+            news_id
+        )[0]["count"].as<int>();
+
+        txn.commit();
+
+        nlohmann::json response = {
+            {"success", true},
+            {"action", isLiked ? "liked" : "unliked"},
+            {"likes_count", likes_count}
+        };
+
+        // Отправляем WebSocket сообщение
+        nlohmann::json wsMessage = {
+            {"type", "likes_updated"},
+            {"data", {
+                {"news_id", news_id},
+                {"likes_count", likes_count}
+            }}
+        };
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
+
+        return response;
     } catch (const std::exception& e) {
         throw;
     }

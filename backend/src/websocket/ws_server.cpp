@@ -1,6 +1,7 @@
 #include "websocket/ws_server.h"
 #include <iostream>
 #include <boost/asio/ip/address.hpp>
+#include <nlohmann/json.hpp>
 
 WebSocketServer::WebSocketServer() {
     ws_server.init_asio();
@@ -58,8 +59,20 @@ void WebSocketServer::on_fail(connection_hdl hdl) {
 }
 
 void WebSocketServer::broadcast(const std::string& message) {
-    for(auto& connection : connections) {
-        ws_server.send(connection, message, websocketpp::frame::opcode::text);
+    // Проверяем что сообщение является валидным JSON перед отправкой
+    try {
+        auto parsed = nlohmann::json::parse(message);
+        
+        // Отправляем сообщение всем подключенным клиентам
+        for(auto& connection : connections) {
+            try {
+                ws_server.send(connection, message, websocketpp::frame::opcode::text);
+            } catch (const std::exception& e) {
+                std::cerr << "Error sending message: " << e.what() << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Invalid JSON message: " << message << std::endl;
     }
 }
 

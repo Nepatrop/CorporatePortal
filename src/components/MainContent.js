@@ -883,7 +883,6 @@ function MainContent() {
         publication_time: item.publication_time,
       }))
 
-      // Сортируем новости: сначала закрепленные, потом по дате (от новых к старым)
       const sortedNews = newsWithDefaults.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1
         if (!a.isPinned && b.isPinned) return 1
@@ -944,104 +943,125 @@ function MainContent() {
   }, [])
 
   useEffect(() => {
-    loadNews()
+    loadNews();
 
-    // Устанавливаем обработчик WebSocket сообщений
-    wsClient.setMessageHandler((event) => {
-      if (event.data === "news_updated") {
-        loadNews() // Перезагружаем новости
-      }
-    })
-  }, [loadNews])
+    wsClient.setMessageHandler((data) => {
+        switch (data.type) {
+            case "news_updated":
+                loadNews();
+                break;
+                
+            case "news_deleted":
+                setNews(prevNews => prevNews.filter(news => news.id !== data.data.id));
+                break;
+                
+            case "comment_added":
+                if (data.data && data.newsId) {
+                    setNews(prevNews => prevNews.map(news => {
+                        if (news.id === data.newsId) {
+                            const commentExists = news.comments?.some(
+                                comment => comment.id === data.data.id
+                            );
+                            
+                            if (!commentExists) {
+                                return {
+                                    ...news,
+                                    comments: [...(news.comments || []), data.data]
+                                };
+                            }
+                        }
+                        return news;
+                    }));
+                }
+                break;
+
+            case "likes_updated":
+                if (data.data && data.data.news_id) {
+                    setNews(prevNews => prevNews.map(news => {
+                        if (news.id === data.data.news_id) {
+                            return {
+                                ...news,
+                                likes_count: data.data.likes_count
+                            };
+                        }
+                        return news;
+                    }));
+                }
+                break;
+        }
+    });
+}, [loadNews]);
 
   const handleLike = async (newsId) => {
     try {
-      const response = await api.post(`/api/news/${Number.parseInt(newsId)}/like`, {
-        employee_id: Number.parseInt(currentUser.id),
-      })
+        const response = await api.post(`/api/news/${Number.parseInt(newsId)}/like`, {
+            employee_id: Number.parseInt(currentUser.id),
+        });
 
-      if (response.ok) {
-        const data = await response.json()
-        setNews((prevNews) =>
-          prevNews.map((item) => {
-            if (item.id === newsId) {
-              return {
-                ...item,
-                likes_count: data.action === "liked" ? item.likes_count + 1 : item.likes_count - 1,
-                liked: data.action === "liked",
-              }
-            }
-            return item
-          }),
-        )
-      }
+        if (response.ok) {
+            const data = await response.json();
+            // Обновляем только состояние лайка текущего пользователя
+            setNews((prevNews) =>
+                prevNews.map((item) => {
+                    if (item.id === newsId) {
+                        return {
+                            ...item,
+                            liked: data.action === "liked"
+                        };
+                    }
+                    return item;
+                })
+            );
+        }
     } catch (error) {
-      console.error("Error liking news:", error)
+        console.error("Error liking news:", error);
     }
-  }
+};
 
   const handleAddComment = async (newsId, text) => {
     try {
-      console.log("Sending comment:", { newsId, text, employee_id: currentUser.id }) // Добавляем логирование
+        const response = await api.post(`/api/news/${newsId}/comments`, {
+            employee_id: Number(currentUser.id),
+            text: text,
+        })
 
-      const response = await api.post(`/api/news/${newsId}/comments`, {
-        employee_id: currentUser.id,
-        text: text,
-      })
-
-      if (response.ok) {
-        const newComment = await response.json()
-        console.log("New comment response:", newComment) // Добавляем логирование
-        setNews((prevNews) =>
-          prevNews.map((item) => {
-            if (item.id === newsId) {
-              return {
-                ...item,
-                comments: [...(item.comments || []), newComment],
-              }
-            }
-            return item
-          }),
-        )
-      } else {
-        const errorText = await response.text()
-        console.error("Comment error response:", errorText)
-      }
+        // Убираем обновление состояния здесь, т.к. оно придет через WebSocket
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error("Comment error response:", errorText)
+        }
     } catch (error) {
-      console.error("Error adding comment:", error)
+        console.error("Error adding comment:", error)
     }
   }
 
   // Функция для редактирования новости
-  const handleEditNews = (newsItem) => {
-    setEditingNews(newsItem)
+  const handleEditNews = async (newsItem) => {
+    setEditingNews(newsItem);
     // Прокручиваем страницу к форме редактирования
     window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    })
-  }
+        top: 0,
+        behavior: "smooth"
+    });
+  };
 
   // Функция для удаления новости
   const handleDeleteNews = async (newsId) => {
     if (showDeleteConfirm === newsId) {
-      try {
-        const response = await api.delete(`/api/news/${newsId}`)
-        if (response.ok) {
-          // Удаляем новость из состояния
-          setNews((prevNews) => prevNews.filter((item) => item.id !== newsId))
-          setShowDeleteConfirm(null)
-          // После удаления перезагружаем список новостей
-          await loadNews()
-        } else {
-          console.error("Error deleting news")
+        try {
+            const response = await api.delete(`/api/news/${newsId}`);
+            if (response.ok) {
+                setShowDeleteConfirm(null);
+                // Локально удаляем новость сразу
+                setNews(prevNews => prevNews.filter(news => news.id !== newsId));
+            } else {
+                console.error("Error deleting news");
+            }
+        } catch (error) {
+            console.error("Error deleting news:", error);
         }
-      } catch (error) {
-        console.error("Error deleting news:", error)
-      }
     } else {
-      // Показываем подтверждение удаления
-      setShowDeleteConfirm(newsId)
+        setShowDeleteConfirm(newsId);
     }
   }
 
