@@ -29,23 +29,12 @@ WebSocketServer::~WebSocketServer() {
 
 void WebSocketServer::run(uint16_t port) {
     try {
-        // Уменьшаем количество логов, оставляем только важные
         ws_server.clear_access_channels(websocketpp::log::alevel::all);
-        ws_server.set_access_channels(
-            websocketpp::log::alevel::connect | 
-            websocketpp::log::alevel::disconnect | 
-            websocketpp::log::alevel::fail
-        );
+        ws_server.set_access_channels(websocketpp::log::alevel::fail);
         
-        // Создаем правильный адрес для прослушивания всех интерфейсов
         auto addr = boost::asio::ip::address::from_string("0.0.0.0");
         ws_server.listen(addr, port);
-        
         ws_server.start_accept();
-        
-        std::cout << "WebSocket server is running on port " << port << std::endl;
-        std::cout << "To access WebSocket from other computers, use ws://<this-computer-ip>:" << port << std::endl;
-        
         ws_server.run();
     } catch (const std::exception& e) {
         std::cerr << "WebSocket server error: " << e.what() << std::endl;
@@ -62,7 +51,7 @@ void WebSocketServer::on_close(connection_hdl hdl) {
 
 void WebSocketServer::on_fail(connection_hdl hdl) {
     auto con = ws_server.get_con_from_hdl(hdl);
-    std::cout << "Connection failed. Error: " 
+    std::cerr << "Connection failed. Error: " 
               << con->get_ec() << " - " 
               << con->get_ec().message() << std::endl;
 }
@@ -72,33 +61,35 @@ void WebSocketServer::broadcast(const std::string& message) {
     
     try {
         auto parsed = nlohmann::json::parse(message);
+        if (!parsed.is_object() || !parsed.contains("type") || !parsed.contains("data")) {
+            std::cerr << "Invalid message structure, skipping broadcast" << std::endl;
+            return;
+        }
         
         std::vector<connection_hdl> deadConnections;
         
         for(auto& connection : connections) {
             try {
                 auto con = ws_server.get_con_from_hdl(connection);
-                
-                // Проверяем, активно ли соединение
                 if (con->get_state() != websocketpp::session::state::open) {
                     deadConnections.push_back(connection);
                     continue;
                 }
-                
                 ws_server.send(connection, message, websocketpp::frame::opcode::text);
             } catch (const std::exception& e) {
-                std::cerr << "Error sending message: " << e.what() << std::endl;
+                std::cerr << "Error sending message to connection: " << e.what() << std::endl;
                 deadConnections.push_back(connection);
             }
         }
         
-        // Удаляем мертвые соединения
         for (const auto& deadConn : deadConnections) {
             connections.erase(deadConn);
         }
+    } catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "JSON parse error in broadcast: " << e.what() << std::endl;
+        std::cerr << "Message was: " << message << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Invalid JSON message: " << message << std::endl;
-        std::cerr << "Error details: " << e.what() << std::endl;
+        std::cerr << "Error in broadcast: " << e.what() << std::endl;
     }
 }
 

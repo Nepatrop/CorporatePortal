@@ -1,6 +1,6 @@
 #include "db/get.h"
 #include "db/config.h"
-
+#include <iostream> // Добавляем для std::cerr
 
 nlohmann::json Get::resultToJson(pqxx::result& r) {
     nlohmann::json result = nlohmann::json::array();
@@ -162,9 +162,10 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
-        txn.exec0("SET TIME ZONE 'UTC';"); // Используем точку с запятой
+        txn.exec0("SET TIME ZONE 'UTC';");
 
-        pqxx::result r = txn.exec_params(R"(
+        // Обновляем запрос, добавляя комментарии через WITH
+        auto result = txn.exec_params(R"(
             WITH comment_details AS (
                 SELECT 
                     nc.news_id,
@@ -173,41 +174,38 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
                             'id', nc.id,
                             'text', nc.text,
                             'author', e.full_name,
-                            'created_at', TO_CHAR(nc.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-                        )
+                            'created_at', TO_CHAR(nc.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                        ) ORDER BY nc.created_at ASC
                     ) FILTER (WHERE nc.id IS NOT NULL) as comments
                 FROM news_comments nc
                 LEFT JOIN employees e ON nc.employee_id = e.id
                 GROUP BY nc.news_id
             )
             SELECT 
-                n.id,
-                n.title,
-                n.content,
-                encode(n.image_data, 'base64') as image_data,
-                n.image_type,
-                TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time,
+                n.*,
                 e.full_name as author_name,
-                COUNT(DISTINCT nl.id) as likes_count,
-                EXISTS (
-                    SELECT 1 
-                    FROM news_likes nl2 
-                    WHERE nl2.news_id = n.id 
-                    AND nl2.employee_id = $1
-                ) as is_liked,
-                COALESCE(cd.comments, '[]') as comments
-            FROM news n
+                CASE 
+                    WHEN n.image_data IS NOT NULL 
+                    THEN encode(n.image_data, 'base64') 
+                    ELSE NULL 
+                END as image_data_base64,
+                nl.employee_id IS NOT NULL as liked,
+                (SELECT COUNT(*) FROM news_likes WHERE news_id = n.id) as likes_count,
+                TO_CHAR(n.publication_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time,
+                COALESCE(cd.comments, '[]'::jsonb) as comments
+            FROM news n 
             LEFT JOIN employees e ON n.author_id = e.id
-            LEFT JOIN news_likes nl ON n.id = nl.news_id
+            LEFT JOIN news_likes nl ON n.id = nl.news_id AND nl.employee_id = $1
             LEFT JOIN comment_details cd ON n.id = cd.news_id
-            GROUP BY n.id, n.title, n.content, n.image_data, n.image_type, 
-                     n.publication_time, e.full_name, cd.comments
-            ORDER BY n.publication_time DESC
+            ORDER BY 
+                n.is_pinned DESC,
+                n.pin_order ASC NULLS LAST,
+                n.publication_time DESC
         )", currentUserId);
 
-        nlohmann::json result = nlohmann::json::array();
-        
-        for (const auto& row : r) {
+        nlohmann::json resultArray = nlohmann::json::array();
+
+        for (const auto& row : result) {
             nlohmann::json newsItem = {
                 {"id", row["id"].as<int>()},
                 {"title", row["title"].as<std::string>()},
@@ -215,17 +213,19 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
                 {"publication_time", row["publication_time"].as<std::string>()},
                 {"author_name", row["author_name"].is_null() ? "" : row["author_name"].as<std::string>()},
                 {"likes_count", row["likes_count"].as<int>()},
-                {"liked", row["is_liked"].as<bool>()},
+                {"liked", row["liked"].as<bool>()},
+                {"is_pinned", row["is_pinned"].as<bool>()},
                 {"comments", row["comments"].is_null() ? nlohmann::json::array() : nlohmann::json::parse(row["comments"].as<std::string>())},
-                {"image_data", row["image_data"].is_null() ? "" : row["image_data"].as<std::string>()},
-                {"image_type", row["image_type"].is_null() ? "" : row["image_type"].as<std::string>()}
+                {"image_type", row["image_type"].is_null() ? "" : row["image_type"].as<std::string>()},
+                {"image_data", row["image_data_base64"].is_null() ? "" : row["image_data_base64"].as<std::string>()}
             };
-            
-            result.push_back(newsItem);
+
+            resultArray.push_back(newsItem);
         }
-        
-        return result;
+
+        return resultArray;
     } catch (const std::exception& e) {
+        std::cerr << "Error in getNewsWithDetails: " << e.what() << std::endl;
         return nlohmann::json::array();
     }
 }

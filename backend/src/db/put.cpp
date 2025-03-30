@@ -86,7 +86,7 @@ nlohmann::json Put::updateNews(int news_id,
             );
         }
         
-        // Получаем обновленную новость
+        // Обновляем запрос для получения обновленной новости
         auto result = txn.exec_params(R"(
             SELECT 
                 n.*, 
@@ -96,7 +96,9 @@ nlohmann::json Put::updateNews(int news_id,
                     THEN encode(n.image_data, 'base64') 
                     ELSE NULL 
                 END as image_data,
-                TO_CHAR(n.publication_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
+                TO_CHAR(n.publication_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time,
+                n.is_pinned,
+                n.pin_order
             FROM news n 
             LEFT JOIN employees e ON n.author_id = e.id 
             WHERE n.id = $1
@@ -109,9 +111,18 @@ nlohmann::json Put::updateNews(int news_id,
             {"title", result[0]["title"].as<std::string>()},
             {"content", result[0]["content"].as<std::string>()},
             {"publication_time", result[0]["publication_time"].as<std::string>()},
-            {"author_name", result[0]["author_name"].as<std::string>()}
+            {"author_name", result[0]["author_name"].as<std::string>()},
+            {"is_pinned", result[0]["is_pinned"].as<bool>()}
         };
 
+        // Добавляем pin_order
+        if (result[0]["is_pinned"].as<bool>() && !result[0]["pin_order"].is_null()) {
+            response["pin_order"] = result[0]["pin_order"].as<int>();
+        } else {
+            response["pin_order"] = nlohmann::json::value_t::null;
+        }
+
+        // Добавляем изображение, если оно есть
         if (!result[0]["image_data"].is_null()) {
             response["image_data"] = result[0]["image_data"].as<std::string>();
             response["image_type"] = result[0]["image_type"].as<std::string>();
@@ -127,5 +138,81 @@ nlohmann::json Put::updateNews(int news_id,
         return response;
     } catch (const std::exception& e) {
         return {{"error", e.what()}};
+    }
+}
+
+nlohmann::json Put::toggleNewsPin(int news_id, bool should_pin) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+
+        if (should_pin) {
+            // Проверяем количество закрепленных новостей
+            auto pinned_count = txn.exec1("SELECT COUNT(*) FROM news WHERE is_pinned = true")[0].as<int>();
+            if (pinned_count >= 3) {
+                txn.abort();
+                return {
+                    {"success", false}, 
+                    {"error", "Maximum number of pinned news (3) reached"}
+                };
+            }
+
+            // Получаем следующий pin_order
+            auto max_order = txn.exec1("SELECT COALESCE(MAX(pin_order), 0) FROM news WHERE is_pinned = true")[0].as<int>();
+            
+            // Закрепляем новость
+            txn.exec_params(
+                "UPDATE news SET is_pinned = true, pin_order = $1 WHERE id = $2",
+                max_order + 1, news_id
+            );
+        } else {
+            // Получаем текущий pin_order новости
+            auto current_order = txn.exec_params1(
+                "SELECT pin_order FROM news WHERE id = $1",
+                news_id
+            )[0].as<int>();
+
+            // Открепляем новость
+            txn.exec_params(
+                "UPDATE news SET is_pinned = false, pin_order = NULL WHERE id = $1",
+                news_id
+            );
+
+            // Обновляем порядок оставшихся закрепленных новостей
+            txn.exec_params(
+                "UPDATE news SET pin_order = pin_order - 1 "
+                "WHERE is_pinned = true AND pin_order > $1",
+                current_order
+            );
+        }
+
+        auto updatedNews = txn.exec_params1(R"(
+            SELECT id, is_pinned, pin_order, 
+                   TO_CHAR(publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
+            FROM news 
+            WHERE id = $1
+        )", news_id);
+
+        txn.commit();
+
+        nlohmann::json pin_order_value = nullptr;
+        if (updatedNews["is_pinned"].as<bool>()) {
+            pin_order_value = updatedNews["pin_order"].as<int>();
+        }
+
+        nlohmann::json wsMessage = {
+            {"type", "news_pin_updated"},
+            {"data", {
+                {"news_id", news_id},
+                {"is_pinned", updatedNews["is_pinned"].as<bool>()},
+                {"pin_order", pin_order_value}
+            }}
+        };
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
+
+        return {{"success", true}};
+    } catch (const std::exception& e) {
+        std::cerr << "Error toggling news pin: " << e.what() << std::endl;
+        return {{"success", false}, {"error", e.what()}};
     }
 }

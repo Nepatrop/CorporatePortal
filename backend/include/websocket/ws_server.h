@@ -13,7 +13,7 @@ private:
     
     server ws_server;
     std::set<connection_hdl, std::owner_less<connection_hdl>> connections;
-    std::mutex connections_mutex; // Добавляем мьютекс для потокобезопасности
+    std::mutex connections_mutex;
     bool is_running;
     
     void on_open(connection_hdl hdl);

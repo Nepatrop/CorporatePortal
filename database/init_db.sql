@@ -65,11 +65,14 @@ CREATE TABLE news (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    author_id INT NOT NULL,
-    publication_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    author_id INTEGER REFERENCES employees(id),
     image_data BYTEA,
-    image_type VARCHAR(50),
-    FOREIGN KEY (author_id) REFERENCES employees(id)
+    image_type VARCHAR(255),
+    publication_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_pinned BOOLEAN DEFAULT FALSE,
+    pin_order INTEGER,
+    CONSTRAINT valid_pin_order CHECK ((is_pinned = FALSE AND pin_order IS NULL) OR 
+                                    (is_pinned = TRUE AND pin_order IS NOT NULL))
 );
 
 CREATE TABLE news_likes (

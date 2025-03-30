@@ -190,6 +190,19 @@ bool Post::postNews(const nlohmann::json& data) {
     }
 }
 
+void broadcastNewsUpdate(const nlohmann::json& newsData) {
+    try {
+        nlohmann::json wsMessage = {
+            {"type", "news_updated"},
+            {"data", newsData}
+        };
+        std::string message = wsMessage.dump();
+        WebSocketServer::getInstance().broadcast(message);
+    } catch (const std::exception& e) {
+        std::cerr << "Error in broadcastNewsUpdate: " << e.what() << std::endl;
+    }
+}
+
 nlohmann::json Post::postNewsWithImage(const std::string& title, 
                                      const std::string& content, 
                                      const std::string& author_id,
@@ -204,65 +217,46 @@ nlohmann::json Post::postNewsWithImage(const std::string& title,
         
         if (image_data.empty()) {
             result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id) VALUES ($1, $2, $3) RETURNING id",
+                "INSERT INTO news (title, content, author_id, publication_time) "
+                "VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING id",
                 title, content, std::stoi(author_id)
             );
         } else {
-            // Используем decode для преобразования base64 в бинарные данные
             result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id, image_data, image_type) "
-                "VALUES ($1, $2, $3, decode($4, 'base64'), $5) RETURNING id",
+                "INSERT INTO news (title, content, author_id, image_data, image_type, publication_time) "
+                "VALUES ($1, $2, $3, decode($4, 'base64'), $5, CURRENT_TIMESTAMP) RETURNING id",
                 title, content, std::stoi(author_id), image_data, image_type
             );
         }
 
-        txn.commit();
-
         if (!result.empty()) {
-            pqxx::work txn2(conn);
             auto newsId = result[0][0].as<int>();
-
-            auto news = txn2.exec_params(R"(
+            auto news = txn.exec_params(R"(
                 SELECT 
-                    n.*, 
+                    n.*,
                     e.full_name as author_name,
-                    CASE 
-                        WHEN n.image_data IS NOT NULL 
-                        THEN encode(n.image_data, 'base64') 
-                        ELSE NULL 
-                    END as image_data,
+                    encode(n.image_data, 'base64') as image_data_base64,
                     TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
                 FROM news n 
                 LEFT JOIN employees e ON n.author_id = e.id 
                 WHERE n.id = $1
             )", newsId);
 
-            txn2.commit();
+            txn.commit();
 
             nlohmann::json response = {
                 {"id", news[0]["id"].as<int>()},
                 {"title", news[0]["title"].as<std::string>()},
                 {"content", news[0]["content"].as<std::string>()},
                 {"publication_time", news[0]["publication_time"].as<std::string>()},
-                {"author_name", news[0]["author_name"].as<std::string>()},
+                {"author_name", news[0]["author_name"].is_null() ? "" : news[0]["author_name"].as<std::string>()},
                 {"likes_count", 0},
-                {"comments", nlohmann::json::array()}
+                {"liked", false},
+                {"image_data", news[0]["image_data_base64"].is_null() ? "" : news[0]["image_data_base64"].as<std::string>()},
+                {"image_type", news[0]["image_type"].is_null() ? "" : news[0]["image_type"].as<std::string>()}
             };
 
-            if (!news[0]["image_data"].is_null()) {
-                response["image_data"] = news[0]["image_data"].as<std::string>();
-                response["image_type"] = news[0]["image_type"].as<std::string>();
-            }
-
-            // Отправляем только одно сообщение WebSocket в правильном формате
-            nlohmann::json wsMessage = {
-                {"type", "news_updated"},
-                {"data", response}
-            };
-            
-            std::string messageStr = wsMessage.dump();
-            WebSocketServer::getInstance().broadcast(messageStr);
-
+            broadcastNewsUpdate(response);
             return response;
         }
         throw std::runtime_error("No rows returned after insert");

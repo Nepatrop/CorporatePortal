@@ -92,16 +92,22 @@ bool Delete::deleteNews(int news_id) {
         // Удаляем саму новость
         txn.exec_params("DELETE FROM news WHERE id = $1", news_id);
         
-        // Отправляем только одно сообщение WebSocket в правильном формате
+        // Коммитим транзакцию перед отправкой WebSocket сообщения
+        txn.commit();
+
+        // Отправляем только одно WebSocket сообщение
         nlohmann::json wsMessage = {
             {"type", "news_deleted"},
-            {"data", {{"id", news_id}}}
+            {"data", {
+                {"id", news_id},
+                {"status", "success"}
+            }}
         };
-        WebSocketServer::getInstance().broadcast(wsMessage.dump());
         
-        txn.commit();
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
         return true;
     } catch (const std::exception& e) {
+        std::cerr << "Error deleting news: " << e.what() << std::endl;
         return false;
     }
 }

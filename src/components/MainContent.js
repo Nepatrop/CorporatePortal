@@ -869,31 +869,31 @@ function MainContent() {
   // Загрузка новостей
   const loadNews = useCallback(async () => {
     try {
-      const newsData = await api.get(`/api/news?current_user_id=${currentUser.id}`)
-      const newsWithDefaults = newsData.map((item) => ({
-        ...item,
-        author: item.author_name,
-        description: item.content,
-        comments: item.comments || [],
-        likes_count: item.likes_count || 0,
-        liked: item.liked || false,
-        isPinned: item.isPinned || false,
-        isAdminPost: item.isAdminPost || false,
-        // Время приходит в UTC, так и оставляем его в UTC
-        publication_time: item.publication_time,
-      }))
+        const newsData = await api.get(`/api/news?current_user_id=${currentUser.id}`);
+        const newsWithDefaults = newsData.map(item => ({
+            ...item,
+            author: item.author_name,
+            description: item.content,
+            comments: item.comments || [],
+            likes_count: item.likes_count || 0,
+            liked: item.liked || false,
+            isPinned: item.is_pinned === true || item.is_pinned === 't',
+            pin_order: item.pin_order !== null ? Number(item.pin_order) : null
+        }));
 
-      const sortedNews = newsWithDefaults.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1
-        if (!a.isPinned && b.isPinned) return 1
-        return new Date(b.publication_time) - new Date(a.publication_time)
-      })
+        const sortedNews = newsWithDefaults.sort((a, b) => {
+            if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+            if (a.isPinned && b.isPinned) {
+                return (a.pin_order || 0) - (b.pin_order || 0);
+            }
+            return new Date(b.publication_time) - new Date(a.publication_time);
+        });
 
-      setNews(sortedNews)
+        setNews(sortedNews);
     } catch (error) {
-      console.error("Error fetching news:", error)
+        console.error("Error fetching news:", error);
     }
-  }, [currentUser.id])
+}, [currentUser.id]);
 
   // Инициализация порталов
   useEffect(() => {
@@ -953,6 +953,31 @@ function MainContent() {
                 
             case "news_deleted":
                 setNews(prevNews => prevNews.filter(news => news.id !== data.data.id));
+                break;
+
+            case "news_pin_updated":
+                if (data.data && typeof data.data.news_id === 'number') {
+                    setNews(prevNews => {
+                        const updatedNews = prevNews.map(news => {
+                            if (news.id === data.data.news_id) {
+                                return {
+                                    ...news,
+                                    isPinned: data.data.is_pinned,
+                                    pin_order: data.data.pin_order
+                                };
+                            }
+                            return news;
+                        });
+
+                        return updatedNews.sort((a, b) => {
+                            if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+                            if (a.isPinned && b.isPinned) {
+                                return (a.pin_order || 0) - (b.pin_order || 0);
+                            }
+                            return new Date(b.publication_time) - new Date(a.publication_time);
+                        });
+                    });
+                }
                 break;
                 
             case "comment_added":
@@ -1052,7 +1077,7 @@ function MainContent() {
             const response = await api.delete(`/api/news/${newsId}`);
             if (response.ok) {
                 setShowDeleteConfirm(null);
-                // Локально удаляем новость сразу
+                // Удаляем новость локально только если она еще существует в состоянии
                 setNews(prevNews => prevNews.filter(news => news.id !== newsId));
             } else {
                 console.error("Error deleting news");
@@ -1068,26 +1093,25 @@ function MainContent() {
   // Функция для закрепления/открепления новости
   const handlePinNews = async (newsId, isPinned) => {
     try {
-      const response = await api.post(`/api/news/${newsId}/pin`, {
-        isPinned: isPinned,
-      })
+        const response = await api.post(`/api/news/${newsId}/pin`, {
+            isPinned: isPinned
+        });
 
-      if (response.ok) {
-        // Обновляем состояние новостей
-        setNews((prevNews) =>
-          prevNews
-            .map((item) => (item.id === newsId ? { ...item, isPinned: isPinned } : item))
-            .sort((a, b) => {
-              if (a.isPinned && !b.isPinned) return -1
-              if (!a.isPinned && b.isPinned) return 1
-              return new Date(b.publication_time) - new Date(a.publication_time)
-            }),
-        )
-      } else {
-        console.error("Error pinning news")
-      }
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to pin news');
+        }
+
+        // Обновление будет происходить через WebSocket
+        console.log('News pin status updated successfully');
     } catch (error) {
-      console.error("Error pinning news:", error)
+        console.error("Error pinning news:", error);
+        alert('Failed to update news pin status: ' + error.message);
     }
   }
 

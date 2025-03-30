@@ -9,4 +9,5 @@ public:
                                    const std::string& content,
                                    const std::string& image_data = "",
                                    const std::string& image_type = "");
+    static nlohmann::json toggleNewsPin(int news_id, bool should_pin);
 };

@@ -200,6 +200,25 @@ int main() {
         }
     });
 
+    svr.Post("/api/news/([0-9]+)/pin", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            const std::string news_id_str = req.matches[1];
+            const int news_id = std::stoi(news_id_str);
+            
+            // Парсим тело запроса для получения флага isPinned
+            auto json = nlohmann::json::parse(req.body);
+            bool should_pin = json["isPinned"].get<bool>();
+
+            // Вызываем метод для изменения состояния закрепления
+            auto result = Put::toggleNewsPin(news_id, should_pin);
+            
+            res.set_content(result.dump(), "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(nlohmann::json({{"error", e.what()}}).dump(), "application/json");
+        }
+    });
+
     svr.Post("/api/notifications", [](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
         bool success = Post::postNotification(json);
