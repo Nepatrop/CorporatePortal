@@ -6,8 +6,20 @@
 #include "db/config.h"
 #include "auth/user_auth.h"
 #include "auth/auth_handler.h"
+#include "websocket/ws_server.h"
+#include <thread>
 
 int main() {
+    // Запускаем WebSocket сервер в отдельном потоке
+    std::thread ws_thread([]() {
+        try {
+            WebSocketServer::getInstance().run(8082); // WebSocket на порту 8082
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket thread error: " << e.what() << std::endl;
+        }
+    });
+    ws_thread.detach();
+
     httplib::Server svr;
 
     // Middleware для проверки аутентификации
@@ -26,7 +38,7 @@ int main() {
         }
     );
 
-    // Изменяем set_default_headers, убирая дублирование CORS заголовков
+    // Разрешаем CORS для всех клиентов в локальной сети
     svr.set_default_headers({
         {"Access-Control-Allow-Origin", "*"},
         {"Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"},
@@ -126,6 +138,9 @@ int main() {
                 json.value("image_data", ""),
                 json.value("image_type", "")
             );
+
+            // Отправляем уведомление всем подключенным клиентам
+            WebSocketServer::getInstance().broadcast("news_updated");
 
             res.set_content(result.dump(), "application/json");
         } catch (const std::exception& e) {
@@ -336,9 +351,14 @@ int main() {
         }
     });
 
-    // Запуск сервера
-    std::cout << "Server is running on http://localhost:8081" << std::endl;
-    svr.listen("0.0.0.0", 8081);
+    // Слушаем на всех интерфейсах
+    const char* host = "0.0.0.0";  // Это позволит принимать подключения со всех сетевых интерфейсов
+    int port = 8081;
+
+    std::cout << "Server is running on port " << port << std::endl;
+    std::cout << "To access from other computers, use http://<this-computer-ip>:" << port << std::endl;
+    
+    svr.listen(host, port);
 
     return 0;
 }

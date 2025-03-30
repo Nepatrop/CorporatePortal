@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useUser } from "../context/UserContext" // Импортируем useUser
 import { api } from "../utils/api"
+import { wsClient } from "../utils/websocket"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faUser,
@@ -907,6 +908,13 @@ function MainContent() {
 
   useEffect(() => {
     loadNews()
+
+    // Устанавливаем обработчик WebSocket сообщений
+    wsClient.setMessageHandler((event) => {
+      if (event.data === "news_updated") {
+        loadNews() // Перезагружаем новости
+      }
+    })
   }, [loadNews])
 
   const handleLike = async (newsId) => {

@@ -12,6 +12,8 @@ set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE S
 find_package(PostgreSQL REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(websocketpp CONFIG REQUIRED)
+find_package(Boost REQUIRED system thread)
 
 # Добавляем директории с исходниками
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -27,6 +29,7 @@ set(SOURCES
     src/db/delete.cpp
     src/auth/auth_handler.cpp
     src/auth/user_auth.cpp
+    src/websocket/ws_server.cpp
 )
 
 # Создаем исполняемый файл
@@ -43,6 +46,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     PostgreSQL::PostgreSQL
     libpqxx::pqxx
     nlohmann_json::nlohmann_json
+    websocketpp::websocketpp
+    Boost::system
+    Boost::thread
 )
 
 # Настройки для MSVC

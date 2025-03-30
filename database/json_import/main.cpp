@@ -1,6 +1,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
+#include <iostream>
 #ifdef _WIN32
     #include <direct.h>
     #define GetCurrentDir _getcwd

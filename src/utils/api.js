@@ -1,4 +1,14 @@
-const API_URL = 'http://localhost:8081';
+// Функция для получения IP адреса сервера
+const getServerIP = () => {
+    // Если мы на localhost, используем его
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'localhost';
+    }
+    // Иначе используем текущий IP адрес
+    return window.location.hostname;
+};
+
+const API_URL = `http://${getServerIP()}:8081`;
 const API_KEY = 'cp_e29b7d8f4a6c2135d9f0';
 
 const defaultHeaders = {
