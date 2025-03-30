@@ -385,8 +385,24 @@ nlohmann::json Post::postNewsComment(int news_id, int employee_id, const std::st
 
 nlohmann::json Post::toggleNewsLike(int news_id, int employee_id) {
     try {
+        if (news_id <= 0 || employee_id <= 0) {
+            throw std::runtime_error("Invalid ID values");
+        }
+
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
+
+        // Проверяем существование новости
+        auto news_check = txn.exec_params("SELECT id FROM news WHERE id = $1", news_id);
+        if (news_check.empty()) {
+            throw std::runtime_error("News not found");
+        }
+
+        // Проверяем существование сотрудника
+        auto emp_check = txn.exec_params("SELECT id FROM employees WHERE id = $1", employee_id);
+        if (emp_check.empty()) {
+            throw std::runtime_error("Employee not found");
+        }
 
         auto check_result = txn.exec_params(
             "SELECT id FROM news_likes WHERE news_id = $1 AND employee_id = $2",
@@ -434,6 +450,7 @@ nlohmann::json Post::toggleNewsLike(int news_id, int employee_id) {
 
         return response;
     } catch (const std::exception& e) {
+        std::cerr << "Error in toggleNewsLike: " << e.what() << std::endl;
         throw;
     }
 }

@@ -4,6 +4,7 @@
 #include <set>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <mutex>
 
 class WebSocketServer {
 private:
@@ -12,6 +13,8 @@ private:
     
     server ws_server;
     std::set<connection_hdl, std::owner_less<connection_hdl>> connections;
+    std::mutex connections_mutex; // Добавляем мьютекс для потокобезопасности
+    bool is_running;
     
     void on_open(connection_hdl hdl);
     void on_close(connection_hdl hdl);
@@ -19,7 +22,11 @@ private:
 
 public:
     WebSocketServer();
+    ~WebSocketServer();
+    
     void run(uint16_t port);
     void broadcast(const std::string& message);
+    void cleanup();
+    bool isRunning() const { return is_running; }
     static WebSocketServer& getInstance();
 };

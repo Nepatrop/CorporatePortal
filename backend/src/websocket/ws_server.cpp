@@ -18,6 +18,15 @@ WebSocketServer::WebSocketServer() {
     ws_server.set_reuse_addr(true);
 }
 
+WebSocketServer::~WebSocketServer() {
+    try {
+        std::lock_guard<std::mutex> lock(connections_mutex);
+        cleanup();
+    } catch (const std::exception& e) {
+        std::cerr << "Error in WebSocketServer destructor: " << e.what() << std::endl;
+    }
+}
+
 void WebSocketServer::run(uint16_t port) {
     try {
         // Уменьшаем количество логов, оставляем только важные
@@ -59,20 +68,46 @@ void WebSocketServer::on_fail(connection_hdl hdl) {
 }
 
 void WebSocketServer::broadcast(const std::string& message) {
-    // Проверяем что сообщение является валидным JSON перед отправкой
+    std::lock_guard<std::mutex> lock(connections_mutex);
+    
     try {
         auto parsed = nlohmann::json::parse(message);
         
-        // Отправляем сообщение всем подключенным клиентам
+        std::vector<connection_hdl> deadConnections;
+        
         for(auto& connection : connections) {
             try {
+                auto con = ws_server.get_con_from_hdl(connection);
+                
+                // Проверяем, активно ли соединение
+                if (con->get_state() != websocketpp::session::state::open) {
+                    deadConnections.push_back(connection);
+                    continue;
+                }
+                
                 ws_server.send(connection, message, websocketpp::frame::opcode::text);
             } catch (const std::exception& e) {
                 std::cerr << "Error sending message: " << e.what() << std::endl;
+                deadConnections.push_back(connection);
             }
+        }
+        
+        // Удаляем мертвые соединения
+        for (const auto& deadConn : deadConnections) {
+            connections.erase(deadConn);
         }
     } catch (const std::exception& e) {
         std::cerr << "Invalid JSON message: " << message << std::endl;
+        std::cerr << "Error details: " << e.what() << std::endl;
+    }
+}
+
+void WebSocketServer::cleanup() {
+    try {
+        ws_server.stop();
+        connections.clear();
+    } catch (const std::exception& e) {
+        std::cerr << "Error during cleanup: " << e.what() << std::endl;
     }
 }
 
