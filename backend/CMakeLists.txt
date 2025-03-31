@@ -51,6 +51,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Boost::thread
 )
 
+# Если используется asio standalone (рекомендуется)
+find_package(Boost REQUIRED COMPONENTS system)
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::system)
+
 # Настройки для MSVC
 if(MSVC)
     add_compile_options(/W4 /EHsc)
