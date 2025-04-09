@@ -143,9 +143,43 @@ nlohmann::json Get::getLinks() {
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
-        pqxx::result r = txn.exec("SELECT * FROM links");
-        return resultToJson(r);
-    } catch (std::exception const& e) {
+        
+        pqxx::result r = txn.exec(R"(
+            SELECT 
+                id,
+                name,
+                description,
+                url,
+                CASE 
+                    WHEN icon_data IS NOT NULL THEN encode(icon_data, 'base64')
+                    ELSE NULL 
+                END as icon_data,
+                icon_type,
+                icon_emoji
+            FROM links 
+            ORDER BY created_at DESC
+        )");
+
+        nlohmann::json result = nlohmann::json::array();
+        for (const auto& row : r) {
+            nlohmann::json portal = {
+                {"id", row["id"].as<int>()},
+                {"name", row["name"].as<std::string>()},
+                {"description", row["description"].is_null() ? "" : row["description"].as<std::string>()},
+                {"url", row["url"].as<std::string>()},
+                {"icon_emoji", row["icon_emoji"].is_null() ? "" : row["icon_emoji"].as<std::string>()}
+            };
+
+            if (!row["icon_data"].is_null()) {
+                portal["icon_data"] = row["icon_data"].as<std::string>();
+                portal["icon_type"] = row["icon_type"].as<std::string>();
+            }
+
+            result.push_back(portal);
+        }
+        return result;
+    } catch (const std::exception& e) {
+        std::cerr << "Error in getLinks: " << e.what() << std::endl;
         return nlohmann::json::array();
     }
 }

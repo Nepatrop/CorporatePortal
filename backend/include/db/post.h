@@ -18,4 +18,10 @@ public:
                                           const std::string& author_id,
                                           const std::string& image_data = "",
                                           const std::string& image_type = "");
+    static nlohmann::json createPortal(const std::string& name, 
+                                 const std::string& description, 
+                                 const std::string& url,
+                                 const std::string& icon_data,
+                                 const std::string& icon_type,
+                                 const std::string& icon_emoji);
 };

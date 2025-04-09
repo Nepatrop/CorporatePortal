@@ -204,14 +204,14 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
   }, [editingNews])
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file) {
-      setImage(file)
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(reader.result); // Показываем превью
+        setImage(file); // Сохраняем файл для последующей отправки
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -453,7 +453,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
 }
 
 // Компонент для редактирования портала
-function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false, onExitEditMode }) {
+function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [url, setUrl] = useState("")
@@ -473,55 +473,40 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
       setName(portal.name || "")
       setDescription(portal.description || "")
       setUrl(portal.url || "")
-      setIcon(portal.icon || "")
-      setIconPreview(portal.iconPreview || null)
-      setHasUnsavedChanges(false)
-      setShowExitWarning(false)
+      // Используем существующую иконку портала
+      setIcon(portal.icon_emoji || "🔗");
+      
+      if (portal.icon_data && portal.icon_type) {
+        setIconPreview(`data:${portal.icon_type};base64,${portal.icon_data}`)
+      } else {
+        setIconPreview(null)
+      }
+      setIconFile(null) // Сбрасываем файл при открытии
       setValidationError(false)
+      setHasUnsavedChanges(false)
     }
   }, [isOpen, portal])
 
   // Обработчик клика вне модального окна
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (modalRef.current && !modalRef.current.contains(event.target) && isOpen) {
-        // Определяем handleCloseModal внутри эффекта, чтобы избежать проблем с зависимостями
-        const handleCloseModal = () => {
-          if (hasUnsavedChanges) {
-            setShowExitWarning(true)
-          } else {
-            onClose()
-            // Если это был режим редактирования, выходим из него
-            if (onExitEditMode && !isNewPortal) {
-              onExitEditMode()
-            }
-          }
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        if (hasUnsavedChanges) {
+          setShowExitWarning(true)
+        } else {
+          onClose()
         }
-
-        handleClickOutside()
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isOpen, hasUnsavedChanges, onClose, onExitEditMode, isNewPortal])
-
-  // Добавляем этот код после существующего useEffect для handleClickOutside:
-  useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden"
-      document.body.style.paddingRight = "15px" // Компенсация ширины скроллбара
-    } else {
-      document.body.style.overflow = ""
-      document.body.style.paddingRight = ""
+      document.addEventListener('mousedown', handleClickOutside)
     }
+
     return () => {
-      document.body.style.overflow = ""
-      document.body.style.paddingRight = ""
+      document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isOpen])
+  }, [isOpen, hasUnsavedChanges, onClose])
 
   // Обработчик закрытия модального окна
   const handleCloseModal = () => {
@@ -529,10 +514,6 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
       setShowExitWarning(true)
     } else {
       onClose()
-      // Если это был режим редактирования, выходим из него
-      if (onExitEditMode && !isNewPortal) {
-        onExitEditMode()
-      }
     }
   }
 
@@ -540,7 +521,6 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
   const handleFieldChange = (setter, value, field) => {
     setter(value)
     setHasUnsavedChanges(true)
-    setValidationError(false)
   }
 
   // Обработчик изменения иконки
@@ -551,33 +531,96 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
       const reader = new FileReader()
       reader.onloadend = () => {
         setIconPreview(reader.result)
-        setHasUnsavedChanges(true)
       }
       reader.readAsDataURL(file)
+      setHasUnsavedChanges(true)
     }
   }
 
-  // Обработчик сохранения изменений
-  const handleSave = () => {
-    // Проверка на заполнение обязательных полей
-    if (!name.trim()) {
-      setValidationError(true)
-      return
+  // Добавляем обработчик изменения изображения
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIconFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setIconPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  // Обновляем handleSave
+  const handleSave = async () => {
+    if (!name.trim() || !url.trim()) {
+      setValidationError(true);
+      return;
     }
 
-    const updatedPortal = {
-      ...portal,
-      name,
-      description,
-      url,
-      icon: iconFile ? null : icon, // Если загружен файл, то текстовую иконку не используем
-      iconFile,
-      iconPreview,
-    }
+    try {
+      const portalData = {
+        name: name.trim(),
+        description: description.trim(),
+        url: url.trim(),
+        icon_emoji: icon,
+      }
 
-    onSave(updatedPortal, isNewPortal)
-    onClose()
+      // Если загружен новый файл, добавляем его данные
+      if (iconFile) {
+        const reader = new FileReader()
+        const imageBase64 = await new Promise((resolve) => {
+          reader.onloadend = () => {
+            const base64String = reader.result.split(',')[1]
+            resolve(base64String)
+          }
+          reader.readAsDataURL(iconFile)
+        })
+        portalData.icon_data = imageBase64
+        portalData.icon_type = iconFile.type
+        portalData.icon_emoji = null
+      } else if (portal && portal.icon_data && portal.icon_type && !icon) {
+        // Если файл не был изменен, но есть существующая иконка и не выбран эмодзи,
+        // сохраняем существующую иконку
+        portalData.icon_data = portal.icon_data
+        portalData.icon_type = portal.icon_type
+        portalData.icon_emoji = null
+      }
+
+      let response
+      if (isNewPortal) {
+        response = await api.post('/api/links', portalData)
+      } else {
+        response = await api.put(`/api/links/${portal.id}`, portalData)
+      }
+
+      if (response.ok) {
+        const updatedPortal = await response.json()
+        onSave(updatedPortal, isNewPortal)
+        onClose()
+      } else {
+        throw new Error('Failed to save portal')
+      }
+    } catch (error) {
+      console.error('Error saving portal:', error)
+    }
   }
+
+  const handleDelete = async () => {
+    if (!portal || !portal.id) return;
+
+    try {
+      const response = await api.delete(`/api/links/${portal.id}`);
+      if (response.ok) {
+        onSave(null, false, true); // добавляем третий параметр isDeleted
+        onClose();
+      } else {
+        throw new Error('Failed to delete portal');
+      }
+    } catch (error) {
+      console.error('Error deleting portal:', error);
+    }
+  };
 
   // Обработчик подтверждения выхода без сохранения
   const confirmExit = () => {
@@ -716,6 +759,15 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false,
                 <button className={styles.cancelButton} onClick={handleCloseModal}>
                   Отмена
                 </button>
+                {!isNewPortal && ( // Показываем кнопку удаления только при редактировании
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className={`${styles.deleteButton} ${styles.actionButton}`}
+                  >
+                    Удалить
+                  </button>
+                )}
                 <button
                   className={styles.saveButton}
                   onMouseOver={(e) => {
@@ -859,7 +911,7 @@ function MainContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null) // ID новости для подтверждения удаления
 
   // Состояния для управления порталами
-  const [portals, setPortals] = useState([])
+  const [portals, setPortals] = useState([]);
   const [editingPortal, setEditingPortal] = useState(null)
   const [isPortalModalOpen, setIsPortalModalOpen] = useState(false)
   const [isNewPortal, setIsNewPortal] = useState(false)
@@ -895,52 +947,31 @@ function MainContent() {
     }
 }, [currentUser.id]);
 
-  // Инициализация порталов
+  // Функция загрузки порталов
+  const loadPortals = useCallback(async () => {
+    try {
+      const response = await api.get('/api/links');
+      
+      // Преобразуем ответ сервера в формат для отображения
+      const formattedPortals = response.map(portal => ({
+        id: portal.id,
+        name: portal.name,
+        description: portal.description,
+        url: portal.url,
+        icon: portal.icon_emoji,
+        iconPreview: portal.icon_data ? `data:${portal.icon_type};base64,${portal.icon_data}` : null
+      }));
+      
+      setPortals(formattedPortals);
+    } catch (error) {
+      console.error('Error loading portals:', error);
+    }
+  }, []);
+
+  // Загружаем порталы при монтировании
   useEffect(() => {
-    // В реальном приложении здесь будет загрузка порталов с сервера
-    setPortals([
-      {
-        id: 1,
-        name: "HR Портал",
-        url: "#",
-        description:
-          "Централизованная платформа для управления кадровыми процессами, включая отпуска, зарплату и персональные данные сотрудников.",
-        icon: "👥",
-      },
-      {
-        id: 2,
-        name: "База знаний",
-        url: "#",
-        description:
-          "Репозиторий с полезной информацией, руководствами и часто задаваемыми вопросами для быстрого доступа к знаниям компании.",
-        icon: "📚",
-      },
-      {
-        id: 3,
-        name: "IT Поддержка",
-        url: "#",
-        description:
-          "Система для запроса технической помощи, устранения неполадок и получения консультаций по ИТ-вопросам.",
-        icon: "🖥️",
-      },
-      {
-        id: 4,
-        name: "Документация",
-        url: "#",
-        description:
-          "Хранилище корпоративных документов, политик и процедур для обеспечения прозрачности и соответствия стандартам.",
-        icon: "📄",
-      },
-      {
-        id: 5,
-        name: "Обучение",
-        url: "#",
-        description:
-          "Платформа для профессионального развития, предлагающая курсы, тренинги и материалы для повышения квалификации сотрудников.",
-        icon: "🎓",
-      },
-    ])
-  }, [])
+    loadPortals();
+  }, [loadPortals]);
 
   useEffect(() => {
     loadNews();
@@ -1012,6 +1043,8 @@ function MainContent() {
                         return news;
                     }));
                 }
+                break;
+            default:
                 break;
         }
     });
@@ -1118,16 +1151,21 @@ function MainContent() {
   // Функция для редактирования портала (помечаем как eslint-disable-next-line, так как она используется в JSX)
   // eslint-disable-next-line no-unused-vars
   const handleEditPortal = (portal) => {
-    setEditingPortal(portal)
-    setIsNewPortal(false)
-    setIsPortalModalOpen(true)
+    // Убедитесь, что icon_emoji передается корректно
+    const portalToEdit = {
+      ...portal,
+      icon_emoji: portal.icon_emoji || "🔗" // Если icon_emoji не определен, используем значение по умолчанию
+    };
+    setEditingPortal(portalToEdit);
+    setIsNewPortal(false);
+    setIsPortalModalOpen(true);
   }
 
   // Функция для добавления нового портала (помечаем как eslint-disable-next-line, так как она используется в JSX)
   // eslint-disable-next-line no-unused-vars
   const handleAddPortal = () => {
     setEditingPortal({
-      id: Date.now(), // Временный ID для нового портала
+      id: Date.now(), // временный ID
       name: "",
       description: "",
       url: "#",
@@ -1138,9 +1176,12 @@ function MainContent() {
   }
 
   // Функция для сохранения изменений портала
-  const handleSavePortal = (updatedPortal, isNew) => {
-    if (isNew) {
-      // Добавляем новый портал в конец списка
+  const handleSavePortal = (updatedPortal, isNew, isDeleted = false) => {
+    if (isDeleted) {
+      // Удаляем портал из состояния
+      setPortals(prevPortals => prevPortals.filter(p => p.id !== editingPortal.id));
+    } else if (isNew) {
+      // Добавляем новый портал
       setPortals((prevPortals) => [...prevPortals, updatedPortal])
     } else {
       // Обновляем существующий портал
@@ -1148,6 +1189,8 @@ function MainContent() {
         prevPortals.map((portal) => (portal.id === updatedPortal.id ? updatedPortal : portal)),
       )
     }
+    setEditingPortal(null);
+    setIsPortalModalOpen(false);
   }
 
   const birthdays = [
@@ -1373,10 +1416,10 @@ function MainContent() {
                           className={styles.portalMenuItem}
                           onClick={() => {
                             setEditingPortal({
-                              id: Date.now(),
+                              id: Date.now(), // временный ID
                               name: "",
                               description: "",
-                              url: "#",
+                              url: "",
                               icon: "🔗",
                             })
                             setIsNewPortal(true)

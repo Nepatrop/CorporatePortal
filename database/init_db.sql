@@ -104,10 +104,18 @@ CREATE TABLE notifications (
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
 
+-- Обновляем таблицу links для хранения порталов
+DROP TABLE IF EXISTS links;
 CREATE TABLE links (
     id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
     url VARCHAR(255) NOT NULL,
-    description TEXT
+    icon_data BYTEA,
+    icon_type VARCHAR(50),
+    icon_emoji VARCHAR(10),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE user_auth (

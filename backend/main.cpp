@@ -139,8 +139,14 @@ int main() {
                 json.value("image_type", "")
             );
 
-            // Отправляем уведомление всем подключенным клиентам
-            WebSocketServer::getInstance().broadcast("news_updated");
+            // Исправляем отправку уведомления через WebSocket
+            WebSocketServer::getInstance().broadcast(
+                nlohmann::json({
+                    {"type", "news_updated"},
+                    {"action", "created"},
+                    {"data", result}  // Добавляем данные новой новости
+                }).dump()
+            );
 
             res.set_content(result.dump(), "application/json");
         } catch (const std::exception& e) {
@@ -226,9 +232,32 @@ int main() {
     });
 
     svr.Post("/api/links", [](const httplib::Request& req, httplib::Response& res) {
-        auto json = nlohmann::json::parse(req.body);
-        bool success = Post::postLink(json);
-        res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
+        try {
+            auto json = nlohmann::json::parse(req.body);
+            
+            // Проверяем обязательные поля
+            if (!json.contains("name") || !json.contains("url")) {
+                res.status = 400;
+                res.set_content(R"({"error":"Missing required fields"})", "application/json");
+                return;
+            }
+
+            auto result = Post::createPortal(
+                json["name"].get<std::string>(),
+                json.value("description", ""),
+                json["url"].get<std::string>(),
+                json.value("icon_data", ""),
+                json.value("icon_type", ""),
+                json.value("icon_emoji", "")
+            );
+
+            res.set_content(result.dump(), "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(nlohmann::json({
+                {"error", e.what()}
+            }).dump(), "application/json");
+        }
     });
 
     svr.Post("/api/auth/login", [](const httplib::Request& req, httplib::Response& res) {
@@ -380,6 +409,31 @@ int main() {
         } catch (const std::exception& e) {
             res.status = 500;
             res.set_content(R"({"error":"Internal server error"})", "application/json");
+        }
+    });
+
+    // Добавляем PUT endpoint для обновления портала
+    svr.Put(R"(/api/links/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            auto json = nlohmann::json::parse(req.body);
+            int portalId = std::stoi(req.matches[1]);
+            
+            auto result = Put::updatePortal(
+                portalId,
+                json["name"].get<std::string>(),
+                json.value("description", ""),
+                json["url"].get<std::string>(),
+                json.value("icon_data", ""),
+                json.value("icon_type", ""),
+                json.value("icon_emoji", "")
+            );
+
+            res.set_content(result.dump(), "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content(nlohmann::json({
+                {"error", e.what()}
+            }).dump(), "application/json");
         }
     });
 

@@ -203,65 +203,49 @@ void broadcastNewsUpdate(const nlohmann::json& newsData) {
     }
 }
 
-nlohmann::json Post::postNewsWithImage(const std::string& title, 
-                                     const std::string& content, 
-                                     const std::string& author_id,
-                                     const std::string& image_data,
-                                     const std::string& image_type) {
+nlohmann::json Post::postNewsWithImage(
+    const std::string& title,
+    const std::string& content,
+    const std::string& author_id,
+    const std::string& image_data,
+    const std::string& image_type
+) {
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
-        txn.exec0("SET TIME ZONE 'UTC'");
 
-        pqxx::result result;
-        
-        if (image_data.empty()) {
-            result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id, publication_time) "
-                "VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING id",
-                title, content, std::stoi(author_id)
+        pqxx::result r;
+        if (!image_data.empty() && !image_type.empty()) {
+            // Если есть изображение, сохраняем его как BYTEA
+            r = txn.exec_params(
+                "INSERT INTO news (title, content, author_id, image_data, image_type) "
+                "VALUES ($1, $2, $3, decode($4, 'base64'), $5) "
+                "RETURNING id, title, content, author_id, "
+                "encode(image_data, 'base64') as image_data, image_type",
+                title, content, author_id, image_data, image_type
             );
         } else {
-            result = txn.exec_params(
-                "INSERT INTO news (title, content, author_id, image_data, image_type, publication_time) "
-                "VALUES ($1, $2, $3, decode($4, 'base64'), $5, CURRENT_TIMESTAMP) RETURNING id",
-                title, content, std::stoi(author_id), image_data, image_type
+            // Если изображения нет, сохраняем только текстовые данные
+            r = txn.exec_params(
+                "INSERT INTO news (title, content, author_id) "
+                "VALUES ($1, $2, $3) "
+                "RETURNING id, title, content, author_id",
+                title, content, author_id
             );
         }
 
-        if (!result.empty()) {
-            auto newsId = result[0][0].as<int>();
-            auto news = txn.exec_params(R"(
-                SELECT 
-                    n.*,
-                    e.full_name as author_name,
-                    encode(n.image_data, 'base64') as image_data_base64,
-                    TO_CHAR(n.publication_time, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time
-                FROM news n 
-                LEFT JOIN employees e ON n.author_id = e.id 
-                WHERE n.id = $1
-            )", newsId);
+        txn.commit();
 
-            txn.commit();
-
-            nlohmann::json response = {
-                {"id", news[0]["id"].as<int>()},
-                {"title", news[0]["title"].as<std::string>()},
-                {"content", news[0]["content"].as<std::string>()},
-                {"publication_time", news[0]["publication_time"].as<std::string>()},
-                {"author_name", news[0]["author_name"].is_null() ? "" : news[0]["author_name"].as<std::string>()},
-                {"likes_count", 0},
-                {"liked", false},
-                {"image_data", news[0]["image_data_base64"].is_null() ? "" : news[0]["image_data_base64"].as<std::string>()},
-                {"image_type", news[0]["image_type"].is_null() ? "" : news[0]["image_type"].as<std::string>()}
-            };
-
-            broadcastNewsUpdate(response);
-            return response;
+        nlohmann::json result = nlohmann::json::object();
+        for (const auto& field : r[0]) {
+            if (!field.is_null()) {
+                result[field.name()] = field.as<std::string>();
+            }
         }
-        throw std::runtime_error("No rows returned after insert");
+        return result;
+
     } catch (const std::exception& e) {
-        throw;
+        return nlohmann::json{{"error", e.what()}};
     }
 }
 
@@ -446,5 +430,60 @@ nlohmann::json Post::toggleNewsLike(int news_id, int employee_id) {
     } catch (const std::exception& e) {
         std::cerr << "Error in toggleNewsLike: " << e.what() << std::endl;
         throw;
+    }
+}
+
+nlohmann::json Post::createPortal(
+    const std::string& name,
+    const std::string& description,
+    const std::string& url,
+    const std::string& icon_data,
+    const std::string& icon_type,
+    const std::string& icon_emoji
+) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+
+        pqxx::result result;
+        
+        if (!icon_data.empty() && !icon_type.empty()) {
+            // Если предоставлено изображение
+            result = txn.exec_params(
+                "INSERT INTO links (name, description, url, icon_data, icon_type) "
+                "VALUES ($1, $2, $3, decode($4, 'base64'), $5) "
+                "RETURNING id, name, description, url, encode(icon_data, 'base64') as icon_data, icon_type",
+                name, description, url, icon_data, icon_type
+            );
+        } else if (!icon_emoji.empty()) {
+            // Если предоставлен эмодзи
+            result = txn.exec_params(
+                "INSERT INTO links (name, description, url, icon_emoji) "
+                "VALUES ($1, $2, $3, $4) "
+                "RETURNING id, name, description, url, icon_emoji",
+                name, description, url, icon_emoji
+            );
+        } else {
+            // Если не предоставлено ни изображения, ни эмодзи
+            result = txn.exec_params(
+                "INSERT INTO links (name, description, url) "
+                "VALUES ($1, $2, $3) "
+                "RETURNING id, name, description, url",
+                name, description, url
+            );
+        }
+
+        txn.commit();
+
+        nlohmann::json response = nlohmann::json::object();
+        for (const auto& field : result[0]) {
+            if (!field.is_null()) {
+                response[field.name()] = field.as<std::string>();
+            }
+        }
+        return response;
+
+    } catch (const std::exception& e) {
+        return nlohmann::json{{"error", std::string("Error creating portal: ") + e.what()}};
     }
 }

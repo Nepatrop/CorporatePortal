@@ -216,3 +216,72 @@ nlohmann::json Put::toggleNewsPin(int news_id, bool should_pin) {
         return {{"success", false}, {"error", e.what()}};
     }
 }
+
+nlohmann::json Put::updatePortal(
+    int id,
+    const std::string& name,
+    const std::string& description,
+    const std::string& url,
+    const std::string& icon_data,
+    const std::string& icon_type,
+    const std::string& icon_emoji
+) {
+    try {
+        pqxx::connection conn(Config::getConnectionString());
+        pqxx::work txn(conn);
+
+        pqxx::result result;
+        if (!icon_data.empty() && !icon_type.empty()) {
+            // Если предоставлено новое изображение
+            result = txn.exec_params(
+                "UPDATE links SET "
+                "name = $1, description = $2, url = $3, "
+                "icon_data = decode($4, 'base64'), icon_type = $5, "
+                "icon_emoji = NULL, updated_at = CURRENT_TIMESTAMP "
+                "WHERE id = $6 "
+                "RETURNING id, name, description, url, "
+                "encode(icon_data, 'base64') as icon_data, icon_type",
+                name, description, url, icon_data, icon_type, id
+            );
+        } else if (!icon_emoji.empty()) {
+            // Если предоставлен эмодзи
+            result = txn.exec_params(
+                "UPDATE links SET "
+                "name = $1, description = $2, url = $3, "
+                "icon_emoji = $4, icon_data = NULL, icon_type = NULL, "
+                "updated_at = CURRENT_TIMESTAMP "
+                "WHERE id = $5 "
+                "RETURNING id, name, description, url, icon_emoji",
+                name, description, url, icon_emoji, id
+            );
+        } else {
+            // Обновляем только текстовые поля, сохраняя существующую иконку
+            result = txn.exec_params(
+                "UPDATE links SET "
+                "name = $1, description = $2, url = $3, "
+                "updated_at = CURRENT_TIMESTAMP "
+                "WHERE id = $4 "
+                "RETURNING id, name, description, url, "
+                "encode(icon_data, 'base64') as icon_data, icon_type, icon_emoji",
+                name, description, url, id
+            );
+        }
+
+        txn.commit();
+
+        if (result.empty()) {
+            return {{"error", "Portal not found"}};
+        }
+
+        nlohmann::json response;
+        for (const auto& field : result[0]) {
+            if (!field.is_null()) {
+                response[field.name()] = field.as<std::string>();
+            }
+        }
+        return response;
+
+    } catch (const std::exception& e) {
+        return {{"error", std::string("Error updating portal: ") + e.what()}};
+    }
+}

@@ -10,4 +10,13 @@ public:
                                    const std::string& image_data = "",
                                    const std::string& image_type = "");
     static nlohmann::json toggleNewsPin(int news_id, bool should_pin);
+    static nlohmann::json updatePortal(
+        int id, 
+        const std::string& name,
+        const std::string& description,
+        const std::string& url,
+        const std::string& icon_data,
+        const std::string& icon_type,
+        const std::string& icon_emoji
+    );
 };

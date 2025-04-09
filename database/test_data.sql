@@ -91,6 +91,12 @@ INSERT INTO news_comments (news_id, employee_id, text, created_at) VALUES
 (1, 1, 'Интересно, какие технологии будут использоваться?', '2025-05-15 12:15:00'),
 (2, 2, 'Обязательно приду!', '2025-05-10 16:30:00');
 
+-- Добавляем тестовые данные в таблицу внутренних порталов
+INSERT INTO links (name, description, url, icon_emoji) VALUES 
+('HR Портал', 'Централизованная платформа для управления кадровыми процессами', 'http://hr.portal.local', '👥'),
+('База знаний', 'Репозиторий документации и инструкций', 'http://kb.portal.local', '📚'),
+('Техподдержка', 'Система заявок в техническую поддержку', 'http://support.portal.local', '🖥️');
+
 -- Notifications
 INSERT INTO notifications (message, time, source, employee_id) VALUES 
 ('Новое сообщение', NOW(), 'система', 1),
