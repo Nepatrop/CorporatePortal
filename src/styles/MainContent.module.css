@@ -9,13 +9,12 @@
 .contentWrapper {
   display: flex;
   width: 100%;
-  gap: 1rem;
+  gap: 20px;
   align-items: flex-start;
 }
 
 .leftColumn {
   flex: 0 0 60%;
-  padding: 1rem;
   box-sizing: border-box;
 }
 
@@ -49,6 +48,7 @@
   font-weight: 600;
   font-size: 36px;
   line-height: 45px;
+  margin: 0 0 20px 0;
   letter-spacing: 0.5px;
   padding: 15px 0 12px 0;
   margin-bottom: 20px;
