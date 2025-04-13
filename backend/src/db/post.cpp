@@ -445,44 +445,61 @@ nlohmann::json Post::createPortal(
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
 
-        pqxx::result result;
+        // Подготавливаем базовый запрос
+        std::string query = "INSERT INTO links (name, description, url, icon_data, icon_type, icon_emoji) VALUES (";
         
         if (!icon_data.empty() && !icon_type.empty()) {
-            // Если предоставлено изображение
-            result = txn.exec_params(
-                "INSERT INTO links (name, description, url, icon_data, icon_type) "
-                "VALUES ($1, $2, $3, decode($4, 'base64'), $5) "
+            // Если есть изображение
+            auto result = txn.exec_params(
+                query + "$1, $2, $3, decode($4, 'base64'), $5, NULL) "
                 "RETURNING id, name, description, url, encode(icon_data, 'base64') as icon_data, icon_type",
                 name, description, url, icon_data, icon_type
             );
+            txn.commit();
+            
+            nlohmann::json response = {
+                {"id", result[0]["id"].as<int>()},
+                {"name", result[0]["name"].as<std::string>()},
+                {"description", result[0]["description"].as<std::string>()},
+                {"url", result[0]["url"].as<std::string>()},
+                {"icon_data", result[0]["icon_data"].as<std::string>()},
+                {"icon_type", result[0]["icon_type"].as<std::string>()}
+            };
+            return response;
         } else if (!icon_emoji.empty()) {
-            // Если предоставлен эмодзи
-            result = txn.exec_params(
-                "INSERT INTO links (name, description, url, icon_emoji) "
-                "VALUES ($1, $2, $3, $4) "
+            // Если есть эмодзи
+            auto result = txn.exec_params(
+                query + "$1, $2, $3, NULL, NULL, $4) "
                 "RETURNING id, name, description, url, icon_emoji",
                 name, description, url, icon_emoji
             );
+            txn.commit();
+            
+            nlohmann::json response = {
+                {"id", result[0]["id"].as<int>()},
+                {"name", result[0]["name"].as<std::string>()},
+                {"description", result[0]["description"].as<std::string>()},
+                {"url", result[0]["url"].as<std::string>()},
+                {"icon_emoji", result[0]["icon_emoji"].as<std::string>()}
+            };
+            return response;
         } else {
-            // Если не предоставлено ни изображения, ни эмодзи
-            result = txn.exec_params(
-                "INSERT INTO links (name, description, url) "
-                "VALUES ($1, $2, $3) "
+            // Без иконки
+            auto result = txn.exec_params(
+                query + "$1, $2, $3, NULL, NULL, NULL) "
                 "RETURNING id, name, description, url",
                 name, description, url
             );
+            txn.commit();
+            
+            nlohmann::json response = {
+                {"id", result[0]["id"].as<int>()},
+                {"name", result[0]["name"].as<std::string>()},
+                {"description", result[0]["description"].as<std::string>()},
+                {"url", result[0]["url"].as<std::string>()}
+            };
+            return response;
         }
-
-        txn.commit();
-
-        nlohmann::json response = nlohmann::json::object();
-        for (const auto& field : result[0]) {
-            if (!field.is_null()) {
-                response[field.name()] = field.as<std::string>();
-            }
-        }
-        return response;
-
     } catch (const std::exception& e) {
         return nlohmann::json{{"error", std::string("Error creating portal: ") + e.what()}};
     }

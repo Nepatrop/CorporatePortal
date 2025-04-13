@@ -453,7 +453,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
 }
 
 // Компонент для редактирования портала
-function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false }) {
+function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false, loadPortals }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [url, setUrl] = useState("")
@@ -470,22 +470,33 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false 
   // Инициализация формы при открытии
   useEffect(() => {
     if (isOpen && portal) {
-      setName(portal.name || "")
-      setDescription(portal.description || "")
-      setUrl(portal.url || "")
-      // Используем существующую иконку портала
-      setIcon(portal.icon_emoji || "🔗");
+      setName(portal.name || "");
+      setDescription(portal.description || "");
+      setUrl(portal.url || "");
       
+      // Проверяем наличие изображения
       if (portal.icon_data && portal.icon_type) {
-        setIconPreview(`data:${portal.icon_type};base64,${portal.icon_data}`)
-      } else {
-        setIconPreview(null)
+        setIconPreview(`data:${portal.icon_type};base64,${portal.icon_data}`);
+        setIcon("");  // Очищаем эмодзи если есть изображение
+        setIconFile(null);
+      } 
+      // Проверяем наличие эмодзи
+      else if (portal.icon_emoji) {
+        setIcon(portal.icon_emoji);  // Устанавливаем существующий эмодзи
+        setIconPreview(null);
+        setIconFile(null);
+      } 
+      // Если нет ни изображения, ни эмодзи - устанавливаем дефолтное значение для нового портала
+      else if (isNewPortal) {
+        setIcon("🔗");
+        setIconPreview(null);
+        setIconFile(null);
       }
-      setIconFile(null) // Сбрасываем файл при открытии
-      setValidationError(false)
-      setHasUnsavedChanges(false)
+      
+      setValidationError(false);
+      setHasUnsavedChanges(false);
     }
-  }, [isOpen, portal])
+  }, [isOpen, portal, isNewPortal]);
 
   // Обработчик клика вне модального окна
   useEffect(() => {
@@ -551,60 +562,86 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false 
     }
   };
 
-  // Обновляем handleSave
-  const handleSave = async () => {
-    if (!name.trim() || !url.trim()) {
-      setValidationError(true);
-      return;
-    }
-
+  const savePortal = async (portalData) => {
+    let response;
     try {
-      const portalData = {
-        name: name.trim(),
-        description: description.trim(),
-        url: url.trim(),
-        icon_emoji: icon,
-      }
+        if (isNewPortal) {
+            response = await api.post('/api/links', portalData);
+        } else {
+            response = await api.put(`/api/links/${portal.id}`, portalData);
+        }
 
-      // Если загружен новый файл, добавляем его данные
-      if (iconFile) {
-        const reader = new FileReader()
-        const imageBase64 = await new Promise((resolve) => {
-          reader.onloadend = () => {
-            const base64String = reader.result.split(',')[1]
-            resolve(base64String)
-          }
-          reader.readAsDataURL(iconFile)
-        })
-        portalData.icon_data = imageBase64
-        portalData.icon_type = iconFile.type
-        portalData.icon_emoji = null
-      } else if (portal && portal.icon_data && portal.icon_type && !icon) {
-        // Если файл не был изменен, но есть существующая иконка и не выбран эмодзи,
-        // сохраняем существующую иконку
-        portalData.icon_data = portal.icon_data
-        portalData.icon_type = portal.icon_type
-        portalData.icon_emoji = null
-      }
-
-      let response
-      if (isNewPortal) {
-        response = await api.post('/api/links', portalData)
-      } else {
-        response = await api.put(`/api/links/${portal.id}`, portalData)
-      }
-
-      if (response.ok) {
-        const updatedPortal = await response.json()
-        onSave(updatedPortal, isNewPortal)
-        onClose()
-      } else {
-        throw new Error('Failed to save portal')
-      }
+        if (response.ok) {
+            const updatedPortal = await response.json();
+            onSave(updatedPortal, isNewPortal);
+            onClose();
+        } else {
+            throw new Error('Failed to save portal');
+        }
     } catch (error) {
-      console.error('Error saving portal:', error)
+        console.error('Error saving portal:', error);
+        throw error;
     }
-  }
+  };
+
+  const handleSave = async () => {
+    try {
+        if (!name.trim() || !url.trim()) {
+            setValidationError(true);
+            return;
+        }
+
+        const portalData = {
+            name: name.trim(),
+            description: description.trim() || "",
+            url: url.trim(),
+            icon_emoji: "",
+            icon_data: "",
+            icon_type: ""
+        };
+
+        if (iconFile) {
+            const reader = new FileReader();
+            const base64Data = await new Promise((resolve) => {
+                reader.onloadend = () => {
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.readAsDataURL(iconFile);
+            });
+
+            portalData.icon_data = base64Data;
+            portalData.icon_type = iconFile.type;
+            portalData.icon_emoji = "";
+        } else if (icon) {
+            portalData.icon_emoji = icon;
+            portalData.icon_data = "";
+            portalData.icon_type = "";
+        }
+
+        let response;
+        if (isNewPortal) {
+            response = await api.post('/api/links', portalData);
+        } else {
+            response = await api.put(`/api/links/${portal.id}`, portalData);
+        }
+
+        if (response.ok) {
+            const responseData = await response.json();
+            if (responseData.error) {
+                throw new Error(responseData.error);
+            }
+            onSave(responseData, isNewPortal);
+            await loadPortals();
+            onClose();
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to save portal:', errorData);
+        }
+    } catch (error) {
+        console.error('Error saving portal:', error);
+    }
+  };
 
   const handleDelete = async () => {
     if (!portal || !portal.id) return;
@@ -613,6 +650,7 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false 
       const response = await api.delete(`/api/links/${portal.id}`);
       if (response.ok) {
         onSave(null, false, true); // добавляем третий параметр isDeleted
+        await loadPortals();
         onClose();
       } else {
         throw new Error('Failed to delete portal');
@@ -648,7 +686,7 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false 
               onClick={() => fileInputRef.current.click()}
             >
               {iconPreview ? (
-                <img src={iconPreview || "/placeholder.svg"} alt="Иконка портала" className={styles.portalIconImage} />
+                <img src={iconPreview} alt="Иконка портала" className={styles.portalIconImage} />
               ) : icon ? (
                 <span className={styles.portalIconEmoji}>{icon}</span>
               ) : (
@@ -685,7 +723,9 @@ function PortalEditModal({ isOpen, onClose, portal, onSave, isNewPortal = false 
                         setIconFile(null)
                         setHasUnsavedChanges(true)
                       }}
-                      className={`${styles.emojiButton} ${icon === emoji ? styles.emojiButtonSelected : ""}`}
+                      className={`${styles.emojiButton} ${
+                        icon === emoji ? styles.emojiButtonSelected : ""
+                      }`}
                     >
                       {emoji}
                     </button>
@@ -1154,7 +1194,7 @@ function MainContent() {
     // Убедитесь, что icon_emoji передается корректно
     const portalToEdit = {
       ...portal,
-      icon_emoji: portal.icon_emoji || "🔗" // Если icon_emoji не определен, используем значение по умолчанию
+      icon_emoji: portal.icon // Используем текущую иконку портала
     };
     setEditingPortal(portalToEdit);
     setIsNewPortal(false);
@@ -1168,30 +1208,27 @@ function MainContent() {
       id: Date.now(), // временный ID
       name: "",
       description: "",
-      url: "#",
-      icon: "🔗",
+      url: "",
+      icon_emoji: "🔗", // Для нового портала
     })
     setIsNewPortal(true)
     setIsPortalModalOpen(true)
   }
 
-  // Функция для сохранения изменений портала
-  const handleSavePortal = (updatedPortal, isNew, isDeleted = false) => {
+  const handleSavePortal = async (updatedPortal, isNew, isDeleted = false) => {
     if (isDeleted) {
-      // Удаляем портал из состояния
-      setPortals(prevPortals => prevPortals.filter(p => p.id !== editingPortal.id));
-    } else if (isNew) {
-      // Добавляем новый портал
-      setPortals((prevPortals) => [...prevPortals, updatedPortal])
+        // После успешного удаления обновляем список
+        await loadPortals();
     } else {
-      // Обновляем существующий портал
-      setPortals((prevPortals) =>
-        prevPortals.map((portal) => (portal.id === updatedPortal.id ? updatedPortal : portal)),
-      )
+        // После успешного создания/обновления обновляем список
+        await loadPortals();
     }
     setEditingPortal(null);
     setIsPortalModalOpen(false);
-  }
+    if (!isNewPortal) {
+        setEditMode(false);
+    }
+  };
 
   const birthdays = [
     {
@@ -1420,7 +1457,7 @@ function MainContent() {
                               name: "",
                               description: "",
                               url: "",
-                              icon: "🔗",
+                              icon_emoji: "🔗", // Для нового портала
                             })
                             setIsNewPortal(true)
                             setIsPortalModalOpen(true)
@@ -1449,9 +1486,15 @@ function MainContent() {
                     className={`${styles.portalContainer} ${editMode ? styles.portalContainerEditable : ""}`}
                     onClick={() => {
                       if (editMode) {
-                        setEditingPortal(portal)
-                        setIsNewPortal(false)
-                        setIsPortalModalOpen(true)
+                        const portalToEdit = {
+                          ...portal,
+                          icon_emoji: portal.icon,
+                          icon_data: portal.iconPreview ? portal.iconPreview.split(',')[1] : null,
+                          icon_type: portal.iconPreview ? portal.iconPreview.split(',')[0].split(':')[1].split(';')[0] : null
+                        };
+                        setEditingPortal(portalToEdit);
+                        setIsNewPortal(false);
+                        setIsPortalModalOpen(true);
                       }
                     }}
                   >
@@ -1636,6 +1679,7 @@ function MainContent() {
         portal={editingPortal}
         onSave={handleSavePortal}
         isNewPortal={isNewPortal}
+        loadPortals={loadPortals}
         onExitEditMode={() => setEditMode(false)}
       />
     </main>
