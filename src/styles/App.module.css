@@ -1,7 +1,21 @@
 .app {
-    font-family: "Manrope", Arial, sans-serif;
-    background-color: #ffffff;
-    min-height: 100vh;
-  }
-  
-  
+  font-family: "Manrope", Arial, sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden; /* Запрещаем горизонтальную прокрутку */
+}
+
+/* Добавляем глобальные правила для html и body */
+:global(html),
+:global(body) {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Запрещаем горизонтальную прокрутку */
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Обеспечиваем, чтобы все контейнеры не выходили за пределы экрана */
+:global(*) {
+  box-sizing: border-box;
+}

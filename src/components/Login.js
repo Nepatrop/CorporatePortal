@@ -70,13 +70,18 @@ function Login({ onLogin, onNavigate }) {
   useEffect(() => {
     const savedData = localStorage.getItem("rememberedLogin")
     if (savedData) {
-      const { personnel_number, password, rememberMe } = JSON.parse(savedData)
-      setLoginData((prev) => ({
-        ...prev,
-        personnel_number,
-        password,
-        rememberMe,
-      }))
+      try {
+        const { personnel_number, password, rememberMe } = JSON.parse(savedData)
+        setLoginData((prev) => ({
+          ...prev,
+          personnel_number,
+          password,
+          rememberMe,
+        }))
+      } catch (error) {
+        console.error("Error parsing saved login data:", error)
+        localStorage.removeItem("rememberedLogin") // Удаляем поврежденные данные
+      }
     }
   }, [])
 
@@ -551,4 +556,3 @@ function Login({ onLogin, onNavigate }) {
 }
 
 export default Login
-
