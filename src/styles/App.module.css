@@ -1,7 +1,19 @@
 .app {
-    font-family: "Manrope", Arial, sans-serif;
-    background-color: #ffffff;
-    min-height: 100vh;
-  }
-  
-  
+  font-family: "Manrope", Arial, sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden; 
+}
+
+:global(html),
+:global(body) {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; 
+  width: 100%;
+  max-width: 100%;
+}
+
+:global(*) {
+  box-sizing: border-box;
+}
