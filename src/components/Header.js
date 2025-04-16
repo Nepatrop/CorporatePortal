@@ -126,6 +126,31 @@ function Header({ onNavigate }) {
     }
   }
 
+  // Добавляем функцию для отмены редактирования
+  const handleCancelEditing = () => {
+    if (hasUnsavedChanges) {
+      setShowExitWarning(true)
+    } else {
+      setIsEditing(false)
+      setHasUnsavedChanges(false)
+      setChangedFields({})
+      // Сбрасываем предпросмотр фото
+      setPhotoPreview(null)
+      setPhotoFile(null)
+    }
+  }
+
+  // Добавляем функцию для подтверждения выхода без сохранения
+  const confirmExit = () => {
+    setIsEditing(false)
+    setHasUnsavedChanges(false)
+    setChangedFields({})
+    setShowExitWarning(false)
+    // Сбрасываем предпросмотр фото
+    setPhotoPreview(null)
+    setPhotoFile(null)
+  }
+
   // Обработчик изменения полей
   const handleFieldChange = (e) => {
     const { name, value } = e.target
@@ -157,31 +182,6 @@ function Header({ onNavigate }) {
       delete updatedFields[name]
       setHasUnsavedChanges(Object.keys(updatedFields).length > 0 || photoFile !== null)
     }
-  }
-
-  // Добавляем функцию для отмены редактирования
-  const handleCancelEditing = () => {
-    if (hasUnsavedChanges) {
-      setShowExitWarning(true)
-    } else {
-      setIsEditing(false)
-      setHasUnsavedChanges(false)
-      setChangedFields({})
-      // Сбрасываем предпросмотр фото
-      setPhotoPreview(null)
-      setPhotoFile(null)
-    }
-  }
-
-  // Добавляем функцию для подтверждения выхода без сохранения
-  const confirmExit = () => {
-    setIsEditing(false)
-    setHasUnsavedChanges(false)
-    setChangedFields({})
-    setShowExitWarning(false)
-    // Сбрасываем предпросмотр фото
-    setPhotoPreview(null)
-    setPhotoFile(null)
   }
 
   // Обработчик сохранения изменений
@@ -341,376 +341,374 @@ function Header({ onNavigate }) {
             </div>
 
             <div className={styles.profileContent}>
+              {/* Предупреждение о несохраненных данных (в стиле EmployeeDirectory) */}
+              {showExitWarning && (
+                <div className={styles.modalOverlay} style={{ zIndex: 1100 }}>
+                  <div className={styles.confirmModal}>
+                    <div className={styles.modalHeader}>
+                      <h2 className={styles.modalTitle}>Подтверждение</h2>
+                      <button className={styles.closeButton} onClick={() => setShowExitWarning(false)}>
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </div>
+                    <div className={styles.modalContent}>
+                      <div className={styles.warningContainer}>
+                        <div className={styles.warningMessage}>
+                          <p>У вас есть несохраненные изменения. Вы уверены, что хотите выйти?</p>
+                        </div>
+                        <div className={styles.warningActions}>
+                          <button className={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
+                            Вернуться к редактированию
+                          </button>
+                          <button className={styles.deleteButton} onClick={confirmExit}>
+                            Выйти без сохранения
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Основная информация */}
-              <div className={styles.profileMainInfo}>
-                {/* Блок с фотографией в профиле */}
-                <div
-                  className={styles.profilePhoto}
-                  style={{
-                    boxShadow: showExitWarning && changedFields.photo ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
-                  }}
-                  onMouseEnter={() => isEditing && setShowPhotoUpload(true)}
-                  onMouseLeave={() => setShowPhotoUpload(false)}
-                >
-                  {isEditing ? (
-                    <>
-                      {photoPreview ? (
-                        <img
-                          src={photoPreview || "/placeholder.svg"}
-                          alt={currentUser.full_name}
-                          className={styles.profilePhotoImg}
-                        />
-                      ) : currentUser?.photo ? (
-                        <img
-                          src={currentUser.photo || "/placeholder.svg"}
-                          alt={currentUser.full_name}
-                          className={styles.profilePhotoImg}
-                        />
-                      ) : (
-                        <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
-                      )}
-                      {isEditing && (
-                        <div
-                          className={styles.photoUploadOverlay}
-                          style={{
-                            opacity: showPhotoUpload ? 1 : 0,
-                          }}
-                          onClick={() => fileInputRef.current.click()}
-                        >
-                          <FontAwesomeIcon icon={faCamera} className={styles.cameraIcon} />
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handlePhotoChange}
-                        style={{ display: "none" }}
-                        accept="image/*"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      {currentUser?.photo ? (
-                        <img
-                          src={currentUser.photo || "/placeholder.svg"}
-                          alt={currentUser.full_name}
-                          className={styles.profilePhotoImg}
-                        />
-                      ) : (
-                        <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
-                      )}
-                    </>
-                  )}
-                </div>
-                <div className={styles.profileNameContainer}>
-                  <div className={styles.nameWithEditIcon}>
-                    <h3 className={styles.profileName}>{currentUser?.full_name}</h3>
-                    {!isEditing && (
-                      <button
-                        className={styles.editIconButton}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setIsEditing(true)
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faPencilAlt} className={styles.editIcon} />
-                        <span className={styles.editText}>Изменить</span>
-                      </button>
-                    )}
-                  </div>
-                  <p className={styles.profilePosition}>{currentUser?.position}</p>
-                </div>
-              </div>
-
-              {/* Детальная информация */}
-              <div className={styles.profileDetails}>
-                <div className={styles.profileSection}>
-                  <h4 className={styles.sectionTitle}>Основная информация</h4>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Табельный номер:</span>
-                    <span className={styles.infoValue}>{currentUser?.personnel_number}</span>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Дата рождения:</span>
-                    <span className={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Местоположение:</span>
-                    <span className={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Организация:</span>
-                    <span className={styles.infoValue}>{currentUser?.organization}</span>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Подразделение:</span>
-                    <span className={styles.infoValue}>{currentUser?.department}</span>
-                  </div>
-                </div>
-
-                <div className={styles.profileSection}>
-                  <h4 className={styles.sectionTitle}>Контактная информация</h4>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Рабочий телефон:</span>
-                    <div className={styles.infoValueWithCopy}>
-                      <span className={styles.infoValue}>{formatPhoneNumber(currentUser?.work_phone)}</span>
-                      {currentUser?.work_phone && (
-                        <button
-                          className={styles.copyButton}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            copyToClipboard(currentUser.work_phone, "Рабочий телефон")
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCopy} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Электронная почта:</span>
-                    <div className={styles.infoValueWithCopy}>
+              {!showExitWarning && (
+                <>
+                  <div className={styles.profileMainInfo}>
+                    {/* Блок с фотографией в профиле */}
+                    <div
+                      className={styles.profilePhoto}
+                      style={{
+                        boxShadow: changedFields.photo ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                      }}
+                      onMouseEnter={() => isEditing && setShowPhotoUpload(true)}
+                      onMouseLeave={() => setShowPhotoUpload(false)}
+                    >
                       {isEditing ? (
-                        <div className={styles.inputContainer}>
+                        <>
+                          {photoPreview ? (
+                            <img
+                              src={photoPreview || "/placeholder.svg"}
+                              alt={currentUser.full_name}
+                              className={styles.profilePhotoImg}
+                            />
+                          ) : currentUser?.photo ? (
+                            <img
+                              src={currentUser.photo || "/placeholder.svg"}
+                              alt={currentUser.full_name}
+                              className={styles.profilePhotoImg}
+                            />
+                          ) : (
+                            <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
+                          )}
+                          {isEditing && (
+                            <div className={styles.photoUploadOverlay}>
+                              <FontAwesomeIcon icon={faCamera} className={styles.cameraIcon} />
+                            </div>
+                          )}
                           <input
-                            type="email"
-                            name="email"
-                            value={editableFields.email}
-                            onChange={handleFieldChange}
-                            className={styles.editInput}
-                            style={{
-                              boxShadow:
-                                showExitWarning && changedFields.email ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
-                            }}
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handlePhotoChange}
+                            style={{ display: "none" }}
+                            accept="image/*"
                           />
-                        </div>
+                        </>
                       ) : (
-                        <span
-                          className={styles.clickableValue}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.location.href = `mailto:${currentUser?.email}`
-                          }}
-                        >
-                          {currentUser?.email || "Не указана"}
-                        </span>
+                        <>
+                          {currentUser?.photo ? (
+                            <img
+                              src={currentUser.photo || "/placeholder.svg"}
+                              alt={currentUser.full_name}
+                              className={styles.profilePhotoImg}
+                            />
+                          ) : (
+                            <FontAwesomeIcon icon={faUser} className={styles.profilePhotoIcon} />
+                          )}
+                        </>
                       )}
-                      {!isEditing && currentUser?.email && (
-                        <button
-                          className={styles.copyButton}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            copyToClipboard(currentUser.email, "Email")
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCopy} />
+                    </div>
+                    <div className={styles.profileNameContainer}>
+                      <div className={styles.nameWithEditIcon}>
+                        <h3 className={styles.profileName}>{currentUser?.full_name}</h3>
+                        {!isEditing && (
+                          <button
+                            className={styles.editIconButton}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setIsEditing(true)
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faPencilAlt} className={styles.editIcon} />
+                            <span className={styles.editText}>Изменить</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className={styles.profilePosition}>{currentUser?.position}</p>
+                    </div>
+                  </div>
+
+                  {/* Детальная информация */}
+                  <div className={styles.profileDetails}>
+                    <div className={styles.profileSection}>
+                      <h4 className={styles.sectionTitle}>Основная информация</h4>
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Табельный номер:</span>
+                        <span className={styles.infoValue}>{currentUser?.personnel_number}</span>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Дата рождения:</span>
+                        <span className={styles.infoValue}>{formatDate(currentUser?.birth_date)}</span>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Местоположение:</span>
+                        <span className={styles.infoValue}>{currentUser?.location || "Не указано"}</span>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Организация:</span>
+                        <span className={styles.infoValue}>{currentUser?.organization}</span>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Подразделение:</span>
+                        <span className={styles.infoValue}>{currentUser?.department}</span>
+                      </div>
+                    </div>
+
+                    <div className={styles.profileSection}>
+                      <h4 className={styles.sectionTitle}>Контактная информация</h4>
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Рабочий телефон:</span>
+                        <div className={styles.infoValueWithCopy}>
+                          <span className={styles.infoValue}>{formatPhoneNumber(currentUser?.work_phone)}</span>
+                          {currentUser?.work_phone && (
+                            <button
+                              className={styles.copyButton}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(currentUser.work_phone, "Рабочий телефон")
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faCopy} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Электронная почта:</span>
+                        <div className={styles.infoValueWithCopy}>
+                          {isEditing ? (
+                            <div className={styles.inputContainer}>
+                              <input
+                                type="email"
+                                name="email"
+                                value={editableFields.email}
+                                onChange={handleFieldChange}
+                                className={styles.editInput}
+                                style={{
+                                  boxShadow: changedFields.email ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <span
+                              className={styles.clickableValue}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `mailto:${currentUser?.email}`
+                              }}
+                            >
+                              {currentUser?.email || "Не указана"}
+                            </span>
+                          )}
+                          {!isEditing && currentUser?.email && (
+                            <button
+                              className={styles.copyButton}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(currentUser.email, "Email")
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faCopy} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.profileSection}>
+                      <h4 className={styles.sectionTitle}>О себе</h4>
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Мои интересы:</span>
+                        <div className={styles.infoValueWithCopy}>
+                          {isEditing ? (
+                            <div className={styles.interestsContainer}>
+                              <input
+                                type="text"
+                                name="interests1"
+                                value={editableFields.interests1 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Интерес 1"
+                                className={styles.editInput}
+                                style={{
+                                  marginBottom: "8px",
+                                  boxShadow: changedFields.interests1 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                name="interests2"
+                                value={editableFields.interests2 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Интерес 2"
+                                className={styles.editInput}
+                                style={{
+                                  marginBottom: "8px",
+                                  boxShadow: changedFields.interests2 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                name="interests3"
+                                value={editableFields.interests3 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Интерес 3"
+                                className={styles.editInput}
+                                style={{
+                                  boxShadow: changedFields.interests3 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className={styles.interestsList}>
+                              {currentUser?.interests1 && (
+                                <div className={styles.interestItem}>{currentUser.interests1}</div>
+                              )}
+                              {currentUser?.interests2 && (
+                                <div className={styles.interestItem}>{currentUser.interests2}</div>
+                              )}
+                              {currentUser?.interests3 && (
+                                <div className={styles.interestItem}>{currentUser.interests3}</div>
+                              )}
+                              {!currentUser?.interests1 && !currentUser?.interests2 && !currentUser?.interests3 && (
+                                <span className={styles.infoValue}>Не указаны</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Мои проекты:</span>
+                        <div className={styles.infoValueWithCopy}>
+                          {isEditing ? (
+                            <div className={styles.interestsContainer}>
+                              <input
+                                type="text"
+                                name="projects1"
+                                value={editableFields.projects1 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Проект 1"
+                                className={styles.editInput}
+                                style={{
+                                  marginBottom: "8px",
+                                  boxShadow: changedFields.projects1 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                name="projects2"
+                                value={editableFields.projects2 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Проект 2"
+                                className={styles.editInput}
+                                style={{
+                                  marginBottom: "8px",
+                                  boxShadow: changedFields.projects2 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                name="projects3"
+                                value={editableFields.projects3 || ""}
+                                onChange={handleFieldChange}
+                                placeholder="Проект 3"
+                                className={styles.editInput}
+                                style={{
+                                  boxShadow: changedFields.projects3 ? "0 0 0 2px rgba(238, 107, 12, 0.3)" : "none",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className={styles.interestsList}>
+                              {currentUser?.projects1 && (
+                                <div className={styles.interestItem}>{currentUser.projects1}</div>
+                              )}
+                              {currentUser?.projects2 && (
+                                <div className={styles.interestItem}>{currentUser.projects2}</div>
+                              )}
+                              {currentUser?.projects3 && (
+                                <div className={styles.interestItem}>{currentUser.projects3}</div>
+                              )}
+                              {!currentUser?.projects1 && !currentUser?.projects2 && !currentUser?.projects3 && (
+                                <span className={styles.infoValue}>Не указаны</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.profileSection}>
+                      <h4 className={styles.sectionTitle}>Руководитель</h4>
+                      <div className={styles.infoRow}>
+                        {currentUser?.manager ? (
+                          <span
+                            className={styles.clickableValue}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              showManagerInfo(currentUser.manager)
+                            }}
+                          >
+                            {currentUser.manager}
+                          </span>
+                        ) : (
+                          <span className={styles.infoValue}>Не указан</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Кнопки действий */}
+                  <div className={styles.profileActions}>
+                    {isEditing ? (
+                      <div className={styles.actionButtons}>
+                        <button className={styles.cancelButton} onClick={handleCancelEditing}>
+                          Отмена
                         </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.profileSection}>
-                  <h4 className={styles.sectionTitle}>О себе</h4>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Мои интересы:</span>
-                    <div className={styles.infoValueWithCopy}>
-                      {isEditing ? (
-                        <div className={styles.interestsContainer}>
-                          <input
-                            type="text"
-                            name="interests1"
-                            value={editableFields.interests1 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Интерес 1"
-                            className={styles.editInput}
-                            style={{
-                              marginBottom: "8px",
-                              boxShadow:
-                                showExitWarning && changedFields.interests1
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            name="interests2"
-                            value={editableFields.interests2 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Интерес 2"
-                            className={styles.editInput}
-                            style={{
-                              marginBottom: "8px",
-                              boxShadow:
-                                showExitWarning && changedFields.interests2
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            name="interests3"
-                            value={editableFields.interests3 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Интерес 3"
-                            className={styles.editInput}
-                            style={{
-                              boxShadow:
-                                showExitWarning && changedFields.interests3
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className={styles.interestsList}>
-                          {currentUser?.interests1 && (
-                            <div className={styles.interestItem}>{currentUser.interests1}</div>
-                          )}
-                          {currentUser?.interests2 && (
-                            <div className={styles.interestItem}>{currentUser.interests2}</div>
-                          )}
-                          {currentUser?.interests3 && (
-                            <div className={styles.interestItem}>{currentUser.interests3}</div>
-                          )}
-                          {!currentUser?.interests1 && !currentUser?.interests2 && !currentUser?.interests3 && (
-                            <span className={styles.infoValue}>Не указаны</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Мои проекты:</span>
-                    <div className={styles.infoValueWithCopy}>
-                      {isEditing ? (
-                        <div className={styles.interestsContainer}>
-                          <input
-                            type="text"
-                            name="projects1"
-                            value={editableFields.projects1 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Проект 1"
-                            className={styles.editInput}
-                            style={{
-                              marginBottom: "8px",
-                              boxShadow:
-                                showExitWarning && changedFields.projects1
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            name="projects2"
-                            value={editableFields.projects2 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Проект 2"
-                            className={styles.editInput}
-                            style={{
-                              marginBottom: "8px",
-                              boxShadow:
-                                showExitWarning && changedFields.projects2
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            name="projects3"
-                            value={editableFields.projects3 || ""}
-                            onChange={handleFieldChange}
-                            placeholder="Проект 3"
-                            className={styles.editInput}
-                            style={{
-                              boxShadow:
-                                showExitWarning && changedFields.projects3
-                                  ? "0 0 0 2px rgba(238, 107, 12, 0.3)"
-                                  : "none",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className={styles.interestsList}>
-                          {currentUser?.projects1 && <div className={styles.interestItem}>{currentUser.projects1}</div>}
-                          {currentUser?.projects2 && <div className={styles.interestItem}>{currentUser.projects2}</div>}
-                          {currentUser?.projects3 && <div className={styles.interestItem}>{currentUser.projects3}</div>}
-                          {!currentUser?.projects1 && !currentUser?.projects2 && !currentUser?.projects3 && (
-                            <span className={styles.infoValue}>Не указаны</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.profileSection}>
-                  <h4 className={styles.sectionTitle}>Руководитель</h4>
-                  <div className={styles.infoRow}>
-                    {currentUser?.manager ? (
-                      <span
-                        className={styles.clickableValue}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          showManagerInfo(currentUser.manager)
-                        }}
-                      >
-                        {currentUser.manager}
-                      </span>
-                    ) : (
-                      <span className={styles.infoValue}>Не указан</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Кнопки действий */}
-              <div className={styles.profileActions}>
-                {isEditing ? (
-                  <>
-                    <div className={styles.warningContainer}>
-                      {showExitWarning && (
-                        <span className={styles.warningText}>У вас есть несохраненные изменения</span>
-                      )}
-                    </div>
-                    <div className={styles.actionButtons}>
-                      <button
-                        className={styles.cancelButton}
-                        onClick={showExitWarning ? confirmExit : handleCancelEditing}
-                      >
-                        {showExitWarning ? "Выйти без сохранения" : "Отмена"}
-                      </button>
-                      {showExitWarning ? (
-                        <button className={styles.cancelButton} onClick={() => setShowExitWarning(false)}>
-                          Вернуться к редактированию
-                        </button>
-                      ) : (
                         <button className={styles.saveButton} onClick={handleSaveChanges}>
                           <FontAwesomeIcon icon={faCheck} style={{ marginRight: "5px" }} />
                           Сохранить
                         </button>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <button
-                    className={styles.logoutButton}
-                    onClick={() => {
-                      logout()
-                      handleCloseProfile()
-                      if (onNavigate) onNavigate("login")
-                    }}
-                  >
-                    Выйти из аккаунта
-                  </button>
-                )}
-              </div>
+                      </div>
+                    ) : (
+                      <button
+                        className={styles.logoutButton}
+                        onClick={() => {
+                          logout()
+                          handleCloseProfile()
+                          if (onNavigate) onNavigate("login")
+                        }}
+                      >
+                        Выйти из аккаунта
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -725,4 +723,3 @@ function Header({ onNavigate }) {
 }
 
 export default Header
-

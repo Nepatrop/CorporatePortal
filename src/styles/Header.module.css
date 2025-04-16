@@ -1,470 +1,572 @@
 /* Основные стили для хедера */
+* {
+  box-sizing: border-box;
+}
+
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: #13454b;
-    color: #ffffff;
-    font-family: "Manrope", Arial, sans-serif;
-  }
-  
-  .userInfoContainer {
-    display: flex;
-    align-items: center;
-    position: relative;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-  }
-  
-  .userInfoContainer:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .userPhoto {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin-right: 12px;
-  }
-  
-  .photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .userIcon {
-    font-size: 20px;
-    color: #333333;
-  }
-  
-  .userDetails {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .userName {
-    font-size: 16px;
-    font-weight: 500;
-    color: #ffffff;
-    margin-bottom: 2px;
-  }
-  
-  .userPosition {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .logoContainer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    flex: 1;
-  }
-  
-  .logoLink {
-    cursor: pointer;
-  }
-  
-  .logo {
-    height: 40px;
-  }
-  
-  .centerNav {
-    display: flex;
-    justify-content: center;
-    flex: 1;
-  }
-  
-  .textButton {
-    background: none;
-    border: none;
-    color: #ffffff;
-    cursor: pointer;
-    font-family: "Manrope", Arial, sans-serif;
-    font-weight: 500;
-    font-size: 16px;
-    padding: 0.5rem 1rem;
-  }
-  
-  /* Стили для модального окна профиля */
-  .modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    z-index: 1000;
-    padding-top: 80px;
-  }
-  
-  .profileModal {
-    width: 45%;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .profileHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .profileTitle {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #13454b;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .closeButton {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #777;
-    cursor: pointer;
-    padding: 5px;
-  }
-  
-  .profileContent {
-    padding: 20px;
-  }
-  
-  .profileMainInfo {
-    display: flex;
-    align-items: center;
-    margin-bottom: 30px;
-  }
-  
-  .profilePhoto {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin-right: 20px;
-    position: relative;
-  }
-  
-  .profilePhotoImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .profilePhotoIcon {
-    font-size: 40px;
-    color: #777;
-  }
-  
-  .profileNameContainer {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .nameWithEditIcon {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .editIconButton {
-    background: none;
-    border: none;
-    padding: 5px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  
-  .editIcon {
-    font-size: 16px;
-    color: #999;
-  }
-  
-  .editText {
-    font-size: 14px;
-    color: #999;
-  }
-  
-  .profileName {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #13454b;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .profilePosition {
-    margin: 0;
-    font-size: 16px;
-    color: #777;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .profileDetails {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-  }
-  
-  .profileSection {
-    margin-bottom: 15px;
-  }
-  
-  .sectionTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: #13454b;
-    margin-bottom: 15px;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .infoRow {
-    display: flex;
-    margin-bottom: 12px;
-    align-items: center;
-  }
-  
-  .infoLabel {
-    width: 180px;
-    font-size: 14px;
-    color: #777;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .infoValue {
-    font-size: 14px;
-    color: #333;
-    font-family: "Open Sans", Arial, sans-serif;
-    margin-left: 0;
-  }
-  
-  .infoValueWithCopy {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .copyButton {
-    background: none;
-    border: none;
-    color: #ee6b0c;
-    cursor: pointer;
-    padding: 5px;
-    font-size: 14px;
-  }
-  
-  .profileActions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 20px;
-  }
-  
-  .editButton {
-    padding: 10px 20px;
-    background-color: #13454b;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .logoutButton {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #ee6b0c;
-    border: 1px solid #ee6b0c;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .logoutButton:hover {
-    background-color: #ee6b0c;
-    color: #ffffff;
-  }
-  
-  .saveButton {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #ee6b0c;
-    border: 1px solid #ee6b0c;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .saveButton:hover {
-    background-color: #ee6b0c;
-    color: #ffffff;
-  }
-  
-  .cancelButton {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #777;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .editInput {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    font-size: 14px;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .inputContainer {
-    width: 300px;
-  }
-  
-  .copyNotification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #13454b;
-    color: #ffffff;
-    padding: 10px 20px;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1100;
-    font-family: "Open Sans", Arial, sans-serif;
-    font-size: 14px;
-  }
-  
-  .clickableValue {
-    font-size: 14px;
-    color: #ee6b0c;
-    font-family: "Open Sans", Arial, sans-serif;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  
-  .clickableValue:hover {
-    text-decoration: underline;
-  }
-  
-  .warningContainer {
-    flex: 1;
-  }
-  
-  .warningText {
-    color: #ee6b0c;
-    font-size: 14px;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  .actionButtons {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .successMessage {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #4caf50;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    z-index: 1100;
-  }
-  
-  .errorMessage {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #f44336;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    z-index: 1100;
-  }
-  
-  .photoUploadOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .photoUploadOverlay:hover {
-    opacity: 1;
-  }
-  
-  .cameraIcon {
-    font-size: 24px;
-    color: #ffffff;
-  }
-  
-  .interestsContainer {
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .interestsList {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .interestItem {
-    font-size: 14px;
-    color: #333;
-    font-family: "Open Sans", Arial, sans-serif;
-  }
-  
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #13454b;
+  color: #ffffff;
+  font-family: "Manrope", Arial, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.userInfoContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.userInfoContainer:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.userPhoto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-right: 12px;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userIcon {
+  font-size: 20px;
+  color: #333333;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.userPosition {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+}
+
+.logoLink {
+  cursor: pointer;
+}
+
+.logo {
+  height: 40px;
+}
+
+.centerNav {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.textButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: "Manrope", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 0.5rem 1rem;
+}
+
+/* Стили для модального окна профиля */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding-top: 80px;
+}
+
+.profileModal {
+  width: 45%;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.profileTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #13454b;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #777;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.profileContent {
+  padding: 20px;
+}
+
+.profileMainInfo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.profilePhoto {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-right: 20px;
+  position: relative;
+}
+
+.profilePhotoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profilePhotoIcon {
+  font-size: 40px;
+  color: #777;
+}
+
+.profileNameContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.nameWithEditIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editIconButton {
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.editIcon {
+  font-size: 16px;
+  color: #999;
+}
+
+.editText {
+  font-size: 14px;
+  color: #999;
+}
+
+.profileName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #13454b;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.profilePosition {
+  margin: 0;
+  font-size: 16px;
+  color: #777;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.profileSection {
+  margin-bottom: 15px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #13454b;
+  margin-bottom: 15px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.infoRow {
+  display: flex;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.infoLabel {
+  width: 180px;
+  font-size: 14px;
+  color: #777;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: #333;
+  font-family: "Open Sans", Arial, sans-serif;
+  margin-left: 0;
+}
+
+.infoValueWithCopy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.copyButton {
+  background: none;
+  border: none;
+  color: #ee6b0c;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.profileActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.editButton {
+  padding: 10px 20px;
+  background-color: #13454b;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.logoutButton {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logoutButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+.saveButton {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.saveButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #777;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.editInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.inputContainer {
+  width: 300px;
+}
+
+.copyNotification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #13454b;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1100;
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.clickableValue {
+  font-size: 14px;
+  color: #ee6b0c;
+  font-family: "Open Sans", Arial, sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.clickableValue:hover {
+  text-decoration: underline;
+}
+
+.warningContainer {
+  padding: 20px;
+  background-color: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.warningIcon {
+  font-size: 32px;
+  color: #ee6b0c;
+  margin-bottom: 10px;
+}
+
+.warningText {
+  color: #ee6b0c;
+  font-size: 14px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.successMessage {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  z-index: 1100;
+}
+
+.errorMessage {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #f44336;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  z-index: 1100;
+}
+
+.photoUploadOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.cameraIcon {
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.interestsContainer {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.interestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.interestItem {
+  font-size: 14px;
+  color: #333;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+/* Стили для модального окна подтверждения */
+.confirmModal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  width: 500px;
+  max-width: 90%;
+  overflow: hidden;
+}
+
+.modalHeader {
+  background-color: #f5f5f5;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #13454b;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 16px;
+}
+
+.modalContent {
+  padding: 24px;
+}
+
+.confirmText {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background-color: #ffffff;
+  color: #777;
+  border: 1px solid #777;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.deleteButton {
+  padding: 12px 24px;
+  background-color: #ee6b0c;
+  color: #ffffff;
+  border: 1px solid #ee6b0c;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Стили для предупреждения о несохраненных данных в стиле EmployeeDirectory */
+.warningMessage {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.warningMessage p {
+  font-size: 16px;
+  color: #ff8f00;
+  margin: 0;
+}
+
+.warningActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}

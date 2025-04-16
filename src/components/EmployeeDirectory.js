@@ -1187,7 +1187,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Уведомление о копировании */}
+      {/* Уведом��ение о копировании */}
       {showCopyNotification && <div className={styles.copyNotification}>{copiedText} скопирован в буфер обмена</div>}
 
       {/* Контекстное меню */}
@@ -1209,4 +1209,3 @@ const EmployeeDirectory = ({ onNavigate }) => {
 }
 
 export default EmployeeDirectory
-

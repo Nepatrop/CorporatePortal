@@ -1,379 +1,219 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import logo from "../logo.svg"
-import { api } from "../utils/api"
 import { useUser } from "../context/UserContext"
+import { api } from "../utils/api"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
+import { faEye, faEyeSlash, faChevronDown } from "@fortawesome/free-solid-svg-icons"
+import logo from "../logo.svg"
 import styles from "../styles/Login.module.css"
 
-function Login({ onLogin, onNavigate }) {
-  const { setCurrentUser } = useUser()
-  const [isRegistration, setIsRegistration] = useState(false)
-  const [loginData, setLoginData] = useState({
-    personnel_number: "",
-    password: "",
-    rememberMe: false,
-  })
-  const [registrationData, setRegistrationData] = useState({
-    organization: "",
-    department: "",
-    fullName: "",
-    password: "",
-    position: "",
-    personnel_number: "",
-    work_phone: "",
-    birth_date: "",
-  })
-  const [organizations, setOrganizations] = useState([])
-  const [departments, setDepartments] = useState([])
-  const [searchOrg, setSearchOrg] = useState("")
-  const [searchDept, setSearchDept] = useState("")
-  const [showOrgDropdown, setShowOrgDropdown] = useState(false)
-  const [showDeptDropdown, setShowDeptDropdown] = useState(false)
-  const [personnelNumberError, setPersonnelNumberError] = useState("")
-  const [loginError, setLoginError] = useState("")
-  const [registrationError, setRegistrationError] = useState("")
+function Login({ onLogin }) {
+  const [isLoginMode, setIsLoginMode] = useState(true)
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [validationErrors, setValidationErrors] = useState({})
+  const { setCurrentUser } = useUser()
 
+  // Поля для регистрации
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [position, setPosition] = useState("")
+  const [department, setDepartment] = useState("")
+  const [departments, setDepartments] = useState([])
+  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false)
+  const [searchDepartment, setSearchDepartment] = useState("")
+  const [registrationError, setRegistrationError] = useState("")
+
+  // Загрузка списка отделов при монтировании компонента
   useEffect(() => {
-    // Загружаем список организаций и отделов
-    const fetchData = async () => {
+    const fetchDepartments = async () => {
       try {
-        const [orgsData, deptsData] = await Promise.all([api.get("/api/organizations"), api.get("/api/departments")])
-        setOrganizations(orgsData)
-        setDepartments(deptsData)
+        const data = await api.get("/api/departments")
+        setDepartments(data)
       } catch (error) {
-        console.error("Error fetching data:", error)
-      }
-    }
-    fetchData()
-  }, [])
-
-  // Обновляем обработчики кликов вне выпадающих списков
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
-        setShowOrgDropdown(false)
-        setShowDeptDropdown(false)
+        console.error("Error fetching departments:", error)
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
+    fetchDepartments()
+
+    // Проверяем, есть ли сохраненные данные для входа
+    const savedUsername = localStorage.getItem("rememberedLogin")
+    if (savedUsername) {
+      setUsername(savedUsername)
+      setRememberMe(true)
     }
   }, [])
 
-  // Добавляем эффект для загрузки сохраненных данных при монтировании
-  useEffect(() => {
-    const savedData = localStorage.getItem("rememberedLogin")
-    if (savedData) {
-      const { personnel_number, password, rememberMe } = JSON.parse(savedData)
-      setLoginData((prev) => ({
-        ...prev,
-        personnel_number,
-        password,
-        rememberMe,
-      }))
-    }
-  }, [])
+  // Фильтрация отделов при поиске
+  const filteredDepartments = departments.filter((dept) =>
+    dept.name.toLowerCase().includes(searchDepartment.toLowerCase()),
+  )
 
-  const handleLoginChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setLoginData({
-      ...loginData,
-      [name]: type === "checkbox" ? checked : value,
-    })
-  }
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
-
-  const checkPersonnelNumber = async (number) => {
-    try {
-      const data = await api.get(`/api/employees?personnel_number=${number}`)
-      if (data && data.length > 0) {
-        setPersonnelNumberError("Табельный номер зарегистрирован.")
-        return true
-      }
-      setPersonnelNumberError("")
-      return false
-    } catch (error) {
-      console.error("Error checking personnel number:", error)
-      return false
-    }
-  }
-
-  const handleRegistrationChange = async (e) => {
-    const { name, value } = e.target
-    setRegistrationData((prev) => ({ ...prev, [name]: value }))
-    // Убираем проверку при вводе
-    if (personnelNumberError) {
-      setPersonnelNumberError("")
-    }
-  }
-
-  const formatPhoneNumber = (value) => {
-    // Удаляем все нецифровые символы
-    const numbers = value.replace(/\D/g, "")
-
-    if (numbers.length === 0) return ""
-
-    // Форматируем номер в формат +7 (XXX) XXX-XX-XX
-    if (numbers.length <= 1) return `+7`
-    if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`
-    if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`
-    if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`
-    return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
-  }
-
-  const handlePhoneChange = (e) => {
-    const { name, value } = e.target
-    setRegistrationData({
-      ...registrationData,
-      [name]: formatPhoneNumber(value),
-    })
-  }
-
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      const response = await api.post("/api/auth/login", {
-        personnel_number: loginData.personnel_number,
-        password: loginData.password,
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        console.log("Login successful:", userData)
-        setLoginError("")
-
-        // Сохраняем данные пользователя в контекст
-        setCurrentUser(userData) // Это обновит isAdmin автоматически через функцию updateUser
-
-        // Сохраняем данные если включео "Запомнить меня"
-        if (loginData.rememberMe) {
-          localStorage.setItem(
-            "rememberedLogin",
-            JSON.stringify({
-              personnel_number: loginData.personnel_number,
-              password: loginData.password,
-              rememberMe: true,
-            }),
-          )
-        } else {
-          // Очищаем сохраненные данные если "Запомнить меня" выключено
-          localStorage.removeItem("rememberedLogin")
-        }
-
-        onLogin(userData)
-      } else {
-        console.error("Login failed")
-        setLoginError("Неверный табельный номер или пароль")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      setLoginError("Ошибка сервера. Попробуйте позже")
-    }
-  }
-
-  const handleRegistrationSubmit = async (e) => {
+  // Обработчик входа
+  const handleLogin = async (e) => {
     e.preventDefault()
 
-    if (await checkPersonnelNumber(registrationData.personnel_number)) {
+    // Валидация
+    const errors = {}
+    if (!username.trim()) errors.username = "Введите имя пользователя"
+    if (!password.trim()) errors.password = "Введите пароль"
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
       return
     }
 
     try {
-      const response = await api.post("/api/auth/register", {
-        full_name: registrationData.fullName,
-        password: registrationData.password,
-        organization: registrationData.organization,
-        department: registrationData.department,
-        position: registrationData.position,
-        personnel_number: registrationData.personnel_number,
-        work_phone: registrationData.work_phone,
-        birth_date: registrationData.birth_date,
-        is_admin: false,
+      // Отправляем запрос на сервер для аутентификации
+      const response = await api.post("/api/login", {
+        username,
+        password,
       })
 
+      // Добавим отладочную информацию
+      console.log("Login response:", response)
+
+      // Проверяем статус ответа
       if (response.ok) {
-        const data = await response.json()
-        console.log("Registration successful:", data)
-        setRegistrationError("") // Очищаем ошибку при успехе
+        // Пытаемся получить данные из ответа
+        try {
+          const userData = await response.json()
+          console.log("User data:", userData)
 
-        // Сразу пытаемся выполнить вход с теми же данными
-        const loginResponse = await api.post("/api/auth/login", {
-          personnel_number: registrationData.personnel_number,
-          password: registrationData.password,
-        })
+          // Сохраняем имя пользователя, если выбрана опция "Запомнить меня"
+          if (rememberMe) {
+            localStorage.setItem("rememberedLogin", username)
+          } else {
+            localStorage.removeItem("rememberedLogin")
+          }
 
-        if (loginResponse.ok) {
-          const userData = await loginResponse.json()
-          console.log("Auto login successful:", userData)
-          setCurrentUser(userData) // Сохраняем данные пользователя в контекст
-          onLogin(userData) // Сразу переходим в систму
-        } else {
-          // Если автологин не удался, переходим на страницу входа
-          setIsRegistration(false)
-          setLoginData({
-            personnel_number: registrationData.personnel_number,
-            password: registrationData.password,
-            rememberMe: false,
-          })
+          // Обновляем контекст пользователя
+          setCurrentUser(userData)
+
+          // Вызываем функцию обратного вызова для перехода на главную страницу
+          onLogin()
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          setErrorMessage("Ошибка при обработке ответа сервера")
         }
       } else {
-        const error = await response.json()
-        console.error("Registration failed:", error)
-        setRegistrationError(error.error || "Ошибка регистрации")
+        let errorMessage = "Неверное имя пользователя или пароль"
+        try {
+          const errorText = await response.text()
+          console.log("Error response text:", errorText)
+
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText)
+              errorMessage = errorJson.message || errorMessage
+            } catch (e) {
+              console.error("Error parsing error response:", e)
+            }
+          }
+        } catch (e) {
+          console.error("Error reading error response:", e)
+        }
+        setErrorMessage(errorMessage)
       }
     } catch (error) {
-      console.error("Error during registration:", error)
-      setRegistrationError("Ошибка сервера при регистрации")
+      console.error("Login error:", error)
+      setErrorMessage("Ошибка при входе. Пожалуйста, попробуйте позже.")
     }
   }
 
-  const toggleRegistration = () => {
-    setIsRegistration(!isRegistration)
+  // Обработчик регистрации
+  const handleRegister = async (e) => {
+    e.preventDefault()
+
+    // Валидация
+    const errors = {}
+    if (!fullName.trim()) errors.fullName = "Введите ФИО"
+    if (!username.trim()) errors.username = "Введите имя пользователя"
+    if (!password.trim()) errors.password = "Введите пароль"
+    if (!email.trim()) errors.email = "Введите email"
+    if (!position.trim()) errors.position = "Введите должность"
+    if (!department.trim()) errors.department = "Выберите отдел"
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+
+    try {
+      // Отправляем запрос на сервер для регистрации
+      const response = await api.post("/api/register", {
+        full_name: fullName,
+        username,
+        password,
+        email,
+        position,
+        department,
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+
+        // Обновляем контекст пользователя
+        setCurrentUser(userData)
+
+        // Вызываем функцию обратного вызова для перехода на главную страницу
+        onLogin()
+      } else {
+        const errorData = await response.json()
+        setRegistrationError(errorData.message || "Ошибка при регистрации")
+      }
+    } catch (error) {
+      console.error("Registration error:", error)
+      setRegistrationError("Ошибка при регистрации. Пожалуйста, попробуйте позже.")
+    }
   }
 
-  // Обновляем функции фильтрации
-  const filteredOrganizations = organizations.filter((org) => org.name.toLowerCase().includes(searchOrg.toLowerCase()))
+  // Переключение между режимами входа и регистрации
+  const toggleMode = () => {
+    setIsLoginMode(!isLoginMode)
+    setErrorMessage("")
+    setRegistrationError("")
+    setValidationErrors({})
+  }
 
-  const filteredDepartments = departments.filter((dept) => dept.name.toLowerCase().startsWith(searchDept.toLowerCase()))
-
-  const renderOrganizationField = () => (
-    <div className={styles.inputGroup}>
-      <label htmlFor="organization" className={styles.label}>
-        Организация
-      </label>
-      <div className={`${styles.dropdownContainer} dropdown-container`}>
-        <input
-          type="text"
-          id="organization"
-          name="organization"
-          value={registrationData.organization}
-          onChange={(e) => {
-            const value = e.target.value
-            setSearchOrg(value)
-            setRegistrationData((prev) => ({ ...prev, organization: value }))
-            setShowOrgDropdown(true)
-          }}
-          onFocus={() => setShowOrgDropdown(true)}
-          placeholder="Выберите организацию"
-          className={styles.input}
-          required
-        />
-        {showOrgDropdown && filteredOrganizations.length > 0 && (
-          <div className={styles.dropdown}>
-            {filteredOrganizations.map((org) => (
-              <div
-                key={org.id}
-                className={`${styles.dropdownItem} ${registrationData.organization === org.name ? styles.dropdownItemSelected : ""}`}
-                onClick={() => {
-                  setRegistrationData((prev) => ({ ...prev, organization: org.name }))
-                  setSearchOrg(org.name)
-                  setShowOrgDropdown(false)
-                }}
-              >
-                {org.name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  const renderDepartmentField = () => (
-    <div className={styles.inputGroup}>
-      <label htmlFor="department" className={styles.label}>
-        Отдел/подразделение
-      </label>
-      <div className={`${styles.dropdownContainer} dropdown-container`}>
-        <input
-          type="text"
-          id="department"
-          name="department"
-          value={registrationData.department}
-          onChange={(e) => {
-            const value = e.target.value
-            setSearchDept(value)
-            setRegistrationData((prev) => ({ ...prev, department: value }))
-            setShowDeptDropdown(true)
-          }}
-          onFocus={() => setShowDeptDropdown(true)}
-          placeholder="Выберите отдел"
-          className={styles.input}
-          required
-        />
-        <span className={styles.dropdownArrow} onClick={() => setShowDeptDropdown(!showDeptDropdown)}>
-          ▼
-        </span>
-        {showDeptDropdown && filteredDepartments.length > 0 && (
-          <div className={styles.dropdown}>
-            {filteredDepartments.map((dept) => (
-              <div
-                key={dept.id}
-                className={`${styles.dropdownItem} ${registrationData.department === dept.name ? styles.dropdownItemSelected : ""}`}
-                onClick={() => {
-                  setRegistrationData((prev) => ({ ...prev, department: dept.name }))
-                  setSearchDept(dept.name)
-                  setShowDeptDropdown(false)
-                }}
-              >
-                {dept.name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  // Переключение видимости пароля
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
 
   return (
     <div className={styles.container}>
-      <style>
-        {`
-          input::placeholder {
-            color: #AAAAAA !important;
-          }
-          
-          input:focus {
-            outline: none;
-          }
-        `}
-      </style>
-
-      {/* Логотип над блоком авторизации */}
       <div className={styles.logoContainer}>
         <img src={logo || "/placeholder.svg"} alt="ИТ-Элемент29 Logo" className={styles.logo} />
       </div>
 
-      {/* Блок авторизации */}
       <div className={styles.authBox}>
-        <h2 className={styles.title}>{isRegistration ? "Регистрация" : "Вход в систему"}</h2>
+        <h2 className={styles.title}>{isLoginMode ? "Вход в систему" : "Регистрация"}</h2>
 
         <div className={styles.formContainer}>
-          {!isRegistration ? (
-            <form onSubmit={handleLoginSubmit} className={styles.form}>
+          {isLoginMode ? (
+            // Форма входа
+            <form onSubmit={handleLogin} className={styles.form}>
               <div className={styles.inputGroup}>
-                <label htmlFor="personnel_number" className={styles.label}>
-                  Табельный номер
+                <label htmlFor="username" className={styles.label}>
+                  Имя пользователя или табельный номер
                 </label>
                 <input
                   type="text"
-                  id="personnel_number"
-                  name="personnel_number"
-                  value={loginData.personnel_number}
-                  onChange={handleLoginChange}
-                  placeholder="Введите табельный номер"
-                  className={`${styles.input} ${loginError ? styles.inputError : ""}`}
-                  required
+                  id="username"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, username: "" }))
+                  }}
+                  className={`${styles.input} ${validationErrors.username ? styles.inputError : ""}`}
                 />
+                {validationErrors.username && <span className={styles.errorMessage}>{validationErrors.username}</span>}
               </div>
 
               <div className={styles.inputGroup}>
@@ -384,27 +224,28 @@ function Login({ onLogin, onNavigate }) {
                   <input
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    name="password"
-                    value={loginData.password}
-                    onChange={handleLoginChange}
-                    placeholder="Введите ваш пароль"
-                    className={`${styles.input} ${loginError ? styles.inputError : ""}`}
-                    required
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setValidationErrors((prev) => ({ ...prev, password: "" }))
+                    }}
+                    className={`${styles.input} ${validationErrors.password ? styles.inputError : ""}`}
                   />
-                  <span className={styles.passwordIcon} onClick={togglePasswordVisibility}>
-                    <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
-                  </span>
+                  <FontAwesomeIcon
+                    icon={showPassword ? faEyeSlash : faEye}
+                    className={styles.passwordIcon}
+                    onClick={togglePasswordVisibility}
+                  />
                 </div>
-                {loginError && <div className={styles.errorMessage}>{loginError}</div>}
+                {validationErrors.password && <span className={styles.errorMessage}>{validationErrors.password}</span>}
               </div>
 
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
                   id="rememberMe"
-                  name="rememberMe"
-                  checked={loginData.rememberMe}
-                  onChange={handleLoginChange}
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className={styles.checkbox}
                 />
                 <label htmlFor="rememberMe" className={styles.checkboxLabel}>
@@ -412,133 +253,169 @@ function Login({ onLogin, onNavigate }) {
                 </label>
               </div>
 
+              {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
+
               <button type="submit" className={styles.button}>
                 Войти
               </button>
 
               <p className={styles.switchText}>
                 Нет аккаунта?{" "}
-                <span className={styles.switchLink} onClick={toggleRegistration}>
-                  Регистрация
+                <span className={styles.switchLink} onClick={toggleMode}>
+                  Зарегистрироваться
                 </span>
               </p>
             </form>
           ) : (
-            <form onSubmit={handleRegistrationSubmit} className={styles.form}>
-              {renderOrganizationField()}
-
-              {renderDepartmentField()}
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="personnel_number" className={styles.label}>
-                  Табельный номер
-                </label>
-                <input
-                  type="text"
-                  id="personnel_number"
-                  name="personnel_number"
-                  value={registrationData.personnel_number}
-                  onChange={handleRegistrationChange}
-                  placeholder="Например: 0000-00001"
-                  className={`${styles.input} ${personnelNumberError ? styles.inputError : ""}`}
-                  required
-                />
-                {personnelNumberError && <div className={styles.errorMessage}>{personnelNumberError}</div>}
-              </div>
-
+            // Форма регистрации
+            <form onSubmit={handleRegister} className={styles.form}>
               <div className={styles.inputGroup}>
                 <label htmlFor="fullName" className={styles.label}>
-                  ФИО
+                  ФИО*
                 </label>
                 <input
                   type="text"
                   id="fullName"
-                  name="fullName"
-                  value={registrationData.fullName}
-                  onChange={handleRegistrationChange}
-                  placeholder="Введите ваше ФИО"
-                  className={styles.input}
-                  required
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, fullName: "" }))
+                  }}
+                  className={`${styles.input} ${validationErrors.fullName ? styles.inputError : ""}`}
                 />
+                {validationErrors.fullName && <span className={styles.errorMessage}>{validationErrors.fullName}</span>}
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="regUsername" className={styles.label}>
+                  Имя пользователя*
+                </label>
+                <input
+                  type="text"
+                  id="regUsername"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, username: "" }))
+                  }}
+                  className={`${styles.input} ${validationErrors.username ? styles.inputError : ""}`}
+                />
+                {validationErrors.username && <span className={styles.errorMessage}>{validationErrors.username}</span>}
               </div>
 
               <div className={styles.inputGroup}>
                 <label htmlFor="regPassword" className={styles.label}>
-                  Пароль
+                  Пароль*
                 </label>
                 <div className={styles.passwordContainer}>
                   <input
                     type={showPassword ? "text" : "password"}
                     id="regPassword"
-                    name="password"
-                    value={registrationData.password}
-                    onChange={handleRegistrationChange}
-                    placeholder="Создайте пароль"
-                    className={styles.input}
-                    required
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setValidationErrors((prev) => ({ ...prev, password: "" }))
+                    }}
+                    className={`${styles.input} ${validationErrors.password ? styles.inputError : ""}`}
                   />
-                  <span className={styles.passwordIcon} onClick={togglePasswordVisibility}>
-                    <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
-                  </span>
+                  <FontAwesomeIcon
+                    icon={showPassword ? faEyeSlash : faEye}
+                    className={styles.passwordIcon}
+                    onClick={togglePasswordVisibility}
+                  />
                 </div>
+                {validationErrors.password && <span className={styles.errorMessage}>{validationErrors.password}</span>}
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="email" className={styles.label}>
+                  Email*
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, email: "" }))
+                  }}
+                  className={`${styles.input} ${validationErrors.email ? styles.inputError : ""}`}
+                />
+                {validationErrors.email && <span className={styles.errorMessage}>{validationErrors.email}</span>}
               </div>
 
               <div className={styles.inputGroup}>
                 <label htmlFor="position" className={styles.label}>
-                  Должность
+                  Должность*
                 </label>
                 <input
                   type="text"
                   id="position"
-                  name="position"
-                  value={registrationData.position}
-                  onChange={handleRegistrationChange}
-                  placeholder="Введите вашу должность"
-                  className={styles.input}
-                  required
+                  value={position}
+                  onChange={(e) => {
+                    setPosition(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, position: "" }))
+                  }}
+                  className={`${styles.input} ${validationErrors.position ? styles.inputError : ""}`}
                 />
+                {validationErrors.position && <span className={styles.errorMessage}>{validationErrors.position}</span>}
               </div>
 
               <div className={styles.inputGroup}>
-                <label htmlFor="work_phone" className={styles.label}>
-                  Рабочий телефон
+                <label htmlFor="department" className={styles.label}>
+                  Отдел*
                 </label>
-                <input
-                  type="tel"
-                  id="work_phone"
-                  name="work_phone"
-                  value={registrationData.work_phone}
-                  onChange={handlePhoneChange}
-                  placeholder="+7 (343) XXX-XX-XX"
-                  className={styles.input}
-                  required
-                />
+                <div className={styles.dropdownContainer}>
+                  <input
+                    type="text"
+                    id="department"
+                    value={department}
+                    onChange={(e) => {
+                      setDepartment(e.target.value)
+                      setSearchDepartment(e.target.value)
+                      setShowDepartmentDropdown(true)
+                      setValidationErrors((prev) => ({ ...prev, department: "" }))
+                    }}
+                    onFocus={() => setShowDepartmentDropdown(true)}
+                    className={`${styles.input} ${validationErrors.department ? styles.inputError : ""}`}
+                    placeholder="Выберите отдел"
+                  />
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className={styles.dropdownArrow}
+                    onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
+                  />
+                  {showDepartmentDropdown && filteredDepartments.length > 0 && (
+                    <div className={styles.dropdown}>
+                      {filteredDepartments.map((dept) => (
+                        <div
+                          key={dept.id}
+                          className={`${styles.dropdownItem} ${department === dept.name ? styles.dropdownItemSelected : ""}`}
+                          onClick={() => {
+                            setDepartment(dept.name)
+                            setShowDepartmentDropdown(false)
+                          }}
+                        >
+                          {dept.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {validationErrors.department && (
+                  <span className={styles.errorMessage}>{validationErrors.department}</span>
+                )}
               </div>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="birth_date" className={styles.label}>
-                  Дата рождения
-                </label>
-                <input
-                  type="date"
-                  id="birth_date"
-                  name="birth_date"
-                  value={registrationData.birth_date}
-                  onChange={handleRegistrationChange}
-                  className={styles.input}
-                  required
-                />
-              </div>
+              {registrationError && <div className={styles.registrationError}>{registrationError}</div>}
 
               <button type="submit" className={styles.button}>
                 Зарегистрироваться
               </button>
 
-              {registrationError && <div className={styles.registrationError}>{registrationError}</div>}
-
               <p className={styles.switchText}>
                 Уже есть аккаунт?{" "}
-                <span className={styles.switchLink} onClick={toggleRegistration}>
+                <span className={styles.switchLink} onClick={toggleMode}>
                   Войти
                 </span>
               </p>
@@ -551,4 +428,3 @@ function Login({ onLogin, onNavigate }) {
 }
 
 export default Login
-

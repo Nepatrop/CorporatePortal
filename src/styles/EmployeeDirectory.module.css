@@ -1,13 +1,22 @@
 /* Основные стили контейнера */
+* {
+  box-sizing: border-box;
+}
+
 .container {
   font-family: "Open Sans", Arial, sans-serif;
   background-color: #ffffff;
   min-height: calc(100vh - 72px);
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 .layout {
   display: flex;
   height: calc(100vh - 72px);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Стили для боковой панели фильтров */
@@ -694,7 +703,7 @@
   font-weight: 500;
 }
 
-/* Стили для выпадаю��их списков */
+/* Стили для выпадающих списков */
 .dropdownContainer {
   position: relative;
   width: 100%;
@@ -765,4 +774,779 @@
   margin-right: 8px;
   width: 16px;
 }
+/* Основные стили контейнера */
+* {
+  box-sizing: border-box;
+}
 
+.container {
+  font-family: "Open Sans", Arial, sans-serif;
+  background-color: #ffffff;
+  min-height: calc(100vh - 72px);
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.layout {
+  display: flex;
+  height: calc(100vh - 72px);
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Стили для боковой панели фильтров */
+.filterSidebar {
+  width: 300px;
+  background-color: #f5f5f5;
+  align-self: stretch;
+  height: 100%;
+  border-radius: 0;
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+}
+
+.filterTitle {
+  margin: 0;
+  color: #13454b;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.filterIcon {
+  color: #13454b;
+}
+
+.filterContent {
+  padding: 20px;
+}
+
+.filterGroup {
+  margin-bottom: 15px;
+}
+
+.filterLabel {
+  display: block;
+  margin-bottom: 5px;
+  color: #13454b;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.filterButtonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.filterButton {
+  padding: 10px 16px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.activeButton {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+/* Стили для основного контента */
+.main {
+  flex: 1;
+  padding: 0;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+.employeeListContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.columnHeaders {
+  display: flex;
+  padding: 15px 2rem;
+  background-color: #f5f5f5;
+  border-radius: 0;
+  font-weight: 600;
+  color: #000000;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.nameHeader {
+  flex: 2;
+  padding-left: 100px;
+}
+
+.departmentHeader {
+  flex: 1.2;
+  text-align: left;
+  padding-left: 0;
+}
+
+.contactsHeader {
+  flex: 0.8;
+  text-align: left;
+  padding-left: 0;
+}
+
+.employeeList {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.employeeRow {
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+}
+
+.employeeDivider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0 2rem;
+}
+
+.employeePhotoAndInfo {
+  display: flex;
+  align-items: center;
+  flex: 2;
+}
+
+.employeeMainInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.employeeDepartment {
+  flex: 1.2;
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+}
+
+.departmentText {
+  color: #ee6b0c;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.employeeContacts {
+  flex: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 0;
+}
+
+.contactIcons {
+  display: flex;
+  gap: 10px;
+}
+
+.contactIconButton {
+  background: none;
+  border: none;
+  color: #13454b;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+}
+
+.expandButton {
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 16px;
+}
+
+.expandIcon {
+  color: #aaaaaa;
+  transition: transform 0.3s ease;
+}
+
+.expandIconRotated {
+  transform: rotate(90deg);
+}
+
+.employeePhoto {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1rem;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.employeeName {
+  color: #000000;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.employeePosition {
+  color: #333333;
+  font-weight: 300;
+  margin: 0.25rem 0 0 0;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.employeeDetails {
+  padding: 1rem 2rem 1rem 8rem;
+  background-color: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detailsSection {
+  margin-bottom: 1.5rem;
+}
+
+.detailsTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.75rem;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.detailsRow {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.detailsLabel {
+  width: 180px;
+  font-size: 14px;
+  color: #777;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.detailsValue {
+  font-size: 14px;
+  color: #333;
+  font-family: "Open Sans", Arial, sans-serif;
+  margin-left: 0;
+}
+
+.detailsValueWithCopy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detailsActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.reportErrorButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #777;
+  border: 1px solid #777;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.downloadContactButton {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Open Sans", Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.downloadContactButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+/* Стили для состояний загрузки и ошибки */
+.loading {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 20px;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+.error {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 20px;
+  color: red;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+
+/* Стили для копирования */
+.copyButton {
+  background: none;
+  border: none;
+  color: #ee6b0c;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.copyNotification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #13454b;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1100;
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* Стили для администраторских функций */
+.adminHeaderControls {
+  position: relative;
+  margin-right: 15px;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ee6b0c;
+  font-size: 20px;
+  padding: 5px;
+}
+
+.editIcon {
+  font-size: 20px;
+}
+
+.adminMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 8px 0;
+  z-index: 1000;
+  min-width: 250px;
+}
+
+.adminMenuItem {
+  background: none;
+  border: none;
+  color: #333333;
+  cursor: pointer;
+  padding: 10px 16px;
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.adminMenuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 4px 0;
+}
+
+.editModeBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 2rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.exitEditModeText {
+  color: #777;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.exitEditModeText:hover {
+  color: #ee6b0c;
+}
+
+.selectedCount {
+  font-size: 14px;
+  color: #ee6b0c;
+  font-weight: 500;
+}
+
+/* Стили для чекбоксов */
+.checkboxHeader {
+  width: 40px;
+}
+
+.checkboxContainer {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.checkboxSelected {
+  background-color: #ee6b0c;
+}
+
+.checkIcon {
+  color: #ffffff;
+  font-size: 12px;
+}
+
+/* Стили для кнопок редактирования */
+.editActions {
+  display: flex;
+  gap: 10px;
+}
+
+.editEmployeeButton {
+  background: none;
+  border: none;
+  color: #ee6b0c;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+}
+
+.editEmployeeIcon {
+  color: #ee6b0c;
+}
+
+.deleteEmployeeButton {
+  background: none;
+  border: none;
+  color: #ee6b0c;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+}
+
+.deleteEmployeeIcon {
+  color: #ee6b0c;
+}
+
+/* Стили для модальных окон */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.employeeModal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 800px;
+  overflow: hidden;
+}
+
+.modalHeader {
+  background-color: #f5f5f5;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #13454b;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 16px;
+}
+
+.modalContent {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.formSection {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #13454b;
+  margin-bottom: 12px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #13454b;
+}
+
+.formInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 16px;
+  color: #333;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  gap: 16px;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background-color: #ffffff;
+  color: #777;
+  border: 1px solid #777;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.saveButton {
+  padding: 12px 24px;
+  background-color: #ffffff;
+  color: #ee6b0c;
+  border: 1px solid #ee6b0c;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.saveButton:hover {
+  background-color: #ee6b0c;
+  color: #ffffff;
+}
+
+/* Стили для предупреждений */
+.warningContainer {
+  padding: 24px;
+  text-align: center;
+}
+
+.warningText {
+  font-size: 18px;
+  color: #ee6b0c;
+  margin-bottom: 16px;
+}
+
+.warningActions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Стили для модального окна подтверждения */
+.confirmModal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+.confirmText {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.deleteButton {
+  padding: 12px 24px;
+  background-color: #ee6b0c;
+  color: #ffffff;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Стили для выпадающих списков */
+.dropdownContainer {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.dropdownItem {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdownItem:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdownItemSelected {
+  background-color: #f5f5f5;
+  font-weight: 500;
+}
+
+.dropdownArrow {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaaaaa;
+  cursor: pointer;
+}
+
+/* Добавим стили для контекстного меню */
+.contextMenu {
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 8px 0;
+  min-width: 200px;
+}
+
+.contextMenuItem {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #333;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.contextMenuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.contextMenuIcon {
+  margin-right: 8px;
+  width: 16px;
+}
