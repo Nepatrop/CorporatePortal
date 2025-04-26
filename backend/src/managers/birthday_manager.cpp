@@ -16,25 +16,16 @@ BirthdayManager::BirthdayManager() {
         
         if (!std::filesystem::exists(configDir)) {
             std::filesystem::create_directory(configDir);
-            std::cout << "Created config directory at: " << configDir << std::endl;
         }
         
         configPath = configDir / "upcoming_birthdays.ini";
         bool fileExists = std::filesystem::exists(configPath);
-        
+
         // Первоначальное обновление списка
         updateBirthdaysList();
         
-        if (!fileExists) {
-            std::cout << "Created new birthdays cache file" << std::endl;
-        }
-        
         // Запускаем ежедневное обновление
-        startDailyUpdate();
-        
-        std::cout << "BirthdayManager initialized successfully with " 
-                  << upcomingBirthdays.size() << " birthdays" << std::endl;
-                  
+        startDailyUpdate();     
     } catch (const std::exception& e) {
         std::cerr << "Error initializing BirthdayManager: " << e.what() << std::endl;
         throw;
@@ -70,7 +61,6 @@ void BirthdayManager::saveToFile() {
         }
 
         file.close();
-        std::cout << "Successfully saved " << birthdaysToSave.size() << " birthdays to config file" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error saving to file: " << e.what() << std::endl;
     }
@@ -79,7 +69,6 @@ void BirthdayManager::saveToFile() {
 void BirthdayManager::loadFromFile() {
     try {
         if (!std::filesystem::exists(configPath)) {
-            std::cout << "Config file not found, creating new one" << std::endl;
             updateBirthdaysList();
             return;
         }
@@ -117,7 +106,6 @@ void BirthdayManager::loadFromFile() {
         auto currentTime = std::chrono::system_clock::to_time_t(now);
 
         if (currentTime - lastUpdate > 86400 || loadedBirthdays.size() != static_cast<size_t>(count)) {
-            std::cout << "Data is outdated or invalid, updating..." << std::endl;
             updateBirthdaysList();
             return;
         }
@@ -127,9 +115,6 @@ void BirthdayManager::loadFromFile() {
             std::lock_guard<std::mutex> lock(birthdaysMutex);
             upcomingBirthdays = std::move(loadedBirthdays);
         }
-
-        std::cout << "Successfully loaded " << upcomingBirthdays.size() << " birthdays from config file" << std::endl;
-
     } catch (const std::exception& e) {
         std::cerr << "Error loading from file: " << e.what() << std::endl;
         updateBirthdaysList();
@@ -175,13 +160,8 @@ void BirthdayManager::updateBirthdaysList() {
                 upcomingBirthdays.push_back(employeeDays[i].first);
             }
         }
-
         // Сохраняем в файл
-        saveToFile();
-        
-        std::cout << "Updated birthdays list with " << upcomingBirthdays.size() 
-                  << " upcoming birthdays" << std::endl;
-                  
+        saveToFile();               
     } catch (const std::exception& e) {
         std::cerr << "Error updating birthdays list: " << e.what() << std::endl;
     }
