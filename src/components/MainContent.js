@@ -958,6 +958,26 @@ function MainContent() {
   const [editMode, setEditMode] = useState(false)
   const [showPortalMenu, setShowPortalMenu] = useState(false)
 
+  // Состояния для дней рождения
+  const [birthdays, setBirthdays] = useState([]);
+  const [isBirthdaysLoading, setIsBirthdaysLoading] = useState(true);
+
+  // Загрузка дней рождения
+  useEffect(() => {
+    const loadBirthdays = async () => {
+      try {
+        const data = await api.get('/api/birthdays/upcoming');
+        setBirthdays(data);
+      } catch (error) {
+        console.error('Error loading birthdays:', error);
+      } finally {
+        setIsBirthdaysLoading(false);
+      }
+    };
+
+    loadBirthdays();
+  }, []);
+
   // Загрузка новостей
   const loadNews = useCallback(async () => {
     try {
@@ -1230,35 +1250,6 @@ function MainContent() {
     }
   };
 
-  const birthdays = [
-    {
-      id: 1,
-      name: "Иван Иванов",
-      date: "15 мая 2023",
-      department: "Отдел разработки",
-      photo: null,
-      position: "Разработчик",
-      location: "Москва",
-      organization: "ИТ-Элемент29",
-      personnel_number: "0000-00001",
-      phone: "+79160000000",
-      email: "ivan.ivanov@example.com",
-    },
-    {
-      id: 2,
-      name: "Мария Петрова",
-      date: "20 мая 2023",
-      department: "Бухгалтерия",
-      photo: null,
-      position: "Бухгалтер",
-      location: "Санкт-Петербург",
-      organization: "ИТ-Элемент29",
-      personnel_number: "0000-00002",
-      phone: "+79210000000",
-      email: "maria.petrova@example.com",
-    },
-  ]
-
   const events = [
     {
       id: 1,
@@ -1314,45 +1305,6 @@ function MainContent() {
     await loadNews()
   }
 
-  // Добавим функцию для отображения информации о сотруднике (помечаем как eslint-disable-next-line, так как она используется в JSX)
-  // eslint-disable-next-line no-unused-vars
-  const handleBirthdayClick = (person, event) => {
-    if (selectedBirthday === person.id) {
-      setSelectedBirthday(null)
-    } else {
-      setSelectedBirthday(person.id)
-      // Удаляем строки с setBirthdayPopupPosition, так как эта переменная не используется
-    }
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text).then(() => {
-      // Можно добавить уведомление о копировании
-      console.log(`${label} скопирован в буфер обмена`)
-    })
-  }
-
-  // Функция для переключения раскрытия информации о сотруднике
-  const toggleBirthdayDetails = (personId) => {
-    if (expandedBirthday === personId) {
-      setExpandedBirthday(null)
-    } else {
-      setExpandedBirthday(personId)
-    }
-  }
-
-  // Функция для копирования текста
-  const copyToClipboardHandler = (text, label) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedText(label)
-      setShowCopyNotification(true)
-      setTimeout(() => {
-        setShowCopyNotification(false)
-      }, 2000)
-    })
-  }
-
   // Функция форматирования телефонного номера
   const formatPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return ""
@@ -1368,7 +1320,61 @@ function MainContent() {
     return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
   }
 
-  // Добавим CSS для подчеркивания имени при наведении
+  // Функция форматирования даты
+  const formatBirthdayDate = (person, showOriginalDate = false) => {
+    if (!person.date) return "";
+  
+    const months = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+  
+    // Для отображения оригинальной даты в деталях
+    if (showOriginalDate) {
+      const birthDate = new Date(person.date);
+      return `${birthDate.getDate()} ${months[birthDate.getMonth()]} ${birthDate.getFullYear()}`;
+    }
+  
+    // Проверяем количество дней до дня рождения
+    if (person.days_until === 1) {
+      return "сегодня";
+    }
+    if (person.days_until === 2) {
+      return "завтра";
+    }
+  
+    // Для остальных случаев показываем дату
+    const birthDate = new Date(person.date);
+    const nextDate = new Date();
+    
+    if (nextDate.getMonth() > birthDate.getMonth() || 
+        (nextDate.getMonth() === birthDate.getMonth() && nextDate.getDate() > birthDate.getDate())) {
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+    }
+    
+    return `${birthDate.getDate()} ${months[birthDate.getMonth()]} ${nextDate.getFullYear()}`;
+  };
+
+  // Функция для копирования текста
+  const copyToClipboardHandler = (text, label) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedText(label)
+      setShowCopyNotification(true)
+      setTimeout(() => {
+        setShowCopyNotification(false)
+      }, 2000)
+    })
+  }
+
+  // Функция для переключения раскрытия информации о сотруднике
+  const toggleBirthdayDetails = (personId) => {
+    if (expandedBirthday === personId) {
+      setExpandedBirthday(null)
+    } else {
+      setExpandedBirthday(personId)
+    }
+  }
+
   return (
     <main className={styles.main}>
       <style>
@@ -1561,104 +1567,89 @@ function MainContent() {
             <div className={styles.block}>
               <h2 className={styles.heading}>Ближайшие дни рождения</h2>
               <div className={styles.birthdayList}>
-                {birthdays.map((person) => (
-                  <div key={person.id}>
-                    <div className={styles.birthdayItem} onClick={() => toggleBirthdayDetails(person.id)}>
-                      <div className={styles.birthdayAvatar}>
-                        {person.photo ? (
-                          <img
-                            src={person.photo || "/placeholder.svg"}
-                            alt={person.name}
-                            className={styles.birthdayPhoto}
-                          />
-                        ) : (
+                {isBirthdaysLoading ? (
+                  <div className={styles.loadingState}>Загрузка...</div>
+                ) : birthdays.length > 0 ? (
+                  birthdays.map((person) => (
+                    <div key={person.id}>
+                      <div className={styles.birthdayItem} onClick={() => toggleBirthdayDetails(person.id)}>
+                        <div className={styles.birthdayAvatar}>
                           <FontAwesomeIcon icon={faUser} style={{ fontSize: "24px", color: "#13454B" }} />
-                        )}
-                      </div>
-                      <div className={styles.birthdayInfo}>
+                        </div>
+                        <div className={styles.birthdayInfo}>
                         <p className={styles.birthdayName}>
-                          {person.name} - {person.date}
+                          {person.name} - {formatBirthdayDate(person)}
                         </p>
-                        <p className={styles.birthdayDepartment}>{person.department}</p>
-                      </div>
-                      <FontAwesomeIcon
-                        icon={faChevronRight}
-                        className={styles.expandIcon}
-                        style={{
-                          transform: expandedBirthday === person.id ? "rotate(90deg)" : "none",
-                          transition: "transform 0.3s ease",
-                        }}
-                      />
-                    </div>
-
-                    {/* Развернутая информация о сотруднике */}
-                    {expandedBirthday === person.id && (
-                      <div className={styles.birthdayDetails}>
-                        <div className={styles.birthdayDetailsSection}>
-                          <h4 className={styles.birthdayDetailsTitle}>Основная информация</h4>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Табельный номер:</span>
-                            <span className={styles.birthdayDetailsValue}>
-                              {person.personnel_number || "Не указан"}
-                            </span>
-                          </div>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Дата рождения:</span>
-                            <span className={styles.birthdayDetailsValue}>{person.date}</span>
-                          </div>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Местоположение:</span>
-                            <span className={styles.birthdayDetailsValue}>{person.location || "Не указано"}</span>
-                          </div>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Организация:</span>
-                            <span className={styles.birthdayDetailsValue}>{person.organization || "Не указана"}</span>
-                          </div>
                         </div>
+                        <FontAwesomeIcon
+                          icon={faChevronRight}
+                          className={styles.expandIcon}
+                          style={{
+                            transform: expandedBirthday === person.id ? "rotate(90deg)" : "none",
+                            transition: "transform 0.3s ease",
+                          }}
+                        />
+                      </div>
 
-                        <div className={styles.birthdayDetailsSection}>
-                          <h4 className={styles.birthdayDetailsTitle}>Контактная информация</h4>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Рабочий телефон:</span>
-                            <div className={styles.birthdayDetailsValueWithCopy}>
+                      {expandedBirthday === person.id && (
+                        <div className={styles.birthdayDetails}>
+                          <div className={styles.birthdayDetailsSection}>
+                            <h4 className={styles.birthdayDetailsTitle}>Основная информация</h4>
+                            <div className={styles.birthdayDetailsRow}>
+                              <span className={styles.birthdayDetailsLabel}>Табельный номер:</span>
                               <span className={styles.birthdayDetailsValue}>
-                                {formatPhoneNumber(person.phone) || "Не указан"}
+                                {person.personnel_number || "Не указан"}
                               </span>
-                              {person.phone && (
-                                <button
-                                  className={styles.copyButton}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    copyToClipboardHandler(person.phone, "Телефон")
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faCopy} />
-                                </button>
-                              )}
+                            </div>
+                            <div className={styles.birthdayDetailsRow}>
+                              <span className={styles.birthdayDetailsLabel}>Дата рождения:</span>
+                              <span className={styles.birthdayDetailsValue}>
+                                {formatBirthdayDate(person, true)}
+                              </span>
+                            </div>
+                            <div className={styles.birthdayDetailsRow}>
+                              <span className={styles.birthdayDetailsLabel}>Местоположение:</span>
+                              <span className={styles.birthdayDetailsValue}>
+                                {person.location || "Не указано"}
+                              </span>
+                            </div>
+                            <div className={styles.birthdayDetailsRow}>
+                              <span className={styles.birthdayDetailsLabel}>Организация:</span>
+                              <span className={styles.birthdayDetailsValue}>
+                                {person.organization || "Не указана"}
+                              </span>
                             </div>
                           </div>
-                          <div className={styles.birthdayDetailsRow}>
-                            <span className={styles.birthdayDetailsLabel}>Электронная почта:</span>
-                            <div className={styles.birthdayDetailsValueWithCopy}>
-                              <span className={styles.birthdayDetailsValue}>{person.email || "Не указана"}</span>
-                              {person.email && (
-                                <button
-                                  className={styles.copyButton}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    copyToClipboardHandler(person.email, "Email")
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faCopy} />
-                                </button>
-                              )}
+
+                          <div className={styles.birthdayDetailsSection}>
+                            <h4 className={styles.birthdayDetailsTitle}>Контактная информация</h4>
+                            <div className={styles.birthdayDetailsRow}>
+                              <span className={styles.birthdayDetailsLabel}>Рабочий телефон:</span>
+                              <div className={styles.birthdayDetailsValueWithCopy}>
+                                <span className={styles.birthdayDetailsValue}>
+                                  {formatPhoneNumber(person.work_phone) || "Не указан"}
+                                </span>
+                                {person.work_phone && (
+                                  <button
+                                    className={styles.copyButton}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboardHandler(person.work_phone, "Рабочий телефон");
+                                    }}
+                                  >
+                                    <FontAwesomeIcon icon={faCopy} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyState}>Нет ближайших дней рождения</div>
+                )}
               </div>
             </div>
           </div>

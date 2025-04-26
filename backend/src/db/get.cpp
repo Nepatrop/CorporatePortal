@@ -1,6 +1,7 @@
 #include "db/get.h"
 #include "db/config.h"
-#include <iostream> // Добавляем для std::cerr
+#include "managers/birthday_manager.h"
+#include <iostream>
 
 nlohmann::json Get::resultToJson(pqxx::result& r) {
     nlohmann::json result = nlohmann::json::array();
@@ -286,4 +287,8 @@ nlohmann::json Get::getNewsComments(int news_id) {
     } catch (std::exception const& e) {
         return nlohmann::json::array();
     }
+}
+
+nlohmann::json Get::getUpcomingBirthdays() {
+    return BirthdayManager::getInstance().getUpcomingBirthdays();
 }

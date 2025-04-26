@@ -7,9 +7,17 @@
 #include "auth/user_auth.h"
 #include "auth/auth_handler.h"
 #include "websocket/ws_server.h"
+#include "managers/birthday_manager.h"
 #include <thread>
 
 int main() {
+    // Инициализируем BirthdayManager при запуске сервера
+    try {
+        BirthdayManager::getInstance();
+    } catch (const std::exception& e) {
+        std::cerr << "Error initializing BirthdayManager: " << e.what() << std::endl;
+    }
+
     // Запускаем WebSocket сервер в отдельном потоке
     std::thread ws_thread([]() {
         try {
@@ -92,6 +100,10 @@ int main() {
 
     svr.Get("/api/links", [](const httplib::Request&, httplib::Response& res) {
         res.set_content(Get::getLinks().dump(), "application/json");
+    });
+
+    svr.Get("/api/birthdays/upcoming", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(Get::getUpcomingBirthdays().dump(), "application/json");
     });
 
     // POST endpoints

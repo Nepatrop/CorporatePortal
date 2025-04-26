@@ -52,8 +52,9 @@ else()
     message(FATAL_ERROR "Boost not found. On Linux, install with: sudo apt-get install libboost-all-dev")
 endif()
 
-# Добавляем директории с исходниками
+# Добавляем директории с исходниками и заголовочными файлами
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/cpp-httplib)
 
 # Устанавливаем правильные пути к исходникам
@@ -67,6 +68,19 @@ set(SOURCES
     src/auth/auth_handler.cpp
     src/auth/user_auth.cpp
     src/websocket/ws_server.cpp
+    src/managers/birthday_manager.cpp  # Добавляем новый файл
+)
+
+set(HEADERS
+    include/db/get.h
+    include/db/post.h
+    include/db/put.h
+    include/db/config.h
+    include/db/delete.h
+    include/auth/auth_handler.h
+    include/auth/user_auth.h
+    include/websocket/ws_server.h
+    include/managers/birthday_manager.h  # Добавляем новый файл
 )
 
 # Создаем исполняемый файл

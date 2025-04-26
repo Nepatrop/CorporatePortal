@@ -1,5 +1,6 @@
 #include "db/post.h"
 #include "db/config.h"
+#include "managers/birthday_manager.h"
 #include <pqxx/pqxx>
 #include <iostream>
 #include "../../include/websocket/ws_server.h"
@@ -154,6 +155,10 @@ bool Post::postEmployee(const nlohmann::json& data) {
         }
 
         txn.commit();
+        
+        // Обновляем список дней рождений
+        BirthdayManager::getInstance().forceUpdate();
+        
         return true;
     } catch (std::exception const& e) {
         std::cerr << "Error creating employee: " << e.what() << std::endl;

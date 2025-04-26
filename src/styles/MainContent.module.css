@@ -1352,3 +1352,18 @@
   margin-top: 20px;
   width: 100%;
 }
+
+.loadingState {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+}

@@ -18,4 +18,5 @@ public:
     static nlohmann::json getNewsWithDetails(int currentUserId = 0); // Добавляем параметр currentUserId
     static nlohmann::json getNewsComments(int news_id);
     static nlohmann::json getNewsLikes(int news_id);
+    static nlohmann::json getUpcomingBirthdays();
 };
