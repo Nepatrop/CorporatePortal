@@ -1,5 +1,6 @@
 #include "managers/birthday_manager.h"
 #include "db/config.h"
+#include "db/connection_pool.h"
 #include <pqxx/pqxx>
 #include <fstream>
 #include <chrono>
@@ -7,10 +8,10 @@
 #include <filesystem>
 #include <iostream>
 #include <algorithm>
+#include <memory>
 
 BirthdayManager::BirthdayManager() {
     try {
-        // Create config directory
         std::filesystem::path execPath = std::filesystem::current_path();
         configDir = execPath / "config";
         
@@ -20,10 +21,8 @@ BirthdayManager::BirthdayManager() {
         
         configPath = configDir / "upcoming_birthdays.ini";
         
-        // First update the birthdays list
         updateBirthdaysList();
         
-        // Then initialize the file if it doesn't exist
         if (!std::filesystem::exists(configPath)) {
             saveToFile();
         }
@@ -44,11 +43,10 @@ void BirthdayManager::saveToFile() {
     std::vector<int> birthdaysToSave;
     {
         std::lock_guard<std::mutex> lock(birthdaysMutex);
-        birthdaysToSave = upcomingBirthdays; // Copy data under lock
+        birthdaysToSave = upcomingBirthdays;
     }
 
     try {
-        // Release lock before file operations
         std::ofstream file(configPath);
         if (!file.is_open()) {
             std::cerr << "Cannot open file for writing: " << configPath << std::endl;
@@ -127,13 +125,16 @@ void BirthdayManager::loadFromFile() {
 
 void BirthdayManager::updateBirthdaysList() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
+        std::unique_lock<std::mutex> lock(birthdaysMutex, std::defer_lock);
+        if (!lock.try_lock()) {
+            return;
+        }
+
+        auto conn = std::make_unique<pqxx::connection>(Config::getConnectionString());
+        pqxx::work txn(*conn);
         
         auto result = txn.exec(R"(
-            SELECT 
-                id,
-                birth_date
+            SELECT id, birth_date
             FROM employees 
             WHERE birth_date IS NOT NULL 
             AND is_dismissed = false
@@ -148,12 +149,9 @@ void BirthdayManager::updateBirthdaysList() {
             employeeDays.push_back({id, daysUntil});
         }
 
-        // Сортируем по количеству дней до дня рождения
         std::sort(employeeDays.begin(), employeeDays.end(),
             [](const auto& a, const auto& b) { return a.second < b.second; });
 
-        // Берем только первые MAX_BIRTHDAYS записей
-        std::lock_guard<std::mutex> lock(birthdaysMutex);
         upcomingBirthdays.clear();
         int count = 0;
         for (const auto& pair : employeeDays) {
@@ -162,8 +160,10 @@ void BirthdayManager::updateBirthdaysList() {
             count++;
         }
 
-        // Сохраняем в файл
-        saveToFile();          
+        // Снимаем блокировку перед сохранением в файл
+        lock.unlock();
+        saveToFile();
+
     } catch (const std::exception& e) {
         std::cerr << "Error updating birthdays list: " << e.what() << std::endl;
     }
@@ -182,9 +182,8 @@ void BirthdayManager::startDailyUpdate() {
 
 int BirthdayManager::calculateDaysUntilBirthday(const std::string& birthDate) {
     try {
-        // Получаем текущую дату
-        auto now = std::chrono::system_clock::now();
-        auto today = std::chrono::floor<std::chrono::days>(now);
+        time_t now = time(nullptr);
+        struct tm today = *localtime(&now);
         
         // Парсим дату рождения
         std::istringstream ss(birthDate);
@@ -193,22 +192,30 @@ int BirthdayManager::calculateDaysUntilBirthday(const std::string& birthDate) {
         std::getline(ss, month_str, '-');
         std::getline(ss, day_str);
         
-        int month = std::stoi(month_str);
-        int day = std::stoi(day_str);
+        int birth_month = std::stoi(month_str);
+        int birth_day = std::stoi(day_str);
         
         // Получаем текущий год
-        auto currentYear = std::chrono::year_month_day(today).year();
+        int current_year = today.tm_year + 1900;
         
-        // Создаем дату следующего дня рождения в текущем году
-        auto birthday = std::chrono::year_month_day(currentYear, std::chrono::month(month), std::chrono::day(day));
+        // Создаем время следующего дня рождения
+        struct tm next_birthday = today;
+        next_birthday.tm_mon = birth_month - 1;
+        next_birthday.tm_mday = birth_day;
         
         // Если день рождения в этом году уже прошел, берем следующий год
-        if (birthday < today) {
-            birthday = std::chrono::year_month_day(currentYear + std::chrono::years(1), std::chrono::month(month), std::chrono::day(day));
+        if (next_birthday.tm_mon < today.tm_mon || 
+            (next_birthday.tm_mon == today.tm_mon && next_birthday.tm_mday < today.tm_mday)) {
+            next_birthday.tm_year = today.tm_year + 1;
+        } else {
+            next_birthday.tm_year = today.tm_year;
         }
         
-        // Вычисляем количество дней
-        return (std::chrono::sys_days(birthday) - std::chrono::sys_days(today)).count();
+        // Вычисляем разницу в днях
+        time_t birth_time = mktime(&next_birthday);
+        time_t current_time = mktime(&today);
+        
+        return (int)((difftime(birth_time, current_time) + 43200) / 86400); // +12 часов для округления
     } catch (const std::exception& e) {
         std::cerr << "Error calculating days until birthday: " << e.what() << std::endl;
         return 0;

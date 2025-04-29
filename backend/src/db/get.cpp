@@ -1,6 +1,7 @@
 #include "db/get.h"
 #include "db/config.h"
 #include "managers/birthday_manager.h"
+#include "db/connection_pool.h"
 #include <iostream>
 
 nlohmann::json Get::resultToJson(pqxx::result& r) {
@@ -56,9 +57,26 @@ nlohmann::json Get::getLocations() {
 
 nlohmann::json Get::getEmployees() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        pqxx::result r = txn.exec(R"(
+        auto conn = ConnectionPool::getConnection();
+        if (!conn || !conn->is_open()) {
+            throw std::runtime_error("Failed to get database connection");
+        }
+
+        pqxx::work txn(*conn);
+        
+        // Генерируем уникальное имя для prepared statement
+        std::string stmt_name = "get_employees_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        
+        // Проверяем существование prepared statement
+        bool stmt_exists = false;
+        try {
+            txn.exec_params1("SELECT 1 FROM pg_prepared_statements WHERE name = $1", stmt_name);
+            stmt_exists = true;
+        } catch (...) {
+            // Если statement не существует, игнорируем ошибку
+        }
+
+        static const std::string query = R"(
             SELECT 
                 e.id as "id",
                 CURRENT_TIMESTAMP as "period",
@@ -87,10 +105,24 @@ nlohmann::json Get::getEmployees() {
             LEFT JOIN departments d ON e.department_id = d.id
             LEFT JOIN locations l ON e.location_id = l.id
             LEFT JOIN employees m ON e.manager_id = m.id
-        )"
-        );
-        return resultToJson(r);
-    } catch (std::exception const& e) {
+        )";
+
+        pqxx::result result;
+        if (!stmt_exists) {
+            txn.conn().prepare(stmt_name, query);
+        }
+        result = txn.exec_prepared(stmt_name);
+        
+        auto json = resultToJson(result);
+        
+        // Удаляем prepared statement перед освобождением соединения
+        txn.exec0("DEALLOCATE " + stmt_name);
+        txn.commit();
+        
+        ConnectionPool::releaseConnection(std::move(conn));
+        return json;
+    } catch (const std::exception& e) {
+        std::cerr << "Database error in getEmployees: " << e.what() << std::endl;
         return nlohmann::json::array();
     }
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 project(corporate_server)
 
 message(STATUS "Determining build OS...")
@@ -65,10 +65,11 @@ set(SOURCES
     src/db/put.cpp
     src/db/config.cpp
     src/db/delete.cpp
+    src/db/connection_pool.cpp
     src/auth/auth_handler.cpp
     src/auth/user_auth.cpp
     src/websocket/ws_server.cpp
-    src/managers/birthday_manager.cpp  # Добавляем новый файл
+    src/managers/birthday_manager.cpp
 )
 
 set(HEADERS
@@ -77,10 +78,12 @@ set(HEADERS
     include/db/put.h
     include/db/config.h
     include/db/delete.h
+    include/db/connection_pool.h
+    include/db/thread_pool.h
     include/auth/auth_handler.h
     include/auth/user_auth.h
     include/websocket/ws_server.h
-    include/managers/birthday_manager.h  # Добавляем новый файл
+    include/managers/birthday_manager.h
 )
 
 # Создаем исполняемый файл

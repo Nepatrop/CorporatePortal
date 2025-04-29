@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <mutex>
 #include <filesystem>
+#include <memory>
 
 class BirthdayManager {
 private:
@@ -13,18 +14,21 @@ private:
     std::vector<int> upcomingBirthdays;
     std::mutex birthdaysMutex;
 
-    void initializeConfigFile();
+    BirthdayManager();
+    ~BirthdayManager();
+
     void saveToFile();
     void loadFromFile();
     void updateBirthdaysList();
     int calculateDaysUntilBirthday(const std::string& birthDate);
+    void startDailyUpdate();
 
 public:
-    BirthdayManager();
-    ~BirthdayManager();
-    
-    void startDailyUpdate();
+    static BirthdayManager& getInstance();
     void forceUpdate();
     nlohmann::json getUpcomingBirthdays();
-    static BirthdayManager& getInstance();
+
+    // Запрещаем копирование и присваивание
+    BirthdayManager(const BirthdayManager&) = delete;
+    BirthdayManager& operator=(const BirthdayManager&) = delete;
 };

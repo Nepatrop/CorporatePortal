@@ -8,9 +8,17 @@
 #include "auth/auth_handler.h"
 #include "websocket/ws_server.h"
 #include "managers/birthday_manager.h"
+#include "db/thread_pool.h"
+#include "db/connection_pool.h"
 #include <thread>
 
 int main() {
+    // Инициализируем пул соединений
+    ConnectionPool::initialize(10);
+    
+    // Создаем пул потоков
+    ThreadPool pool(std::thread::hardware_concurrency());
+
     // Инициализируем BirthdayManager при запуске сервера
     try {
         BirthdayManager::getInstance();
@@ -59,39 +67,51 @@ int main() {
     });
 
     // GET endpoints
-    svr.Get("/api/news", [](const httplib::Request& req, httplib::Response& res) {
-        // Получаем current_user_id из параметров запроса
-        int currentUserId = 0;
-        try {
-            auto userId = req.get_param_value("current_user_id");
-            if (!userId.empty()) {
-                currentUserId = std::stoi(userId);
+    svr.Get("/api/news", [&pool](const httplib::Request& req, httplib::Response& res) {
+        auto future = pool.enqueue([&req]() {
+            int currentUserId = 0;
+            try {
+                auto userId = req.get_param_value("current_user_id");
+                if (!userId.empty()) {
+                    currentUserId = std::stoi(userId);
+                }
+            } catch (...) {}
+            return Get::getNewsWithDetails(currentUserId);
+        });
+        res.set_content(future.get().dump(), "application/json");
+    });
+
+    svr.Get("/api/organizations", [&pool](const httplib::Request&, httplib::Response& res) {
+        auto future = pool.enqueue([]() {
+            return Get::getOrganizations();
+        });
+        res.set_content(future.get().dump(), "application/json");
+    });
+
+    svr.Get("/api/departments", [&pool](const httplib::Request&, httplib::Response& res) {
+        auto future = pool.enqueue([]() {
+            return Get::getDepartments();
+        });
+        res.set_content(future.get().dump(), "application/json");
+    });
+
+    svr.Get("/api/locations", [&pool](const httplib::Request&, httplib::Response& res) {
+        auto future = pool.enqueue([]() {
+            return Get::getLocations();
+        });
+        res.set_content(future.get().dump(), "application/json");
+    });
+
+    svr.Get("/api/employees", [&pool](const httplib::Request& req, httplib::Response& res) {
+        auto future = pool.enqueue([&req]() {
+            auto personnel_number = req.get_param_value("personnel_number");
+            if (!personnel_number.empty()) {
+                return Get::getEmployeeByPersonnelNumber(personnel_number);
+            } else {
+                return Get::getEmployees();
             }
-        } catch (...) {
-            // Игнорируем ошибки преобразования
-        }
-        res.set_content(Get::getNewsWithDetails(currentUserId).dump(), "application/json");
-    });
-
-    svr.Get("/api/organizations", [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(Get::getOrganizations().dump(), "application/json");
-    });
-
-    svr.Get("/api/departments", [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(Get::getDepartments().dump(), "application/json");
-    });
-
-    svr.Get("/api/locations", [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(Get::getLocations().dump(), "application/json");
-    });
-
-    svr.Get("/api/employees", [](const httplib::Request& req, httplib::Response& res) {
-        auto personnel_number = req.get_param_value("personnel_number");
-        if (!personnel_number.empty()) {
-            res.set_content(Get::getEmployeeByPersonnelNumber(personnel_number).dump(), "application/json");
-        } else {
-            res.set_content(Get::getEmployees().dump(), "application/json");
-        }
+        });
+        res.set_content(future.get().dump(), "application/json");
     });
 
     svr.Get("/api/notifications", [](const httplib::Request&, httplib::Response& res) {
@@ -131,40 +151,30 @@ int main() {
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
     });
 
-    svr.Post("/api/news", [](const httplib::Request& req, httplib::Response& res) {
-        try {
-            auto json = nlohmann::json::parse(req.body);
-            
-            // Проверяем обязательные поля
-            if (!json.contains("title") || !json.contains("content") || !json.contains("author_id")) {
-                res.status = 400;
-                res.set_content(R"({"error":"Missing required fields"})", "application/json");
-                return;
+    svr.Post("/api/news", [&pool](const httplib::Request& req, httplib::Response& res) {
+        auto future = pool.enqueue([&req]() {
+            try {
+                auto json = nlohmann::json::parse(req.body);
+                if (!json.contains("title") || !json.contains("content") || !json.contains("author_id")) {
+                    return nlohmann::json{{"error", "Missing required fields"}};
+                }
+                return Post::postNewsWithImage(
+                    json["title"].get<std::string>(),
+                    json["content"].get<std::string>(),
+                    json["author_id"].get<std::string>(),
+                    json.value("image_data", ""),
+                    json.value("image_type", "")
+                );
+            } catch (const std::exception& e) {
+                return nlohmann::json{{"error", e.what()}};
             }
-
-            // Используем postNewsWithImage вместо postNews
-            auto result = Post::postNewsWithImage(
-                json["title"].get<std::string>(),
-                json["content"].get<std::string>(),
-                json["author_id"].get<std::string>(),
-                json.value("image_data", ""),
-                json.value("image_type", "")
-            );
-
-            // Исправляем отправку уведомления через WebSocket
-            WebSocketServer::getInstance().broadcast(
-                nlohmann::json({
-                    {"type", "news_updated"},
-                    {"action", "created"},
-                    {"data", result}  // Добавляем данные новой новости
-                }).dump()
-            );
-
-            res.set_content(result.dump(), "application/json");
-        } catch (const std::exception& e) {
-            res.status = 500;
-            res.set_content(R"({"error":"Internal server error"})", "application/json");
+        });
+        
+        auto result = future.get();
+        if (result.contains("error")) {
+            res.status = 400;
         }
+        res.set_content(result.dump(), "application/json");
     });
 
     svr.Post(R"(/api/news/(\d+)/comments)", [](const httplib::Request& req, httplib::Response& res) {
@@ -344,29 +354,22 @@ int main() {
         res.set_content(nlohmann::json({{"success", success}}).dump(), "application/json");
     });
 
-    svr.Delete(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
-        try {
-            int newsId = std::stoi(req.matches[1].str());
-            bool success = Delete::deleteNews(newsId);
-            
-            if (success) {
-                // Отправляем уведомление через WebSocket в формате JSON
-                WebSocketServer::getInstance().broadcast(
-                    nlohmann::json({
-                        {"type", "news_updated"}
-                    }).dump()
-                );
-                
-                res.status = 200;
-                res.set_content("{\"success\":true}", "application/json");
-            } else {
-                res.status = 404;
-                res.set_content("{\"error\":\"News not found\"}", "application/json");
+    svr.Delete(R"(/api/news/(\d+))", [&pool](const httplib::Request& req, httplib::Response& res) {
+        auto future = pool.enqueue([&req]() {
+            try {
+                int newsId = std::stoi(req.matches[1].str());
+                bool success = Delete::deleteNews(newsId);
+                return nlohmann::json{{"success", success}};
+            } catch (const std::exception& e) {
+                return nlohmann::json{{"error", e.what()}};
             }
-        } catch (const std::exception& e) {
+        });
+        
+        auto result = future.get();
+        if (result.contains("error")) {
             res.status = 500;
-            res.set_content("{\"error\":\"Internal server error\"}", "application/json");
         }
+        res.set_content(result.dump(), "application/json");
     });
 
     svr.Delete(R"(/api/notifications/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
@@ -397,31 +400,28 @@ int main() {
         }
     });
 
-    svr.Put(R"(/api/news/(\d+))", [](const httplib::Request& req, httplib::Response& res) {
-        try {
-            auto json = nlohmann::json::parse(req.body);
-            int newsId = std::stoi(req.matches[1].str());
-            
-            auto result = Put::updateNews(
-                newsId,
-                json["title"].get<std::string>(),
-                json["content"].get<std::string>(),
-                json.contains("image_data") ? json["image_data"].get<std::string>() : "",
-                json.contains("image_type") ? json["image_type"].get<std::string>() : ""
-            );
-
-            if (!result.contains("error")) {
-                // Отправляем уведомление всем подключенным клиентам
-                WebSocketServer::getInstance().broadcast("news_updated");
-                res.set_content(result.dump(), "application/json");
-            } else {
-                res.status = 404;
-                res.set_content(result.dump(), "application/json");
+    svr.Put(R"(/api/news/(\d+))", [&pool](const httplib::Request& req, httplib::Response& res) {
+        auto future = pool.enqueue([&req]() {
+            try {
+                auto json = nlohmann::json::parse(req.body);
+                int newsId = std::stoi(req.matches[1].str());
+                return Put::updateNews(
+                    newsId,
+                    json["title"].get<std::string>(),
+                    json["content"].get<std::string>(),
+                    json.contains("image_data") ? json["image_data"].get<std::string>() : "",
+                    json.contains("image_type") ? json["image_type"].get<std::string>() : ""
+                );
+            } catch (const std::exception& e) {
+                return nlohmann::json{{"error", e.what()}};
             }
-        } catch (const std::exception& e) {
+        });
+        
+        auto result = future.get();
+        if (result.contains("error")) {
             res.status = 500;
-            res.set_content(R"({"error":"Internal server error"})", "application/json");
         }
+        res.set_content(result.dump(), "application/json");
     });
 
     // Добавляем PUT endpoint для обновления портала

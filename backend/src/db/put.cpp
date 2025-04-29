@@ -22,7 +22,6 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
 
-        // Check if employee exists
         auto check = txn.exec_params(
             "SELECT personnel_number FROM employees WHERE id = $1",
             employee_id
@@ -36,7 +35,6 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
         std::string new_number = data["personnel_number"].get<std::string>();
 
         if (old_number != new_number) {
-            // First create new employee record with new number
             txn.exec_params(
                 "INSERT INTO employees ("
                 "   personnel_number, full_name, position, work_phone, "
@@ -49,7 +47,6 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
                 employee_id
             );
 
-            // Then update user_auth
             txn.exec_params(
                 "UPDATE user_auth SET personnel_number = $1 "
                 "WHERE personnel_number = $2",
@@ -57,19 +54,16 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
                 old_number
             );
 
-            // Delete old record
             txn.exec_params(
                 "DELETE FROM employees WHERE id = $1",
                 employee_id
             );
 
-            // Get ID of new record
             auto new_emp = txn.exec_params(
                 "SELECT id FROM employees WHERE personnel_number = $1",
                 new_number
             );
 
-            // Update remaining fields with proper subqueries
             txn.exec_params(
                 "UPDATE employees SET "
                 "full_name = $1, "
@@ -92,7 +86,6 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
             return {{"success", true}};
         }
 
-        // If personnel number didn't change, just update other fields
         txn.exec_params(
             "UPDATE employees SET "
             "full_name = $1, "
