@@ -3,6 +3,7 @@
 #include <pqxx/pqxx>
 #include <vector>
 #include <string>
+#include <iostream>
 #include "../../include/websocket/ws_server.h"
 
 // Вспомогательная функция для объединения строк с разделителем
@@ -20,32 +21,99 @@ nlohmann::json Put::putEmployeeWithResponse(int employee_id, const nlohmann::jso
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
+
+        // Check if employee exists
+        auto check = txn.exec_params(
+            "SELECT personnel_number FROM employees WHERE id = $1",
+            employee_id
+        );
         
-        std::vector<std::string> setClauses;
-        std::vector<std::string> values;
-
-        // Для каждого поля формируем отдельный SQL запрос, чтобы избежать проблем с параметрами
-        if (data.contains("birth_date")) {
-            std::string query = "UPDATE employees SET birth_date = $1 WHERE id = $2";
-            pqxx::result result = txn.exec_params(query, data["birth_date"].get<std::string>(), employee_id);
-            
-            if (result.affected_rows() == 0) {
-                return {{"success", false}, {"error", "Employee not found"}};
-            }
+        if (check.empty()) {
+            return {{"success", false}, {"error", "Employee not found"}};
         }
 
-        if (data.contains("full_name")) {
-            std::string query = "UPDATE employees SET full_name = $1 WHERE id = $2";
-            txn.exec_params(query, data["full_name"].get<std::string>(), employee_id);
+        std::string old_number = check[0][0].as<std::string>();
+        std::string new_number = data["personnel_number"].get<std::string>();
+
+        if (old_number != new_number) {
+            // First create new employee record with new number
+            txn.exec_params(
+                "INSERT INTO employees ("
+                "   personnel_number, full_name, position, work_phone, "
+                "   birth_date, organization_id, department_id, physical_person_name"
+                ") SELECT "
+                "   $1, full_name, position, work_phone, "
+                "   birth_date, organization_id, department_id, physical_person_name "
+                "FROM employees WHERE id = $2",
+                new_number,
+                employee_id
+            );
+
+            // Then update user_auth
+            txn.exec_params(
+                "UPDATE user_auth SET personnel_number = $1 "
+                "WHERE personnel_number = $2",
+                new_number,
+                old_number
+            );
+
+            // Delete old record
+            txn.exec_params(
+                "DELETE FROM employees WHERE id = $1",
+                employee_id
+            );
+
+            // Get ID of new record
+            auto new_emp = txn.exec_params(
+                "SELECT id FROM employees WHERE personnel_number = $1",
+                new_number
+            );
+
+            // Update remaining fields with proper subqueries
+            txn.exec_params(
+                "UPDATE employees SET "
+                "full_name = $1, "
+                "position = $2, "
+                "work_phone = $3, "
+                "birth_date = $4, "
+                "organization_id = (SELECT id FROM organizations WHERE name = $5 LIMIT 1), "
+                "department_id = (SELECT id FROM departments WHERE name = $6 LIMIT 1) "
+                "WHERE personnel_number = $7",
+                data["full_name"].get<std::string>(),
+                data["position"].get<std::string>(),
+                data["work_phone"].is_null() ? "" : data["work_phone"].get<std::string>(),
+                data["birth_date"].is_null() ? "" : data["birth_date"].get<std::string>(),
+                data["organization"].get<std::string>(),
+                data["department"].get<std::string>(),
+                new_number
+            );
+
+            txn.commit();
+            return {{"success", true}};
         }
 
-        if (data.contains("work_phone")) {
-            std::string query = "UPDATE employees SET work_phone = $1 WHERE id = $2";
-            txn.exec_params(query, data["work_phone"].get<std::string>(), employee_id);
-        }
+        // If personnel number didn't change, just update other fields
+        txn.exec_params(
+            "UPDATE employees SET "
+            "full_name = $1, "
+            "position = $2, "
+            "work_phone = $3, "
+            "birth_date = $4, "
+            "organization_id = (SELECT id FROM organizations WHERE name = $5 LIMIT 1), "
+            "department_id = (SELECT id FROM departments WHERE name = $6 LIMIT 1) "
+            "WHERE id = $7",
+            data["full_name"].get<std::string>(),
+            data["position"].get<std::string>(),
+            data["work_phone"].is_null() ? "" : data["work_phone"].get<std::string>(),
+            data["birth_date"].is_null() ? "" : data["birth_date"].get<std::string>(),
+            data["organization"].get<std::string>(),
+            data["department"].get<std::string>(),
+            employee_id
+        );
 
         txn.commit();
         return {{"success", true}};
+
     } catch (const std::exception& e) {
         return {{"success", false}, {"error", e.what()}};
     }

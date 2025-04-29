@@ -1336,6 +1336,9 @@ function MainContent() {
     }
   
     // Проверяем количество дней до дня рождения
+    if (person.days_until === 0) {
+      return "сегодня";
+    }
     if (person.days_until === 1) {
       return "сегодня";
     }

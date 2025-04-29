@@ -10,7 +10,7 @@
 
 BirthdayManager::BirthdayManager() {
     try {
-        // Создаем директорию config если её нет
+        // Create config directory
         std::filesystem::path execPath = std::filesystem::current_path();
         configDir = execPath / "config";
         
@@ -19,13 +19,17 @@ BirthdayManager::BirthdayManager() {
         }
         
         configPath = configDir / "upcoming_birthdays.ini";
-        bool fileExists = std::filesystem::exists(configPath);
-
-        // Первоначальное обновление списка
+        
+        // First update the birthdays list
         updateBirthdaysList();
         
-        // Запускаем ежедневное обновление
-        startDailyUpdate();     
+        // Then initialize the file if it doesn't exist
+        if (!std::filesystem::exists(configPath)) {
+            saveToFile();
+        }
+        
+        startDailyUpdate();
+        
     } catch (const std::exception& e) {
         std::cerr << "Error initializing BirthdayManager: " << e.what() << std::endl;
         throw;
@@ -37,18 +41,18 @@ BirthdayManager::~BirthdayManager() {
 }
 
 void BirthdayManager::saveToFile() {
-    try {
-        // Создаем временный список для сохранения под блокировкой
-        std::vector<int> birthdaysToSave;
-        {
-            std::lock_guard<std::mutex> lock(birthdaysMutex);
-            birthdaysToSave = upcomingBirthdays;
-        }
+    std::vector<int> birthdaysToSave;
+    {
+        std::lock_guard<std::mutex> lock(birthdaysMutex);
+        birthdaysToSave = upcomingBirthdays; // Copy data under lock
+    }
 
-        // Сохраняем данные без блокировки мьютекса
+    try {
+        // Release lock before file operations
         std::ofstream file(configPath);
         if (!file.is_open()) {
-            throw std::runtime_error("Cannot open file for writing: " + configPath.string());
+            std::cerr << "Cannot open file for writing: " << configPath << std::endl;
+            return;
         }
 
         auto now = std::chrono::system_clock::now();
@@ -126,7 +130,6 @@ void BirthdayManager::updateBirthdaysList() {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
         
-        // Получаем всех активных сотрудников с днями рождения
         auto result = txn.exec(R"(
             SELECT 
                 id,
@@ -134,11 +137,10 @@ void BirthdayManager::updateBirthdaysList() {
             FROM employees 
             WHERE birth_date IS NOT NULL 
             AND is_dismissed = false
+            ORDER BY id
         )");
 
         std::vector<std::pair<int, int>> employeeDays;
-        
-        // Собираем дни рождения в вектор
         for (const auto& row : result) {
             int id = row["id"].as<int>();
             std::string birthDate = row["birth_date"].as<std::string>();
@@ -150,18 +152,18 @@ void BirthdayManager::updateBirthdaysList() {
         std::sort(employeeDays.begin(), employeeDays.end(),
             [](const auto& a, const auto& b) { return a.second < b.second; });
 
-        // Обновляем список под блокировкой
-        {
-            std::lock_guard<std::mutex> lock(birthdaysMutex);
-            upcomingBirthdays.clear();
-            
-            // Берем первые MAX_BIRTHDAYS записей
-            for (size_t i = 0; i < std::min(employeeDays.size(), static_cast<size_t>(MAX_BIRTHDAYS)); ++i) {
-                upcomingBirthdays.push_back(employeeDays[i].first);
-            }
+        // Берем только первые MAX_BIRTHDAYS записей
+        std::lock_guard<std::mutex> lock(birthdaysMutex);
+        upcomingBirthdays.clear();
+        int count = 0;
+        for (const auto& pair : employeeDays) {
+            if (count >= MAX_BIRTHDAYS) break;
+            upcomingBirthdays.push_back(pair.first);
+            count++;
         }
+
         // Сохраняем в файл
-        saveToFile();               
+        saveToFile();          
     } catch (const std::exception& e) {
         std::cerr << "Error updating birthdays list: " << e.what() << std::endl;
     }
@@ -217,64 +219,65 @@ nlohmann::json BirthdayManager::getUpcomingBirthdays() {
     try {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
-        
+
         auto result = txn.exec(R"(
-            WITH birthdays AS (
+            WITH birthday_data AS (
                 SELECT 
                     e.id,
                     e.full_name as name,
                     e.birth_date as date,
-                    e.personnel_number,
+                    e.position,
+                    d.name as department,
                     l.name as location,
-                    e.work_phone,
                     o.name as organization,
+                    e.personnel_number,
+                    e.work_phone,
                     CASE
-                        WHEN (DATE_PART('month', current_date) < DATE_PART('month', e.birth_date)) 
-                            OR (DATE_PART('month', current_date) = DATE_PART('month', e.birth_date) 
-                                AND DATE_PART('day', current_date) <= DATE_PART('day', e.birth_date))
-                        THEN MAKE_DATE(DATE_PART('year', current_date)::INTEGER, 
-                                     DATE_PART('month', e.birth_date)::INTEGER, 
-                                     DATE_PART('day', e.birth_date)::INTEGER)
-                        ELSE MAKE_DATE(DATE_PART('year', current_date)::INTEGER + 1, 
-                                     DATE_PART('month', e.birth_date)::INTEGER, 
-                                     DATE_PART('day', e.birth_date)::INTEGER)
-                    END as next_birthday
+                        WHEN EXTRACT(DOY FROM birth_date) >= EXTRACT(DOY FROM CURRENT_DATE)
+                        THEN DATE(DATE_TRUNC('year', CURRENT_DATE) + 
+                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL)
+                        ELSE DATE(DATE_TRUNC('year', CURRENT_DATE + INTERVAL '1 year') + 
+                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL)
+                    END as next_birthday_date,
+                    CASE
+                        WHEN EXTRACT(DOY FROM birth_date) >= EXTRACT(DOY FROM CURRENT_DATE)
+                        THEN (DATE(DATE_TRUNC('year', CURRENT_DATE) + 
+                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL) - CURRENT_DATE)
+                        ELSE (DATE(DATE_TRUNC('year', CURRENT_DATE + INTERVAL '1 year') + 
+                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL) - CURRENT_DATE)
+                    END as days_until
                 FROM employees e
+                LEFT JOIN departments d ON e.department_id = d.id
                 LEFT JOIN locations l ON e.location_id = l.id
                 LEFT JOIN organizations o ON e.organization_id = o.id
                 WHERE e.birth_date IS NOT NULL 
                 AND e.is_dismissed = false
-            ),
-            birthdays_with_days AS (
-                SELECT 
-                    *,
-                    next_birthday - current_date as days_until
-                FROM birthdays
             )
             SELECT *
-            FROM birthdays_with_days
-            ORDER BY next_birthday ASC
-            LIMIT 10
+            FROM birthday_data
+            ORDER BY days_until ASC
+            LIMIT 5
         )");
 
-        nlohmann::json birthdaysList = nlohmann::json::array();
-        
+        nlohmann::json birthdays = nlohmann::json::array();
         for (const auto& row : result) {
-            nlohmann::json person = {
-                {"id", row["id"].as<int>()},
+            nlohmann::json birthday = {
+                {"id", row["id"].as<std::string>()},
                 {"name", row["name"].as<std::string>()},
                 {"date", row["date"].as<std::string>()},
-                {"days_until", row["days_until"].as<int>()},
-                {"personnel_number", row["personnel_number"].is_null() ? "" : row["personnel_number"].as<std::string>()},
+                {"position", row["position"].is_null() ? "" : row["position"].as<std::string>()},
+                {"department", row["department"].is_null() ? "" : row["department"].as<std::string>()},
                 {"location", row["location"].is_null() ? "" : row["location"].as<std::string>()},
                 {"organization", row["organization"].is_null() ? "" : row["organization"].as<std::string>()},
-                {"work_phone", row["work_phone"].is_null() ? "" : row["work_phone"].as<std::string>()}
+                {"personnel_number", row["personnel_number"].as<std::string>()},
+                {"work_phone", row["work_phone"].is_null() ? "" : row["work_phone"].as<std::string>()},
+                {"days_until", row["days_until"].as<int>()}
             };
-            birthdaysList.push_back(person);
+            birthdays.push_back(birthday);
         }
-        
-        return birthdaysList;
-        
+
+        return birthdays;
+
     } catch (const std::exception& e) {
         std::cerr << "Error getting upcoming birthdays: " << e.what() << std::endl;
         return nlohmann::json::array();

@@ -156,8 +156,13 @@ bool Post::postEmployee(const nlohmann::json& data) {
 
         txn.commit();
         
-        // Обновляем список дней рождений
-        BirthdayManager::getInstance().forceUpdate();
+        // Обновляем список дней рождений после успешного создания сотрудника
+        try {
+            BirthdayManager::getInstance().forceUpdate();
+            std::cout << "Birthday list updated after creating new employee" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Error updating birthday list: " << e.what() << std::endl;
+        }
         
         return true;
     } catch (std::exception const& e) {

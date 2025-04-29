@@ -21,6 +21,21 @@ import { useUser } from "../context/UserContext" // Импортируем useUs
 import ContextMenu from "../context/ContextMenu" // Импортируем компонент контекстного меню из папки context
 import styles from "../styles/EmployeeDirectory.module.css" // Импортируем CSS модуль
 
+// Функция форматирования телефонного номера
+const formatPhoneNumber = (value) => {
+  // Удаляем все нецифровые символы
+  const numbers = value.replace(/\D/g, "")
+
+  if (numbers.length === 0) return ""
+
+  // Форматируем номер в формат +7 (XXX) XXX-XX-XX
+  if (numbers.length <= 1) return `+7`
+  if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`
+  if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`
+  if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`
+  return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
+}
+
 // Добавим новые состояния в компонент EmployeeDirectory
 const EmployeeDirectory = ({ onNavigate }) => {
   const [employees, setEmployees] = useState([])
@@ -52,6 +67,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
     employee: "",
     position: "",
     personnel_number: "",
+    password: "", // Добавляем поле для пароля
     birth_date: "",
     location: "",
     organization: "",
@@ -64,10 +80,13 @@ const EmployeeDirectory = ({ onNavigate }) => {
   const [showNewEmployeeExitWarning, setShowNewEmployeeExitWarning] = useState(false)
 
   const [departments, setDepartments] = useState([])
+  const [organizations, setOrganizations] = useState([])
   const [showDeptDropdown, setShowDeptDropdown] = useState(false)
   const [showEditDeptDropdown, setShowEditDeptDropdown] = useState(false)
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false)
   const [searchDept, setSearchDept] = useState("")
   const [searchEditDept, setSearchEditDept] = useState("")
+  const [searchOrg, setSearchOrg] = useState("")
 
   // Добавим новые состояния для контекстного меню
   const [contextMenu, setContextMenu] = useState({
@@ -79,21 +98,6 @@ const EmployeeDirectory = ({ onNavigate }) => {
 
   // Состояние для определения, открыта ли хоть одна модалка или развернут хоть один сотрудник
   const [isModalOrDetailsOpen, setIsModalOrDetailsOpen] = useState(false)
-
-  // Функция форматирования телефонного номера
-  const formatPhoneNumber = useCallback((phoneNumber) => {
-    if (!phoneNumber) return ""
-
-    // Удаляем все нецифровые символы
-    const numbers = phoneNumber.replace(/\D/g, "")
-
-    if (numbers.length === 0) return ""
-    if (numbers.length <= 1) return `+7`
-    if (numbers.length <= 4) return `+7 (${numbers.slice(1)}`
-    if (numbers.length <= 7) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4)}`
-    if (numbers.length <= 9) return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7)}`
-    return `+7 (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 9)}-${numbers.slice(9, 11)}`
-  }, [])
 
   // Добавим функцию для закрытия контекстного меню
   const closeContextMenu = useCallback(() => {
@@ -109,10 +113,15 @@ const EmployeeDirectory = ({ onNavigate }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [employeesData, deptsData] = await Promise.all([api.get("/api/employees"), api.get("/api/departments")])
+        const [employeesData, deptsData, orgsData] = await Promise.all([
+          api.get("/api/employees"),
+          api.get("/api/departments"),
+          api.get("/api/organizations"),
+        ])
         console.log("Данные о сотрудниках:", employeesData)
         setEmployees(employeesData)
         setDepartments(deptsData)
+        setOrganizations(orgsData)
         setLoading(false)
       } catch (err) {
         console.error("Ошибка при загрузке данных:", err)
@@ -122,7 +131,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
     }
 
     fetchData()
-  }, [formatPhoneNumber])
+  }, [])
 
   // Обработчик клика вне контекстного меню
   useEffect(() => {
@@ -144,6 +153,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
       if (!event.target.closest(".dropdown-container")) {
         setShowDeptDropdown(false)
         setShowEditDeptDropdown(false)
+        setShowOrgDropdown(false)
       }
     }
 
@@ -193,68 +203,114 @@ const EmployeeDirectory = ({ onNavigate }) => {
   const handlePhoneChange = (e, isNewEmployee = false) => {
     const { name, value } = e.target
 
+    const formattedValue = formatPhoneNumber(value)
+
     if (isNewEmployee) {
       setNewEmployee((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: formattedValue,
       }))
       setHasUnsavedNewEmployee(true)
     } else {
       setEditingEmployee((prev) => ({
         ...prev,
-        [name]: formatPhoneNumber(value),
+        [name]: formattedValue,
       }))
       setHasUnsavedChanges(true)
     }
   }
 
-  // Функция для сохранения нового сотрудника
+  // Заменяем существующую функцию handleSaveNewEmployee
   const handleSaveNewEmployee = async () => {
     try {
-      // Здесь будет запрос к API для сохранения нового сотрудника
-      // const response = await api.post("/api/employees", newEmployee)
-
-      // Временная имитация добавления сотрудника
-      const newEmployeeWithId = {
-        ...newEmployee,
-        id: Date.now(), // Временный ID
-      }
-
-      setEmployees((prev) => [...prev, newEmployeeWithId])
-      setIsAddEmployeeModalOpen(false)
-      setHasUnsavedNewEmployee(false)
-      setShowNewEmployeeExitWarning(false)
-      setNewEmployee({
-        employee: "",
-        position: "",
-        personnel_number: "",
-        birth_date: "",
-        location: "",
-        organization: "",
-        department: "",
-        work_phone: "",
-        email: "",
+      const response = await api.post("/api/auth/register", {
+        full_name: newEmployee.employee,
+        password: newEmployee.password, // Используем введенный пароль вместо дефолтного
+        organization: newEmployee.organization,
+        department: newEmployee.department,
+        position: newEmployee.position,
+        personnel_number: newEmployee.personnel_number,
+        work_phone: newEmployee.work_phone,
+        birth_date: newEmployee.birth_date,
+        email: newEmployee.email,
+        is_admin: false, // По умолчанию новый сотрудник не админ
       })
+
+      if (response.ok) {
+        const userData = await response.json()
+
+        // Обновляем список сотрудников
+        setEmployees((prevEmployees) => [...prevEmployees, userData])
+
+        // Закрываем модальное окно и сбрасываем форму
+        setIsAddEmployeeModalOpen(false)
+        setHasUnsavedNewEmployee(false)
+        setShowNewEmployeeExitWarning(false)
+        setNewEmployee({
+          employee: "",
+          position: "",
+          personnel_number: "",
+          password: "",
+          birth_date: "",
+          location: "",
+          organization: "",
+          department: "",
+          work_phone: "",
+          email: "",
+        })
+
+        // Получаем обновленный список сотрудников
+        const updatedEmployees = await api.get("/api/employees")
+        setEmployees(updatedEmployees)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Ошибка при создании сотрудника")
+      }
     } catch (error) {
       console.error("Error adding employee:", error)
+      // Здесь можно добавить отображение ошибки пользователю
+      alert(`Ошибка при добавлении сотрудника: ${error.message}`)
     }
   }
 
   // Функция для сохранения изменений сотрудника
   const handleSaveEmployee = async () => {
     try {
-      // Здесь будет запрос к API для обновления данных сотрудника
-      // const response = await api.put(`/api/employees/${editingEmployee.id}`, editingEmployee)
+      // Validate required fields
+      if (!editingEmployee.employee || !editingEmployee.position || !editingEmployee.personnel_number) {
+        throw new Error("Не заполнены обязательные поля");
+      }
 
-      // Временная имитация обновления сотрудника
-      setEmployees((prev) => prev.map((emp) => (emp.id === editingEmployee.id ? editingEmployee : emp)))
+      // Format the data for API request
+      const employeeData = {
+        full_name: editingEmployee.employee,
+        position: editingEmployee.position,
+        personnel_number: editingEmployee.personnel_number,
+        birth_date: editingEmployee.birth_date || null,
+        organization: editingEmployee.organization || null,
+        department: editingEmployee.department || null,
+        work_phone: editingEmployee.work_phone || null
+      };
 
-      setIsEditEmployeeModalOpen(false)
-      setEditingEmployee(null)
-      setHasUnsavedChanges(false)
-      setShowExitWarning(false)
+      const response = await api.put(`/api/employees/${editingEmployee.id}`, employeeData);
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh employee list
+        const updatedEmployees = await api.get("/api/employees");
+        setEmployees(updatedEmployees);
+
+        // Close modal and reset states
+        setIsEditEmployeeModalOpen(false);
+        setEditingEmployee(null);
+        setHasUnsavedChanges(false);
+        setShowExitWarning(false);
+      } else {
+        throw new Error(result.error || "Failed to update employee");
+      }
     } catch (error) {
-      console.error("Error updating employee:", error)
+      console.error("Error updating employee:", error);
+      alert(`Ошибка при обновлении данных сотрудника: ${error.message}`);
     }
   }
 
@@ -293,6 +349,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
       employee: "",
       position: "",
       personnel_number: "",
+      password: "",
       birth_date: "",
       location: "",
       organization: "",
@@ -316,15 +373,20 @@ const EmployeeDirectory = ({ onNavigate }) => {
   // Функция для удаления выбранных сотрудников
   const deleteSelectedEmployees = async () => {
     try {
-      // Здесь будет запрос к API для удаления сотрудников
-      // await Promise.all(selectedEmployees.map(id => api.delete(`/api/employees/${id}`)))
+      // Отправляем запросы на удаление для каждого выбранного сотрудника
+      await Promise.all(selectedEmployees.map(id => api.delete(`/api/employees/${id}`)));
 
-      // Временная имитация удаления сотрудников
-      setEmployees((prev) => prev.filter((emp) => !selectedEmployees.includes(emp.id)))
-      setSelectedEmployees([])
-      setShowDeleteConfirm(false)
+      // После успешного удаления получаем обновленный список сотрудников
+      const updatedEmployees = await api.get("/api/employees");
+      setEmployees(updatedEmployees);
+      
+      // Очищаем список выбранных сотрудников и закрываем диалог подтверждения
+      setSelectedEmployees([]);
+      setShowDeleteConfirm(false);
+      
     } catch (error) {
-      console.error("Error deleting employees:", error)
+      console.error("Error deleting employees:", error);
+      alert("Ошибка при удалении сотрудников");
     }
   }
 
@@ -423,6 +485,10 @@ const EmployeeDirectory = ({ onNavigate }) => {
     dept.name.toLowerCase().startsWith(searchEditDept.toLowerCase()),
   )
 
+  const filteredOrganizations = organizations.filter((org) =>
+    org.name.toLowerCase().includes(searchOrg.toLowerCase()),
+  )
+
   // Заменим функцию handleContextMenu на React-версию
   const handleContextMenu = (e, employeeId) => {
     if (isEditMode && selectedEmployees.includes(employeeId)) {
@@ -487,6 +553,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
                       onChange={(e) => handleEmployeeChange(e, true)}
                       className={styles.formInput}
                       required
+                      placeholder="Введите ФИО сотрудника"
                     />
                   </div>
 
@@ -499,6 +566,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
                       onChange={(e) => handleEmployeeChange(e, true)}
                       className={styles.formInput}
                       required
+                      placeholder="Укажите должность сотрудника"
                     />
                   </div>
 
@@ -511,6 +579,20 @@ const EmployeeDirectory = ({ onNavigate }) => {
                       onChange={(e) => handleEmployeeChange(e, true)}
                       className={styles.formInput}
                       required
+                      placeholder="Введите табельный номер сотрудника"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Пароль*</label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={newEmployee.password}
+                      onChange={(e) => handleEmployeeChange(e, true)}
+                      className={styles.formInput}
+                      required
+                      placeholder="Введите пароль для сотрудника"
                     />
                   </div>
 
@@ -533,19 +615,54 @@ const EmployeeDirectory = ({ onNavigate }) => {
                       value={newEmployee.location}
                       onChange={(e) => handleEmployeeChange(e, true)}
                       className={styles.formInput}
+                      placeholder="Укажите локацию сотрудника"
                     />
                   </div>
 
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Организация*</label>
-                    <input
-                      type="text"
-                      name="organization"
-                      value={newEmployee.organization}
-                      onChange={(e) => handleEmployeeChange(e, true)}
-                      className={styles.formInput}
-                      required
-                    />
+                    <div className={`${styles.dropdownContainer} dropdown-container`}>
+                      <input
+                        type="text"
+                        name="organization"
+                        value={newEmployee.organization}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setSearchOrg(value)
+                          handleEmployeeChange({ target: { name: "organization", value } }, true)
+                          setShowOrgDropdown(true)
+                        }}
+                        onFocus={() => setShowOrgDropdown(true)}
+                        placeholder="Выберите организацию"
+                        className={styles.formInput}
+                        required
+                      />
+                      <span className={styles.dropdownArrow} onClick={() => setShowOrgDropdown(!showOrgDropdown)}>
+                        ▼
+                      </span>
+                      {showOrgDropdown && filteredOrganizations.length > 0 && (
+                        <div className={styles.dropdown}>
+                          {filteredOrganizations.map((org) => (
+                            <div
+                              key={org.id}
+                              className={`${styles.dropdownItem} ${
+                                newEmployee.organization === org.name ? styles.dropdownItemSelected : ""
+                              }`}
+                              onClick={() => {
+                                handleEmployeeChange(
+                                  { target: { name: "organization", value: org.name } },
+                                  true,
+                                )
+                                setSearchOrg(org.name)
+                                setShowOrgDropdown(false)
+                              }}
+                            >
+                              {org.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className={styles.formGroup}>
@@ -574,7 +691,9 @@ const EmployeeDirectory = ({ onNavigate }) => {
                           {filteredDepartments.map((dept) => (
                             <div
                               key={dept.id}
-                              className={`${styles.dropdownItem} ${newEmployee.department === dept.name ? styles.dropdownItemSelected : ""}`}
+                              className={`${styles.dropdownItem} ${
+                                newEmployee.department === dept.name ? styles.dropdownItemSelected : ""
+                              }`}
                               onClick={() => {
                                 handleEmployeeChange({ target: { name: "department", value: dept.name } }, true)
                                 setSearchDept(dept.name)
@@ -725,14 +844,45 @@ const EmployeeDirectory = ({ onNavigate }) => {
 
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Организация*</label>
-                    <input
-                      type="text"
-                      name="organization"
-                      value={editingEmployee.organization || ""}
-                      onChange={handleEmployeeChange}
-                      className={styles.formInput}
-                      required
-                    />
+                    <div className={`${styles.dropdownContainer} dropdown-container`}>
+                      <input
+                        type="text"
+                        name="organization"
+                        value={editingEmployee.organization || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setSearchOrg(value)
+                          handleEmployeeChange({ target: { name: "organization", value } })
+                          setShowOrgDropdown(true)
+                        }}
+                        onFocus={() => setShowOrgDropdown(true)}
+                        placeholder="Выберите организацию"
+                        className={styles.formInput}
+                        required
+                      />
+                      <span className={styles.dropdownArrow} onClick={() => setShowOrgDropdown(!showOrgDropdown)}>
+                        ▼
+                      </span>
+                      {showOrgDropdown && filteredOrganizations.length > 0 && (
+                        <div className={styles.dropdown}>
+                          {filteredOrganizations.map((org) => (
+                            <div
+                              key={org.id}
+                              className={`${styles.dropdownItem} ${
+                                editingEmployee.organization === org.name ? styles.dropdownItemSelected : ""
+                              }`}
+                              onClick={() => {
+                                handleEmployeeChange({ target: { name: "organization", value: org.name } })
+                                setSearchOrg(org.name)
+                                setShowOrgDropdown(false)
+                              }}
+                            >
+                              {org.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className={styles.formGroup}>
@@ -764,7 +914,9 @@ const EmployeeDirectory = ({ onNavigate }) => {
                           {filteredEditDepartments.map((dept) => (
                             <div
                               key={dept.id}
-                              className={`${styles.dropdownItem} ${editingEmployee.department === dept.name ? styles.dropdownItemSelected : ""}`}
+                              className={`${styles.dropdownItem} ${
+                                editingEmployee.department === dept.name ? styles.dropdownItemSelected : ""
+                              }`}
                               onClick={() => {
                                 handleEmployeeChange({ target: { name: "department", value: dept.name } })
                                 setSearchEditDept(dept.name)
