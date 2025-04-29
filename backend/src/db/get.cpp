@@ -199,7 +199,6 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
         pqxx::work txn(conn);
         txn.exec0("SET TIME ZONE 'UTC';");
 
-        // Обновляем запрос, добавляя комментарии через WITH
         auto result = txn.exec_params(R"(
             WITH comment_details AS (
                 SELECT 
@@ -219,11 +218,6 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
             SELECT 
                 n.*,
                 e.full_name as author_name,
-                CASE 
-                    WHEN n.image_data IS NOT NULL 
-                    THEN encode(n.image_data, 'base64') 
-                    ELSE NULL 
-                END as image_data_base64,
                 nl.employee_id IS NOT NULL as liked,
                 (SELECT COUNT(*) FROM news_likes WHERE news_id = n.id) as likes_count,
                 TO_CHAR(n.publication_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as publication_time,
@@ -249,11 +243,17 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
                 {"author_name", row["author_name"].is_null() ? "" : row["author_name"].as<std::string>()},
                 {"likes_count", row["likes_count"].as<int>()},
                 {"liked", row["liked"].as<bool>()},
-                {"is_pinned", row["is_pinned"].as<bool>()},
-                {"comments", row["comments"].is_null() ? nlohmann::json::array() : nlohmann::json::parse(row["comments"].as<std::string>())},
-                {"image_type", row["image_type"].is_null() ? "" : row["image_type"].as<std::string>()},
-                {"image_data", row["image_data_base64"].is_null() ? "" : row["image_data_base64"].as<std::string>()}
+                {"is_pinned", row["is_pinned"].as<bool>()}
             };
+
+            if (!row["image_url"].is_null()) {
+                std::string filename = row["image_url"].as<std::string>();
+                newsItem["image_url"] = "/images/" + std::filesystem::path(filename).filename().string();
+            }
+
+            newsItem["comments"] = row["comments"].is_null() ? 
+                nlohmann::json::array() : 
+                nlohmann::json::parse(row["comments"].as<std::string>());
 
             resultArray.push_back(newsItem);
         }

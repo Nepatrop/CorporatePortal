@@ -3,7 +3,9 @@
 #include <pqxx/pqxx>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <filesystem>
 #include "../../include/websocket/ws_server.h"
+#include "../../include/utils/file_utils.h"
 
 bool Delete::deleteOrganization(int id) {
     try {
@@ -75,14 +77,22 @@ bool Delete::deleteNews(int news_id) {
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
 
-        // Проверяем существование новости
-        auto result = txn.exec_params(
-            "SELECT id FROM news WHERE id = $1",
+        // Получаем URL изображения перед удалением новости
+        auto image_result = txn.exec_params(
+            "SELECT image_url FROM news WHERE id = $1",
             news_id
         );
 
-        if (result.empty()) {
+        if (image_result.empty()) {
             return false;
+        }
+
+        // Если есть изображение, удаляем его
+        if (!image_result[0]["image_url"].is_null()) {
+            std::string image_url = image_result[0]["image_url"].as<std::string>();
+            std::filesystem::path imagePath(image_url);
+            std::string filename = imagePath.filename().string();
+            FileUtils::deleteImage(filename);
         }
 
         // Удаляем все связанные лайки и комментарии
@@ -92,19 +102,7 @@ bool Delete::deleteNews(int news_id) {
         // Удаляем саму новость
         txn.exec_params("DELETE FROM news WHERE id = $1", news_id);
         
-        // Коммитим транзакцию перед отправкой WebSocket сообщения
         txn.commit();
-
-        // Отправляем только одно WebSocket сообщение
-        nlohmann::json wsMessage = {
-            {"type", "news_deleted"},
-            {"data", {
-                {"id", news_id},
-                {"status", "success"}
-            }}
-        };
-        
-        WebSocketServer::getInstance().broadcast(wsMessage.dump());
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Error deleting news: " << e.what() << std::endl;

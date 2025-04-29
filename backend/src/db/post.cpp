@@ -4,6 +4,7 @@
 #include <pqxx/pqxx>
 #include <iostream>
 #include "../../include/websocket/ws_server.h"
+#include "../../include/utils/file_utils.h"
 
 bool Post::postOrganization(const nlohmann::json& data) {
     try {
@@ -117,15 +118,22 @@ bool Post::postEmployee(const nlohmann::json& data) {
             }
         }
 
+        // Сохраняем фото, если оно есть
+        std::string photoPath;
+        if (data.contains("photo") && !data["photo"].empty()) {
+            std::string filename = "employee_" + data["personnel_number"].get<std::string>() + ".jpg";
+            photoPath = FileUtils::saveImage(data["photo"].get<std::string>(), filename);
+        }
+
         // Выполняем вставку сотрудника
         txn.exec_params(
             "INSERT INTO employees ("
             "full_name, physical_person_name, organization_id, department_id, "
             "position, personnel_number, dismissal_date, service, can_help_with, "
             "responsibilities, makes_decisions, is_dismissed, work_phone, "
-            "location_id, birth_date, is_admin"
+            "location_id, birth_date, is_admin, photo"
             ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, "
-            "$13, $14, $15, $16)",
+            "$13, $14, $15, $16, $17)",
             data["employee"].get<std::string>(),
             data["physical_person"].get<std::string>(),
             organization_id,
@@ -141,7 +149,8 @@ bool Post::postEmployee(const nlohmann::json& data) {
             data["work_phone"].get<std::string>(),
             location_id,
             data["birth_date"].get<std::string>(),
-            data["is_admin"].get<std::string>() == "t"
+            data["is_admin"].get<std::string>() == "t",
+            photoPath.empty() ? nullptr : photoPath
         );
 
         // Если есть manager_id, обновляем его отдельным запросом
@@ -219,37 +228,59 @@ nlohmann::json Post::postNewsWithImage(
         pqxx::connection conn(Config::getConnectionString());
         pqxx::work txn(conn);
 
-        pqxx::result r;
+        std::string image_url;
         if (!image_data.empty() && !image_type.empty()) {
-            // Если есть изображение, сохраняем его как BYTEA
-            r = txn.exec_params(
-                "INSERT INTO news (title, content, author_id, image_data, image_type) "
-                "VALUES ($1, $2, $3, decode($4, 'base64'), $5) "
-                "RETURNING id, title, content, author_id, "
-                "encode(image_data, 'base64') as image_data, image_type",
-                title, content, author_id, image_data, image_type
-            );
-        } else {
-            // Если изображения нет, сохраняем только текстовые данные
-            r = txn.exec_params(
-                "INSERT INTO news (title, content, author_id) "
-                "VALUES ($1, $2, $3) "
-                "RETURNING id, title, content, author_id",
-                title, content, author_id
-            );
+            std::string ext = ".jpg";
+            if (image_type.find("png") != std::string::npos) ext = ".png";
+            else if (image_type.find("gif") != std::string::npos) ext = ".gif";
+            else if (image_type.find("webp") != std::string::npos) ext = ".webp";
+            
+            std::string filename = "news_" + std::to_string(std::time(nullptr)) + "_" + 
+                                   std::to_string(rand()) + ext;
+            
+            std::cout << "Saving image with filename: " << filename << std::endl;
+            
+            if (FileUtils::saveImage(image_data, filename)) {
+                image_url = filename; // Сохраняем только имя файла
+                std::cout << "Image saved successfully, URL: " << image_url << std::endl;
+            } else {
+                std::cerr << "Failed to save image" << std::endl;
+            }
         }
+
+        pqxx::result r = txn.exec_params(
+            "INSERT INTO news (title, content, author_id, image_url) "
+            "VALUES ($1, $2, $3, $4) "
+            "RETURNING id, title, content, author_id, image_url, "
+            "TO_CHAR(publication_time, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as publication_time",
+            title, content, author_id, 
+            image_url.empty() ? nullptr : image_url
+        );
 
         txn.commit();
 
-        nlohmann::json result = nlohmann::json::object();
-        for (const auto& field : r[0]) {
-            if (!field.is_null()) {
-                result[field.name()] = field.as<std::string>();
-            }
-        }
-        return result;
+        nlohmann::json response = {
+            {"id", r[0]["id"].as<int>()},
+            {"title", r[0]["title"].as<std::string>()},
+            {"content", r[0]["content"].as<std::string>()},
+            {"author_id", r[0]["author_id"].as<std::string>()},
+            {"publication_time", r[0]["publication_time"].as<std::string>()}
+        };
 
+        if (!r[0]["image_url"].is_null()) {
+            response["image_url"] = r[0]["image_url"].as<std::string>();
+        }
+
+        // Отправляем уведомление через WebSocket
+        nlohmann::json wsMessage = {
+            {"type", "news_added"},
+            {"data", response}
+        };
+        WebSocketServer::getInstance().broadcast(wsMessage.dump());
+
+        return response;
     } catch (const std::exception& e) {
+        std::cerr << "Error in postNewsWithImage: " << e.what() << std::endl;
         return nlohmann::json{{"error", e.what()}};
     }
 }

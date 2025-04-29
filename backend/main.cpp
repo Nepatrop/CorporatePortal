@@ -8,7 +8,11 @@
 #include "auth/auth_handler.h"
 #include "websocket/ws_server.h"
 #include "managers/birthday_manager.h"
+#include "utils/file_utils.h"
 #include <thread>
+#include <filesystem>
+#include <fstream>
+#include <string>
 
 int main() {
     // Инициализируем BirthdayManager при запуске сервера
@@ -133,37 +137,37 @@ int main() {
 
     svr.Post("/api/news", [](const httplib::Request& req, httplib::Response& res) {
         try {
-            auto json = nlohmann::json::parse(req.body);
-            
-            // Проверяем обязательные поля
-            if (!json.contains("title") || !json.contains("content") || !json.contains("author_id")) {
+            auto title = req.has_file("title") ? req.get_file_value("title") : httplib::MultipartFormData{};
+            auto content = req.has_file("content") ? req.get_file_value("content") : httplib::MultipartFormData{};
+            auto author_id = req.has_file("author_id") ? req.get_file_value("author_id") : httplib::MultipartFormData{};
+            auto image = req.has_file("image") ? req.get_file_value("image") : httplib::MultipartFormData{};
+
+            if (!req.has_file("title") || !req.has_file("content") || !req.has_file("author_id")) {
                 res.status = 400;
-                res.set_content(R"({"error":"Missing required fields"})", "application/json");
+                res.set_content(R"({"error": "Missing required fields"})", "application/json");
                 return;
             }
 
-            // Используем postNewsWithImage вместо postNews
-            auto result = Post::postNewsWithImage(
-                json["title"].get<std::string>(),
-                json["content"].get<std::string>(),
-                json["author_id"].get<std::string>(),
-                json.value("image_data", ""),
-                json.value("image_type", "")
-            );
+            std::string image_data;
+            std::string image_type;
+            
+            if (req.has_file("image")) {
+                image_data = image.content;
+                image_type = image.content_type;
+            }
 
-            // Исправляем отправку уведомления через WebSocket
-            WebSocketServer::getInstance().broadcast(
-                nlohmann::json({
-                    {"type", "news_updated"},
-                    {"action", "created"},
-                    {"data", result}  // Добавляем данные новой новости
-                }).dump()
+            auto result = Post::postNewsWithImage(
+                title.content,
+                content.content,
+                author_id.content,
+                image_data,
+                image_type
             );
 
             res.set_content(result.dump(), "application/json");
         } catch (const std::exception& e) {
             res.status = 500;
-            res.set_content(R"({"error":"Internal server error"})", "application/json");
+            res.set_content(nlohmann::json{{"error", e.what()}}.dump(), "application/json");
         }
     });
 
@@ -350,22 +354,24 @@ int main() {
             bool success = Delete::deleteNews(newsId);
             
             if (success) {
-                // Отправляем уведомление через WebSocket в формате JSON
-                WebSocketServer::getInstance().broadcast(
-                    nlohmann::json({
-                        {"type", "news_updated"}
-                    }).dump()
-                );
-                
-                res.status = 200;
-                res.set_content("{\"success\":true}", "application/json");
+                nlohmann::json response = {
+                    {"success", true},
+                    {"message", "News deleted successfully"}
+                };
+                res.set_content(response.dump(), "application/json");
             } else {
                 res.status = 404;
-                res.set_content("{\"error\":\"News not found\"}", "application/json");
+                nlohmann::json error = {
+                    {"error", "News not found"}
+                };
+                res.set_content(error.dump(), "application/json");
             }
         } catch (const std::exception& e) {
             res.status = 500;
-            res.set_content("{\"error\":\"Internal server error\"}", "application/json");
+            nlohmann::json error = {
+                {"error", std::string("Internal server error: ") + e.what()}
+            };
+            res.set_content(error.dump(), "application/json");
         }
     });
 
@@ -446,6 +452,57 @@ int main() {
             res.set_content(nlohmann::json({
                 {"error", e.what()}
             }).dump(), "application/json");
+        }
+    });
+
+    // Add route to serve images
+    svr.Get("/images/(.*)", [](const httplib::Request& req, httplib::Response& res) {
+        try {
+            std::string filename = req.matches[1].str();
+            filename = std::filesystem::path(filename).filename().string();
+            std::filesystem::path imagePath = FileUtils::getImagesPath() / filename;
+            
+            std::cout << "Serving image from: " << imagePath.string() << std::endl;
+            
+            if (!std::filesystem::exists(imagePath)) {
+                std::cerr << "Image not found: " << imagePath.string() << std::endl;
+                res.status = 404;
+                return;
+            }
+
+            // Добавляем CORS заголовки
+            res.set_header("Access-Control-Allow-Origin", "*");
+            res.set_header("Access-Control-Allow-Methods", "GET, OPTIONS");
+            res.set_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key");
+
+            std::string ext = imagePath.extension().string();
+            std::string content_type = "application/octet-stream";
+            if (ext == ".jpg" || ext == ".jpeg") content_type = "image/jpeg";
+            else if (ext == ".png") content_type = "image/png";
+            else if (ext == ".gif") content_type = "image/gif";
+            else if (ext == ".webp") content_type = "image/webp";
+
+            res.set_header("Content-Type", content_type.c_str());
+            res.set_header("Cache-Control", "public, max-age=31536000");
+
+            std::ifstream file(imagePath, std::ios::binary);
+            if (!file) {
+                std::cerr << "Failed to open file: " << imagePath.string() << std::endl;
+                res.status = 500;
+                return;
+            }
+
+            res.body.clear();
+            char buffer[4096];
+            while (file.read(buffer, sizeof(buffer))) {
+                res.body.append(buffer, file.gcount());
+            }
+            if (file.gcount() > 0) {
+                res.body.append(buffer, file.gcount());
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error serving image: " << e.what() << std::endl;
+            res.status = 500;
         }
     });
 

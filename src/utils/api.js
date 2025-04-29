@@ -8,7 +8,7 @@ const getServerIP = () => {
     return window.location.hostname;
 };
 
-const API_URL = `http://${getServerIP()}:8081`;
+export const API_URL = `http://${getServerIP()}:8081`;
 const API_KEY = 'cp_e29b7d8f4a6c2135d9f0';
 
 const defaultHeaders = {
@@ -52,14 +52,30 @@ export const api = {
 
     // Специальные методы для работы с формами и файлами где не нужен Content-Type: application/json
     postFormData: async (endpoint, formData) => {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'X-API-Key': API_KEY
-            },
-            body: formData
-        });
-        return response;
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': API_KEY
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.error || 'Server error');
+                } catch {
+                    throw new Error(errorText || 'Server error');
+                }
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('Error in postFormData:', error);
+            throw error;
+        }
     },
 
     putFormData: async (endpoint, formData) => {

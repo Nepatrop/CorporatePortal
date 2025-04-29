@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { useUser } from "../context/UserContext" // Импортируем useUser
-import { api } from "../utils/api"
+import { useUser } from "../context/UserContext"
+import { api, API_URL } from "../utils/api" // Добавляем импорт API_URL
 import { wsClient } from "../utils/websocket"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -119,14 +119,17 @@ function NewsItem({ news, onLike, onAddComment, onEdit, onDelete, onPin, isAdmin
       <h3 className={styles.newsTitle}>{news.title}</h3>
       <p className={styles.newsDescription}>{news.content}</p>
 
-      {news.image_data && news.image_type && (
+      {news.image_url && (
         <img
-          src={`data:${news.image_type};base64,${news.image_data}`}
+          src={`${API_URL}${news.image_url}`}
           alt={news.title}
           className={styles.newsImage}
           onError={(e) => {
-            console.error("Image loading error:", e)
-            e.target.style.display = "none"
+            console.error("Error loading image:", e.target.src);
+            e.target.style.display = "none";
+          }}
+          onLoad={() => {
+            console.log("Image loaded successfully:", news.image_url);
           }}
         />
       )}
@@ -180,9 +183,9 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
   const [isExpanded, setIsExpanded] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [image, setImage] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [validationError, setValidationError] = useState(false)
+  const [validationError, setValidationError] = useState("")
   const fileInputRef = useRef(null)
   const { currentUser } = useUser()
   const [showCancelWarning, setShowCancelWarning] = useState(false)
@@ -195,113 +198,80 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
       setDescription(editingNews.content || "")
 
       // Если у новости есть изображение, устанавливаем предпросмотр
-      if (editingNews.image_data && editingNews.image_type) {
-        setImagePreview(`data:${editingNews.image_type};base64,${editingNews.image_data}`)
+      if (editingNews.image_url) {
+        setImagePreview(`${API_URL}${editingNews.image_url}`)
       } else {
         setImagePreview(null)
       }
     }
   }, [editingNews])
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result); // Показываем превью
-        setImage(file); // Сохраняем файл для последующей отправки
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setValidationError("Размер файла не должен превышать 5MB");
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
-  }
+  };
 
-  const handleSubmit = async (e) => {
+  const handlePublish = async (e) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
-        setValidationError(true);
-        return;
+      setValidationError("Заполните все обязательные поля");
+      return;
     }
 
     try {
-        // Создаем объект с обязательными полями
-        const newsData = {
-            title: title.trim(),
-            content: description.trim(),
-            author_id: currentUser.id.toString()
-        };
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", description);
+      formData.append("author_id", currentUser.id);
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
 
-        // Обработка изображения при редактировании
-        if (editingNews) {
-            if (image) {
-                // Если выбрано новое изображение
-                const reader = new FileReader();
-                const imageBase64 = await new Promise((resolve) => {
-                    reader.onloadend = () => {
-                        const base64String = reader.result.split(',')[1];
-                        resolve(base64String);
-                    };
-                    reader.readAsDataURL(image);
-                });
-                newsData.image_data = imageBase64;
-                newsData.image_type = image.type;
-            } else if (imagePreview === null) {
-                // Если изображение было удалено
-                newsData.image_data = "null";
-                newsData.image_type = "";
-            }
-            // Если imagePreview есть, но image нет - значит изображение не менялось
-        } else {
-            // Для новой новости
-            if (image) {
-                const reader = new FileReader();
-                const imageBase64 = await new Promise((resolve) => {
-                    reader.onloadend = () => {
-                        const base64String = reader.result.split(',')[1];
-                        resolve(base64String);
-                    };
-                    reader.readAsDataURL(image);
-                });
-                newsData.image_data = imageBase64;
-                newsData.image_type = image.type;
-            }
-        }
+      const response = await api.postFormData("/api/news", formData);
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-        let response;
+      // Reset the form
+      setTitle("");
+      setDescription("");
+      setImageFile(null);
+      setImagePreview(null);
+      setIsExpanded(false);
+      setValidationError("");
+      setEditingNews(null);
 
-        if (editingNews) {
-            response = await api.put(`/api/news/${editingNews.id}`, newsData);
-        } else {
-            response = await api.post("/api/news", newsData);
-        }
-
-        if (response.ok) {
-            const responseData = await response.json();
-            console.log("Server response:", responseData);
-            
-            onAddNews(responseData);
-            resetForm();
-            setEditingNews(null);
-
-            // Перезагружаем список новостей
-            if (onUpdate) {
-                await onUpdate();
-            }
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to save news');
-        }
+      // News will be updated through WebSocket
+      if (onUpdate) {
+        await onUpdate();
+      }
     } catch (error) {
-        console.error("Error creating/updating news:", error);
-        alert(`Ошибка при ${editingNews ? 'обновлении' : 'создании'} новости: ${error.message}`);
+      console.error("Error publishing news:", error);
+      setValidationError(error.message || "Ошибка при публикации новости");
     }
-  }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const resetForm = () => {
     setTitle("")
     setDescription("")
-    setImage(null)
+    setImageFile(null)
     setImagePreview(null)
-    setValidationError(false)
+    setValidationError("")
     setIsExpanded(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -340,7 +310,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
 
   return (
     <div className={styles.addNewsFormContainer}>
-      <form onSubmit={handleSubmit} className={styles.addNewsForm}>
+      <form onSubmit={handlePublish} className={styles.addNewsForm}>
         {showCancelWarning && (
           <div className={styles.cancelWarning}>
             <p>Вы уверены, что хотите отменить? Все несохраненные изменения будут потеряны.</p>
@@ -380,7 +350,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
             />
 
             {validationError && (!title.trim() || !description.trim()) && (
-              <p className={styles.validationError}>Не все поля заполнены</p>
+              <p className={styles.validationError}>{validationError}</p>
             )}
 
             <div className={styles.addNewsActions}>
@@ -403,7 +373,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
                 <input
                   type="file"
                   ref={fileInputRef}
-                  onChange={handleImageChange}
+                  onChange={handleImageUpload}
                   className={styles.fileInput}
                   accept="image/*"
                 />
@@ -434,11 +404,7 @@ function AddNewsForm({ onAddNews, editingNews, setEditingNews, isAdmin, onUpdate
                 <img src={imagePreview || "/placeholder.svg"} alt="Предпросмотр" className={styles.imagePreview} />
                 <button
                   type="button"
-                  onClick={() => {
-                    setImage(null)
-                    setImagePreview(null)
-                    if (fileInputRef.current) fileInputRef.current.value = ""
-                  }}
+                  onClick={handleRemoveImage}
                   className={styles.removeImageButton}
                 >
                   ✕
@@ -1166,20 +1132,21 @@ function MainContent() {
   // Функция для удаления новости
   const handleDeleteNews = async (newsId) => {
     if (showDeleteConfirm === newsId) {
-        try {
-            const response = await api.delete(`/api/news/${newsId}`);
-            if (response.ok) {
-                setShowDeleteConfirm(null);
-                // Удаляем новость локально только если она еще существует в состоянии
-                setNews(prevNews => prevNews.filter(news => news.id !== newsId));
-            } else {
-                console.error("Error deleting news");
-            }
-        } catch (error) {
-            console.error("Error deleting news:", error);
+      try {
+        const response = await api.delete(`/api/news/${newsId}`);
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
         }
+        
+        setShowDeleteConfirm(null);
+        setNews(prevNews => prevNews.filter(news => news.id !== newsId));
+        
+      } catch (error) {
+        console.error("Error deleting news:", error);
+        alert("Failed to delete news: " + error.message);
+      }
     } else {
-        setShowDeleteConfirm(newsId);
+      setShowDeleteConfirm(newsId);
     }
   }
 

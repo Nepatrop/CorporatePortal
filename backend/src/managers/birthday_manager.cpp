@@ -1,5 +1,6 @@
 #include "managers/birthday_manager.h"
 #include "db/config.h"
+#include "utils/file_utils.h"
 #include <pqxx/pqxx>
 #include <fstream>
 #include <chrono>
@@ -10,24 +11,28 @@
 
 BirthdayManager::BirthdayManager() {
     try {
-        // Создаем директорию config если её нет
-        std::filesystem::path execPath = std::filesystem::current_path();
-        configDir = execPath / "config";
+        // Используем FileUtils для получения пути к конфигурационному файлу
+        configPath = FileUtils::getConfigPath() / "upcoming_birthdays.ini";
         
-        if (!std::filesystem::exists(configDir)) {
-            std::filesystem::create_directory(configDir);
+        // Создаем файл если его нет
+        if (!std::filesystem::exists(configPath)) {
+            std::ofstream file(configPath);
+            if (file.is_open()) {
+                auto now = std::chrono::system_clock::now();
+                auto timestamp = std::chrono::system_clock::to_time_t(now);
+                file << "last_update=" << timestamp << std::endl;
+                file << "count=0" << std::endl;
+                file.close();
+                std::cout << "Created configuration file at: " << configPath << std::endl;
+            }
         }
-        
-        configPath = configDir / "upcoming_birthdays.ini";
-        bool fileExists = std::filesystem::exists(configPath);
 
-        // Первоначальное обновление списка
+        loadFromFile();
         updateBirthdaysList();
-        
-        // Запускаем ежедневное обновление
-        startDailyUpdate();     
+        startDailyUpdate();
+        std::cout << "BirthdayManager initialized successfully" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Error initializing BirthdayManager: " << e.what() << std::endl;
+        std::cerr << "Error in BirthdayManager constructor: " << e.what() << std::endl;
         throw;
     }
 }

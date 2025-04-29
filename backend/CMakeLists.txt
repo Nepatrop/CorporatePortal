@@ -68,7 +68,8 @@ set(SOURCES
     src/auth/auth_handler.cpp
     src/auth/user_auth.cpp
     src/websocket/ws_server.cpp
-    src/managers/birthday_manager.cpp  # Добавляем новый файл
+    src/managers/birthday_manager.cpp
+    src/utils/file_utils.cpp
 )
 
 set(HEADERS
@@ -80,7 +81,8 @@ set(HEADERS
     include/auth/auth_handler.h
     include/auth/user_auth.h
     include/websocket/ws_server.h
-    include/managers/birthday_manager.h  # Добавляем новый файл
+    include/managers/birthday_manager.h
+    include/utils/file_utils.h
 )
 
 # Создаем исполняемый файл

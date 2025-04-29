@@ -61,13 +61,13 @@ CREATE TABLE employees (
 );
 
 -- Обновляем структуру таблицы новостей
+DROP TABLE IF EXISTS news CASCADE;
 CREATE TABLE news (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     author_id INTEGER REFERENCES employees(id),
-    image_data BYTEA,
-    image_type VARCHAR(255),
+    image_url VARCHAR(255),     -- Stores only the filename
     publication_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_pinned BOOLEAN DEFAULT FALSE,
     pin_order INTEGER,
