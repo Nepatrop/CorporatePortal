@@ -20,26 +20,61 @@ nlohmann::json Get::resultToJson(pqxx::result& r) {
 
 nlohmann::json Get::getOrganizations() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        pqxx::result r = txn.exec("SELECT * FROM organizations");
-        return resultToJson(r);
-    } catch (std::exception const& e) {
+        auto conn = ConnectionPool::getConnection();
+        if (!conn) throw std::runtime_error("Failed to get connection");
+        
+        pqxx::work txn(*conn);
+        static const std::string query = "SELECT * FROM organizations";
+        
+        std::string stmt_name = "get_orgs_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        pqxx::result result;
+        
+        try {
+            txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec(query);
+        }
+
+        auto json = resultToJson(result);
+        txn.commit();
+        ConnectionPool::releaseConnection(std::move(conn));
+        return json;
+    } catch (const std::exception& e) {
         return nlohmann::json::array();
     }
 }
 
 nlohmann::json Get::getDepartments() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        pqxx::result r = txn.exec(
+        auto conn = ConnectionPool::getConnection();
+        if (!conn) throw std::runtime_error("Failed to get connection");
+        
+        pqxx::work txn(*conn);
+        static const std::string query = 
             "SELECT d.*, o.name as organization_name "
             "FROM departments d "
-            "LEFT JOIN organizations o ON d.organization_id = o.id"
-        );
-        return resultToJson(r);
-    } catch (std::exception const& e) {
+            "LEFT JOIN LATERAL ("
+            "    SELECT name FROM organizations WHERE id = d.organization_id"
+            ") o ON true";
+
+        std::string stmt_name = "get_depts_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        pqxx::result result;
+        
+        try {
+            txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec(query);
+        }
+
+        auto json = resultToJson(result);
+        txn.commit();
+        ConnectionPool::releaseConnection(std::move(conn));
+        return json;
+    } catch (const std::exception& e) {
         return nlohmann::json::array();
     }
 }
@@ -64,63 +99,50 @@ nlohmann::json Get::getEmployees() {
 
         pqxx::work txn(*conn);
         
-        // Генерируем уникальное имя для prepared statement
-        std::string stmt_name = "get_employees_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
-        
-        // Проверяем существование prepared statement
-        bool stmt_exists = false;
-        try {
-            txn.exec_params1("SELECT 1 FROM pg_prepared_statements WHERE name = $1", stmt_name);
-            stmt_exists = true;
-        } catch (...) {
-            // Если statement не существует, игнорируем ошибку
-        }
-
         static const std::string query = R"(
             SELECT 
-                e.id as "id",
-                CURRENT_TIMESTAMP as "period",
-                e.full_name as "employee",
-                e.physical_person_name as "physical_person",
-                o.name as "organization",
-                d.name as "department",
-                e.position as "position",
-                e.personnel_number as "personnel_number",
-                COALESCE(TO_CHAR(e.dismissal_date, 'YYYY-MM-DD'), '') as "dismissal_date",
-                COALESCE(e.service, '') as "service",
-                COALESCE(m.personnel_number, '') as "manager",
-                COALESCE(e.can_help_with, '') as "can_help_with",
-                COALESCE(e.responsibilities, '') as "responsibilities",
-                COALESCE(l.name, '') as "location",
-                COALESCE(e.makes_decisions, '') as "makes_decisions",
-                COALESCE(d.department_code::text, '') as "department_code",
-                COALESCE(d.parent_department_code::text, '') as "parent_department_code",
-                e.is_dismissed::boolean as "is_dismissed",
-                COALESCE(e.work_phone, '') as "work_phone",
-                COALESCE(e.work_phone, '') as "physical_person_work_phone",
-                COALESCE(TO_CHAR(e.birth_date, 'YYYY-MM-DD'), '') as "birth_date",
-                e.is_admin::boolean as "is_admin"
+                e.id, e.full_name, e.physical_person_name, 
+                e.position, e.personnel_number, 
+                COALESCE(TO_CHAR(e.dismissal_date, 'YYYY-MM-DD'), '') as dismissal_date,
+                e.service, e.can_help_with, e.responsibilities,
+                e.makes_decisions, e.is_dismissed, e.work_phone,
+                COALESCE(TO_CHAR(e.birth_date, 'YYYY-MM-DD'), '') as birth_date,
+                e.is_admin,
+                o.name as organization,
+                d.name as department,
+                l.name as location,
+                m.personnel_number as manager
             FROM employees e
-            LEFT JOIN organizations o ON e.organization_id = o.id
-            LEFT JOIN departments d ON e.department_id = d.id
-            LEFT JOIN locations l ON e.location_id = l.id
-            LEFT JOIN employees m ON e.manager_id = m.id
+            LEFT JOIN LATERAL (
+                SELECT name FROM organizations WHERE id = e.organization_id
+            ) o ON true
+            LEFT JOIN LATERAL (
+                SELECT name FROM departments WHERE id = e.department_id
+            ) d ON true
+            LEFT JOIN LATERAL (
+                SELECT name FROM locations WHERE id = e.location_id
+            ) l ON true
+            LEFT JOIN LATERAL (
+                SELECT personnel_number FROM employees WHERE id = e.manager_id
+            ) m ON true
         )";
 
+        std::string stmt_name = "get_employees_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        
         pqxx::result result;
-        if (!stmt_exists) {
+        try {
             txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec(query);
         }
-        result = txn.exec_prepared(stmt_name);
-        
+
         auto json = resultToJson(result);
-        
-        // Удаляем prepared statement перед освобождением соединения
-        txn.exec0("DEALLOCATE " + stmt_name);
         txn.commit();
-        
         ConnectionPool::releaseConnection(std::move(conn));
         return json;
+
     } catch (const std::exception& e) {
         std::cerr << "Database error in getEmployees: " << e.what() << std::endl;
         return nlohmann::json::array();
@@ -174,10 +196,11 @@ nlohmann::json Get::getNotifications() {
 
 nlohmann::json Get::getLinks() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        
-        pqxx::result r = txn.exec(R"(
+        auto conn = ConnectionPool::getConnection();
+        if (!conn) throw std::runtime_error("Failed to get connection");
+
+        pqxx::work txn(*conn);
+        static const std::string query = R"(
             SELECT 
                 id,
                 name,
@@ -191,10 +214,21 @@ nlohmann::json Get::getLinks() {
                 icon_emoji
             FROM links 
             ORDER BY created_at DESC
-        )");
+        )";
 
-        nlohmann::json result = nlohmann::json::array();
-        for (const auto& row : r) {
+        std::string stmt_name = "get_links_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        pqxx::result result;
+
+        try {
+            txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec(query);
+        }
+
+        nlohmann::json json = nlohmann::json::array();
+        for (const auto& row : result) {
             nlohmann::json portal = {
                 {"id", row["id"].as<int>()},
                 {"name", row["name"].as<std::string>()},
@@ -208,9 +242,12 @@ nlohmann::json Get::getLinks() {
                 portal["icon_type"] = row["icon_type"].as<std::string>();
             }
 
-            result.push_back(portal);
+            json.push_back(portal);
         }
-        return result;
+
+        txn.commit();
+        ConnectionPool::releaseConnection(std::move(conn));
+        return json;
     } catch (const std::exception& e) {
         std::cerr << "Error in getLinks: " << e.what() << std::endl;
         return nlohmann::json::array();
@@ -227,12 +264,13 @@ bool Get::checkIfLikedByEmployee(int newsId, int employeeId, pqxx::work& txn) {
 
 nlohmann::json Get::getNewsWithDetails(int currentUserId) {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-        txn.exec0("SET TIME ZONE 'UTC';");
+        auto conn = ConnectionPool::getConnection();
+        if (!conn) throw std::runtime_error("Failed to get connection");
 
-        // Обновляем запрос, добавляя комментарии через WITH
-        auto result = txn.exec_params(R"(
+        pqxx::work txn(*conn);
+        txn.exec0("SET TIME ZONE 'UTC'");
+
+        static const std::string query = R"(
             WITH comment_details AS (
                 SELECT 
                     nc.news_id,
@@ -268,10 +306,21 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
                 n.is_pinned DESC,
                 n.pin_order ASC NULLS LAST,
                 n.publication_time DESC
-        )", currentUserId);
+        )";
+
+        std::string stmt_name = "get_news_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        pqxx::result result;
+
+        try {
+            txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name, currentUserId);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec_params(query, currentUserId);
+        }
 
         nlohmann::json resultArray = nlohmann::json::array();
-
+        
         for (const auto& row : result) {
             nlohmann::json newsItem = {
                 {"id", row["id"].as<int>()},
@@ -286,11 +335,13 @@ nlohmann::json Get::getNewsWithDetails(int currentUserId) {
                 {"image_type", row["image_type"].is_null() ? "" : row["image_type"].as<std::string>()},
                 {"image_data", row["image_data_base64"].is_null() ? "" : row["image_data_base64"].as<std::string>()}
             };
-
             resultArray.push_back(newsItem);
         }
 
+        txn.commit();
+        ConnectionPool::releaseConnection(std::move(conn));
         return resultArray;
+
     } catch (const std::exception& e) {
         std::cerr << "Error in getNewsWithDetails: " << e.what() << std::endl;
         return nlohmann::json::array();

@@ -398,7 +398,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
     let csvContent = "ФИО,Должность,Подразделение,Телефон,Email\n"
 
     selectedEmployeesList.forEach((emp) => {
-      const row = [emp.employee || "", emp.position || "", emp.department || "", emp.work_phone || "", emp.email || ""]
+      const row = [emp.full_name || "", emp.position || "", emp.department || "", emp.work_phone || "", emp.email || ""]
         .map((field) => `"${field}"`)
         .join(",")
 
@@ -468,7 +468,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
   const filteredEmployees = employees.filter((employee) => {
     if (!filters.name && !filters.position && !filters.phone) return true
 
-    const employeeName = employee.employee?.toLowerCase() || ""
+    const employeeName = employee.full_name?.toLowerCase() || ""
     const employeePosition = employee.position?.toLowerCase() || ""
     const employeePhone = employee.work_phone?.toLowerCase() || ""
 
@@ -1173,7 +1173,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
                           {employee.photo ? (
                             <img
                               src={employee.photo || "/placeholder.svg"}
-                              alt={employee.employee}
+                              alt={employee.full_name}
                               className={styles.photo}
                             />
                           ) : (
@@ -1181,7 +1181,7 @@ const EmployeeDirectory = ({ onNavigate }) => {
                           )}
                         </div>
                         <div className={styles.employeeMainInfo}>
-                          <h4 className={styles.employeeName}>{employee.employee}</h4>
+                          <h4 className={styles.employeeName}>{employee.full_name}</h4>
                           <p className={styles.employeePosition}>{employee.position}</p>
                         </div>
                       </div>
@@ -1261,6 +1261,10 @@ const EmployeeDirectory = ({ onNavigate }) => {
                       <div className={styles.employeeDetails}>
                         <div className={styles.detailsSection}>
                           <h4 className={styles.detailsTitle}>Основная информация</h4>
+                          <div className={styles.detailsRow}>
+                            <span className={styles.detailsLabel}>ФИО:</span>
+                            <span className={styles.detailsValue}>{employee.full_name || "Не указано"}</span>
+                          </div>
                           <div className={styles.detailsRow}>
                             <span className={styles.detailsLabel}>Табельный номер:</span>
                             <span className={styles.detailsValue}>{employee.personnel_number || "Не указан"}</span>

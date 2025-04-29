@@ -29,41 +29,41 @@ INSERT INTO employees (
 ('Лебедев Александр Сергеевич', 'Лебедев Александр Сергеевич', 1, 1, 'Начальник управления', '0000-00003', '', '', '', '', false, '+73436896204', 1, '1985-03-15', true),
 ('Аккерман Ксения Эдмундовна', 'Аккерман Ксения Эдмундовна', 1, 2, 'Инженер-программист(2519)', '0000-00004', '', '', '', '', false, '+7 (343) 737-11-37', 2, '1990-04-12', false);
 
--- -- Добавляем 100 тестовых сотрудников для нагрузочного тестирования
--- INSERT INTO employees (
---     full_name, 
---     physical_person_name,
---     organization_id,
---     department_id,
---     position,
---     personnel_number,
---     service,
---     can_help_with,
---     responsibilities,
---     makes_decisions,
---     is_dismissed,
---     work_phone,
---     location_id,
---     birth_date,
---     is_admin
--- )
--- SELECT 
---     'Тестовый Сотрудник',
---     'Тестовый Сотрудник',
---     1, -- organization_id
---     1, -- department_id
---     'Инженер',
---     'TEST-' || LPAD(generate_series::text, 5, '0'), -- Генерируем уникальные табельные номера TEST-00001, TEST-00002, etc.
---     '',
---     '',
---     '',
---     '',
---     false,
---     '+7 (343) 123-45-67',
---     1,
---     '1990-01-01',
---     false
--- FROM generate_series(1, 100);
+-- Добавляем 100 тестовых сотрудников для нагрузочного тестирования
+INSERT INTO employees (
+    full_name, 
+    physical_person_name,
+    organization_id,
+    department_id,
+    position,
+    personnel_number,
+    service,
+    can_help_with,
+    responsibilities,
+    makes_decisions,
+    is_dismissed,
+    work_phone,
+    location_id,
+    birth_date,
+    is_admin
+)
+SELECT 
+    'Тестовый Сотрудник',
+    'Тестовый Сотрудник',
+    1, -- organization_id
+    1, -- department_id
+    'Инженер',
+    'TEST-' || LPAD(generate_series::text, 5, '0'), -- Генерируем уникальные табельные номера TEST-00001, TEST-00002, etc.
+    '',
+    '',
+    '',
+    '',
+    false,
+    '+7 (343) 123-45-67',
+    1,
+    '1990-01-01',
+    false
+FROM generate_series(1, 500);
 
 -- Update manager references
 UPDATE employees SET manager_id = (SELECT id FROM employees WHERE personnel_number = '0000-00003') 
