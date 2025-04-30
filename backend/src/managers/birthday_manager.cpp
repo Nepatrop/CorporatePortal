@@ -224,47 +224,66 @@ int BirthdayManager::calculateDaysUntilBirthday(const std::string& birthDate) {
 
 nlohmann::json BirthdayManager::getUpcomingBirthdays() {
     try {
-        pqxx::connection conn(Config::getConnectionString());
-        pqxx::work txn(conn);
-
-        auto result = txn.exec(R"(
-            WITH birthday_data AS (
+        auto conn = ConnectionPool::getConnection();
+        if (!conn) throw std::runtime_error("Failed to get connection");
+        
+        pqxx::work txn(*conn);
+        
+        static const std::string query = R"(
+            WITH upcoming_birthdays AS (
                 SELECT 
                     e.id,
                     e.full_name as name,
                     e.birth_date as date,
                     e.position,
-                    d.name as department,
-                    l.name as location,
-                    o.name as organization,
                     e.personnel_number,
                     e.work_phone,
+                    o.name as organization,
+                    d.name as department,
+                    l.name as location,
                     CASE
-                        WHEN EXTRACT(DOY FROM birth_date) >= EXTRACT(DOY FROM CURRENT_DATE)
-                        THEN DATE(DATE_TRUNC('year', CURRENT_DATE) + 
-                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL)
-                        ELSE DATE(DATE_TRUNC('year', CURRENT_DATE + INTERVAL '1 year') + 
-                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL)
-                    END as next_birthday_date,
-                    CASE
-                        WHEN EXTRACT(DOY FROM birth_date) >= EXTRACT(DOY FROM CURRENT_DATE)
-                        THEN (DATE(DATE_TRUNC('year', CURRENT_DATE) + 
-                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL) - CURRENT_DATE)
-                        ELSE (DATE(DATE_TRUNC('year', CURRENT_DATE + INTERVAL '1 year') + 
-                             (EXTRACT(DOY FROM birth_date) - 1 || ' days')::INTERVAL) - CURRENT_DATE)
+                        WHEN (DATE_PART('month', CURRENT_DATE) > DATE_PART('month', e.birth_date))
+                            OR (DATE_PART('month', CURRENT_DATE) = DATE_PART('month', e.birth_date) 
+                                AND DATE_PART('day', CURRENT_DATE) > DATE_PART('day', e.birth_date))
+                        THEN 
+                            (DATE(DATE_PART('year', CURRENT_DATE) + 1 || '-' || 
+                                  DATE_PART('month', e.birth_date) || '-' || 
+                                  DATE_PART('day', e.birth_date)) - CURRENT_DATE)
+                        ELSE 
+                            (DATE(DATE_PART('year', CURRENT_DATE) || '-' || 
+                                  DATE_PART('month', e.birth_date) || '-' || 
+                                  DATE_PART('day', e.birth_date)) - CURRENT_DATE)
                     END as days_until
                 FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN locations l ON e.location_id = l.id
-                LEFT JOIN organizations o ON e.organization_id = o.id
+                LEFT JOIN LATERAL (
+                    SELECT name FROM organizations WHERE id = e.organization_id
+                ) o ON true
+                LEFT JOIN LATERAL (
+                    SELECT name FROM departments WHERE id = e.department_id
+                ) d ON true
+                LEFT JOIN LATERAL (
+                    SELECT name FROM locations WHERE id = e.location_id
+                ) l ON true
                 WHERE e.birth_date IS NOT NULL 
                 AND e.is_dismissed = false
             )
             SELECT *
-            FROM birthday_data
+            FROM upcoming_birthdays
+            WHERE days_until >= 0
             ORDER BY days_until ASC
             LIMIT 5
-        )");
+        )";
+
+        std::string stmt_name = "get_birthdays_" + std::to_string(reinterpret_cast<uintptr_t>(conn.get()));
+        pqxx::result result;
+        
+        try {
+            txn.conn().prepare(stmt_name, query);
+            result = txn.exec_prepared(stmt_name);
+            txn.exec0("DEALLOCATE " + stmt_name);
+        } catch (...) {
+            result = txn.exec(query);
+        }
 
         nlohmann::json birthdays = nlohmann::json::array();
         for (const auto& row : result) {
@@ -283,6 +302,8 @@ nlohmann::json BirthdayManager::getUpcomingBirthdays() {
             birthdays.push_back(birthday);
         }
 
+        txn.commit();
+        ConnectionPool::releaseConnection(std::move(conn));
         return birthdays;
 
     } catch (const std::exception& e) {

@@ -60,6 +60,17 @@ CREATE TABLE employees (
     FOREIGN KEY (location_id) REFERENCES locations(id)
 );
 
+-- Добавляем индексы для оптимизации
+CREATE INDEX idx_employees_personnel_number ON employees(personnel_number);
+CREATE INDEX idx_employees_organization_id ON employees(organization_id);
+CREATE INDEX idx_employees_department_id ON employees(department_id);
+CREATE INDEX idx_employees_location_id ON employees(location_id);
+CREATE INDEX idx_locations_name ON locations(name);
+
+-- Добавляем индексы для оптимизации запроса дней рождений
+CREATE INDEX idx_employees_birth_date ON employees(birth_date) WHERE birth_date IS NOT NULL AND is_dismissed = false;
+CREATE INDEX idx_employees_birthdays_composite ON employees(birth_date, is_dismissed) WHERE birth_date IS NOT NULL;
+
 -- Обновляем структуру таблицы новостей
 CREATE TABLE news (
     id SERIAL PRIMARY KEY,
@@ -95,6 +106,10 @@ CREATE TABLE news_comments (
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
 
+-- Добавляем индексы для оптимизации
+CREATE INDEX idx_news_comments_created_at ON news_comments(created_at);
+CREATE INDEX idx_news_comments_news_id ON news_comments(news_id);
+
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     message TEXT NOT NULL,
@@ -103,6 +118,9 @@ CREATE TABLE notifications (
     employee_id INT,
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
+
+-- Добавляем индексы для оптимизации
+CREATE INDEX idx_notifications_time ON notifications(time DESC);
 
 -- Обновляем таблицу links для хранения порталов
 DROP TABLE IF EXISTS links;

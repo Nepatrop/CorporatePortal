@@ -52,11 +52,11 @@ private:
 
             if (LoadTestConfig::VERBOSE_OUTPUT) {
                 std::lock_guard<std::mutex> lock(console_mutex);
-                std::cout << std::fixed << std::setprecision(2)
-                         << "Thread " << std::this_thread::get_id() 
-                         << " Request " << i 
-                         << " Status: " << (res ? res->status : 0) 
-                         << " Time: " << duration << "ms\n";
+                // std::cout << std::fixed << std::setprecision(2)
+                //          << "Thread " << std::this_thread::get_id() 
+                //          << " Request " << i 
+                //          << " Status: " << (res ? res->status : 0) 
+                //          << " Time: " << duration << "ms\n";
             }
             
             // Добавляем небольшую задержку между запросами
@@ -76,7 +76,7 @@ private:
             auto end = std::chrono::high_resolution_clock::now();
             double duration = std::chrono::duration<double, std::milli>(end - start).count();
             
-            std::cout << "Warmup request " << i + 1 << ": " << duration << "ms\n";
+            // std::cout << "Warmup request " << i + 1 << ": " << duration << "ms\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         std::cout << "Warm up complete.\n";

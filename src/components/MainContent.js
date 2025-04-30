@@ -1340,9 +1340,6 @@ function MainContent() {
       return "сегодня";
     }
     if (person.days_until === 1) {
-      return "сегодня";
-    }
-    if (person.days_until === 2) {
       return "завтра";
     }
   
