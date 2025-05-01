@@ -11,8 +11,45 @@
 #include "db/thread_pool.h"
 #include "db/connection_pool.h"
 #include <thread>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+
+// Функция для копирования директории
+void copyDirectory(const std::filesystem::path& source, const std::filesystem::path& destination) {
+    try {
+        if (!std::filesystem::exists(source)) {
+            std::cerr << "Source directory does not exist: " << source << std::endl;
+            return;
+        }
+
+        if (!std::filesystem::exists(destination)) {
+            std::filesystem::create_directories(destination);
+        }
+
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(source)) {
+            auto targetPath = destination / entry.path().lexically_relative(source);
+            
+            if (entry.is_directory()) {
+                std::filesystem::create_directories(targetPath);
+            } else {
+                std::filesystem::copy_file(entry.path(), targetPath, 
+                    std::filesystem::copy_options::overwrite_existing);
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error copying directory: " << e.what() << std::endl;
+    }
+}
 
 int main() {
+    // Копируем Swagger UI файлы в директорию сборки
+    auto execPath = std::filesystem::current_path();
+    auto sourcePath = execPath.parent_path().parent_path() / "public";
+    auto destPath = execPath / "public";
+
+    copyDirectory(sourcePath, destPath);
+
     // Инициализируем пул соединений
     ConnectionPool::initialize(10);
     
@@ -41,8 +78,14 @@ int main() {
     // Middleware для проверки аутентификации
     svr.set_pre_routing_handler(
         [](const httplib::Request& req, httplib::Response& res) -> httplib::Server::HandlerResponse {
-            // Пропускаем OPTIONS запросы
-            if (req.method == "OPTIONS") return httplib::Server::HandlerResponse::Unhandled;
+            // Пропускаем аутентификацию для документации и OPTIONS запросов
+            if (req.method == "OPTIONS" || 
+                req.path.rfind("/swagger", 0) == 0 || 
+                req.path == "/swagger.json" ||
+                req.path == "/docs" || 
+                req.path.rfind("/api-docs", 0) == 0) {
+                return httplib::Server::HandlerResponse::Unhandled;
+            }
 
             // Проверяем аутентификацию для всех остальных запросов
             if (!AuthHandler::validateAuth(req)) {
@@ -64,6 +107,41 @@ int main() {
 
     svr.Options(R"(/.*)", [](const httplib::Request&, httplib::Response& res) {
         res.status = 204; // No Content
+    });
+
+    // Настраиваем статические файлы для Swagger UI
+    const std::string SWAGGER_DIR = "./public/swagger";
+    const std::string SWAGGER_PATH = "/swagger";
+    svr.set_mount_point(SWAGGER_PATH, SWAGGER_DIR);
+
+    // Проверяем существование файлов после копирования
+    std::cout << "Checking Swagger files in build directory..." << std::endl;
+    if (!std::filesystem::exists(SWAGGER_DIR + "/index.html")) {
+        std::cerr << "Warning: " << SWAGGER_DIR << "/index.html not found" << std::endl;
+    }
+    if (!std::filesystem::exists(SWAGGER_DIR + "/openapi.yaml")) {
+        std::cerr << "Warning: " << SWAGGER_DIR << "/openapi.yaml not found" << std::endl;
+    }
+
+    // Добавляем редирект с /docs на Swagger UI
+    svr.Get("/docs", [SWAGGER_PATH](const httplib::Request&, httplib::Response& res) {
+        res.set_redirect(SWAGGER_PATH + "/");
+    });
+
+    // Обработчик для OpenAPI спецификации
+    svr.Get("/swagger/openapi.yaml", [SWAGGER_DIR](const httplib::Request&, httplib::Response& res) {
+        std::ifstream file(SWAGGER_DIR + "/openapi.yaml");
+        if (!file.is_open()) {
+            res.status = 404;
+            res.set_content("OpenAPI specification not found", "text/plain");
+            return;
+        }
+        
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        
+        res.set_header("Content-Type", "application/yaml");
+        res.set_content(buffer.str(), "application/yaml");
     });
 
     // GET endpoints

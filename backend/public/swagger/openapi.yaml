@@ -1,0 +1,859 @@
+openapi: 3.0.0
+info:
+  title: Corporate Portal API
+  description: |
+    # API документация корпоративного портала
+    
+    ## Аутентификация
+    Все API эндпоинты (кроме /docs и /api/auth/*) требуют API ключ в заголовке
+
+    ## WebSocket
+    WebSocket сервер работает на порту 8082 и отправляет события:
+    - news_updated: Обновление новости
+    - news_deleted: Удаление новости 
+    - news_pin_updated: Изменение закрепления новости
+    - comment_added: Добавление комментария
+    - likes_updated: Обновление количества лайков
+
+    ## Коды ошибок
+    - 400 Bad Request - Неверный запрос или данные
+    - 401 Unauthorized - Отсутствует или неверный API ключ
+    - 403 Forbidden - Недостаточно прав для операции
+    - 404 Not Found - Ресурс не найден  
+    - 500 Internal Server Error - Внутренняя ошибка сервера
+
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Описание ошибки
+
+    Success:
+      type: object  
+      properties:
+        success:
+          type: boolean
+          description: Признак успешной операции
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Уникальный идентификатор сотрудника
+        full_name: 
+          type: string
+          description: ФИО сотрудника
+        physical_person_name:
+          type: string
+          description: Имя физического лица 
+        position:
+          type: string
+          description: Должность
+        personnel_number:
+          type: string
+          description: Табельный номер
+        department:
+          type: string
+          description: Отдел
+        organization:
+          type: string  
+          description: Организация
+        location:
+          type: string
+          description: Местоположение
+        work_phone:
+          type: string
+          description: Рабочий телефон
+        birth_date:
+          type: string
+          format: date
+          description: Дата рождения
+        is_admin:
+          type: boolean
+          description: Признак администратора
+
+    NewsItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID новости
+        title:
+          type: string
+          description: Заголовок
+        content:
+          type: string 
+          description: Текст новости
+        author_name:
+          type: string
+          description: Имя автора
+        publication_time:
+          type: string
+          format: date-time
+          description: Дата/время публикации
+        is_pinned:
+          type: boolean
+          description: Признак закрепленной новости
+        pin_order:
+          type: integer
+          nullable: true
+          description: Порядок закрепления
+        image_data:
+          type: string
+          description: Изображение в base64
+        image_type:
+          type: string
+          description: MIME тип изображения
+        likes_count:
+          type: integer
+          description: Количество лайков
+        liked:
+          type: boolean
+          description: Лайкнул ли текущий пользователь
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID комментария
+        text:
+          type: string
+          description: Текст комментария  
+        author:
+          type: string
+          description: Автор комментария
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания
+
+    Portal:
+      type: object  
+      properties:
+        id:
+          type: integer
+          description: ID портала
+        name:
+          type: string
+          description: Название
+        description:
+          type: string
+          description: Описание
+        url:
+          type: string
+          description: URL портала
+        icon_data:
+          type: string
+          description: Иконка в base64
+        icon_type:
+          type: string
+          description: MIME тип иконки
+        icon_emoji:
+          type: string
+          description: Эмодзи иконка
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Аутентификация
+      summary: Вход в систему
+      description: Аутентификация пользователя по табельному номеру и паролю
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - personnel_number
+                - password  
+              properties:
+                personnel_number:
+                  type: string
+                  description: Табельный номер сотрудника
+                  example: "12345"
+                password:
+                  type: string
+                  format: password
+                  description: Пароль
+                  example: "password123" 
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/register:
+    post:
+      tags:
+        - Аутентификация  
+      summary: Регистрация нового пользователя
+      description: |
+        Регистрация нового сотрудника в системе.
+        Требуются все обязательные поля сотрудника.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - personnel_number
+                - password
+                - full_name
+                - department
+                - position
+                - work_phone
+                - birth_date
+              properties:
+                personnel_number:
+                  type: string
+                  description: Табельный номер
+                password:
+                  type: string
+                  format: password
+                  description: Пароль
+                full_name:
+                  type: string
+                  description: ФИО
+                department:
+                  type: string  
+                  description: Отдел
+                position:
+                  type: string
+                  description: Должность
+                work_phone:
+                  type: string
+                  description: Рабочий телефон
+                birth_date:
+                  type: string
+                  format: date
+                  description: Дата рождения
+      responses:
+        '200':
+          description: Успешная регистрация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/news:
+    get:
+      tags:
+        - Новости
+      summary: Получение списка новостей
+      description: Возвращает все новости с информацией о лайках и комментариях
+      parameters:
+        - in: query
+          name: current_user_id
+          required: true
+          schema:
+            type: integer
+          description: ID текущего пользователя для определения статуса лайков
+      responses:
+        '200':
+          description: Список новостей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewsItem'
+
+    post:
+      tags:
+        - Новости
+      summary: Создание новости
+      description: |
+        Создает новую новость. Поддерживает загрузку изображений в формате base64.
+        Требуются права администратора.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - author_id
+              properties:
+                title:
+                  type: string
+                  description: Заголовок новости
+                content:
+                  type: string
+                  description: Текст новости
+                author_id:
+                  type: string
+                  description: ID автора
+                image_data:
+                  type: string
+                  description: Изображение в base64
+                image_type:
+                  type: string
+                  description: MIME тип изображения
+      responses:
+        '200':
+          description: Новость создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsItem'
+        '403':
+          description: Недостаточно прав
+
+  /api/news/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID новости
+
+    put:
+      tags:
+        - Новости
+      summary: Редактирование новости
+      description: |
+        Обновляет существующую новость.
+        Требуются права администратора.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  description: Новый заголовок
+                content:
+                  type: string  
+                  description: Новый текст
+                image_data:
+                  type: string
+                  description: Новое изображение в base64
+                image_type:
+                  type: string
+                  description: MIME тип изображения
+      responses:
+        '200':
+          description: Новость обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsItem'
+        '404':
+          description: Новость не найдена
+
+    delete:
+      tags:
+        - Новости  
+      summary: Удаление новости
+      description: |
+        Удаляет новость и все связанные комментарии/лайки.
+        Требуются права администратора.
+      responses:
+        '200':
+          description: Новость удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          description: Новость не найдена
+
+  /api/news/{id}/comments:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID новости
+
+    post:
+      tags:
+        - Новости
+      summary: Добавление комментария
+      description: Добавляет комментарий к новости
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+                - text
+              properties:
+                employee_id:
+                  type: integer
+                  description: ID автора комментария
+                text:
+                  type: string
+                  description: Текст комментария
+      responses:
+        '200':
+          description: Комментарий добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+
+  /api/news/{id}/like:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID новости
+
+    post:
+      tags:
+        - Новости
+      summary: Лайк/дизлайк новости 
+      description: Ставит или убирает лайк от пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+              properties:
+                employee_id:  
+                  type: integer
+                  description: ID пользователя
+      responses:
+        '200':
+          description: Статус лайка обновлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  action:
+                    type: string
+                    enum: [liked, unliked]
+                  likes_count:
+                    type: integer
+
+  /api/news/{id}/pin:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID новости
+
+    post:
+      tags:
+        - Новости
+      summary: Закрепление новости
+      description: |
+        Закрепляет или открепляет новость.
+        Требуются права администратора.
+        Максимум 3 закрепленные новости.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isPinned
+              properties:
+                isPinned:
+                  type: boolean
+                  description: true - закрепить, false - открепить
+      responses:
+        '200':
+          description: Статус закрепления обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Превышен лимит закрепленных новостей
+
+  /api/employees:
+    get:
+      tags:
+        - Сотрудники
+      summary: Получение списка сотрудников
+      description: Возвращает список всех сотрудников с полной информацией
+      parameters:
+        - in: query
+          name: personnel_number
+          schema:
+            type: string
+          description: Фильтр по табельному номеру
+      responses:
+        '200':
+          description: Список сотрудников
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+
+    post:
+      tags:
+        - Сотрудники
+      summary: Создание сотрудника
+      description: Создает нового сотрудника в системе
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+      responses:
+        '200':
+          description: Сотрудник создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/employees/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID сотрудника
+
+    put:
+      tags:
+        - Сотрудники
+      summary: Обновление данных сотрудника
+      description: Обновляет информацию о сотруднике
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+      responses:
+        '200':
+          description: Данные обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          description: Сотрудник не найден
+
+    delete:
+      tags:
+        - Сотрудники
+      summary: Удаление сотрудника
+      description: |
+        Удаляет сотрудника и все связанные данные.
+        Требуются права администратора.
+      responses:
+        '200':
+          description: Сотрудник удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          description: Сотрудник не найден
+
+  /api/links:
+    get:
+      tags:
+        - Порталы
+      summary: Получение списка порталов
+      description: Возвращает список всех внутренних порталов
+      responses:
+        '200':
+          description: Список порталов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Portal'
+
+    post:
+      tags:
+        - Порталы
+      summary: Создание портала
+      description: |
+        Создает новый внутренний портал.
+        Требуются права администратора.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - url
+              properties:
+                name:
+                  type: string
+                  description: Название портала
+                description:
+                  type: string
+                  description: Описание
+                url:
+                  type: string 
+                  description: URL портала
+                icon_data:
+                  type: string
+                  description: Иконка в base64
+                icon_type:
+                  type: string
+                  description: MIME тип иконки
+                icon_emoji:
+                  type: string
+                  description: Эмодзи иконка
+      responses:
+        '200':
+          description: Портал создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portal'
+
+  /api/links/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID портала
+
+    put:
+      tags:
+        - Порталы
+      summary: Обновление портала
+      description: |
+        Обновляет существующий портал.
+        Требуются права администратора.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Portal'
+      responses:
+        '200':
+          description: Портал обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portal'
+        '404':
+          description: Портал не найден
+
+    delete:
+      tags:
+        - Порталы
+      summary: Удаление портала
+      description: |
+        Удаляет внутренний портал.
+        Требуются права администратора.
+      responses:
+        '200':
+          description: Портал удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          description: Портал не найден
+
+  /api/birthdays/upcoming:
+    get:
+      tags:
+        - Дни рождения
+      summary: Получение предстоящих дней рождения
+      description: |
+        Возвращает список из 5 ближайших дней рождения сотрудников.
+        Сортировка по количеству дней до дня рождения.
+      responses:
+        '200':
+          description: Список дней рождения
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ID сотрудника
+                    name:
+                      type: string
+                      description: ФИО
+                    date:
+                      type: string
+                      format: date
+                      description: Дата рождения
+                    days_until:
+                      type: integer
+                      description: Дней до дня рождения
+                    position:
+                      type: string
+                      description: Должность
+                    department:
+                      type: string
+                      description: Отдел
+                    work_phone:
+                      type: string
+                      description: Рабочий телефон
+
+  /api/organizations:
+    get:
+      tags:
+        - Организационная структура
+      summary: Получение списка организаций
+      responses:
+        '200':
+          description: Список организаций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+    post:
+      tags:
+        - Организационная структура
+      summary: Создание организации
+      responses:
+        '200':
+          description: Организация создана
+    delete:
+      tags:
+        - Организационная структура
+      summary: Удаление организации
+      responses:
+        '200':
+          description: Организация удалена
+
+  /api/departments:
+    get:
+      tags:
+        - Организационная структура
+      summary: Получение списка отделов
+      responses:
+        '200':
+          description: Список отделов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    organization:
+                      type: string
+    post:
+      tags:
+        - Организационная структура
+      summary: Создание отдела
+      responses:
+        '200':
+          description: Отдел создан
+    delete:
+      tags:
+        - Организационная структура
+      summary: Удаление отдела
+      responses:
+        '200':
+          description: Отдел удален
+
+  /api/locations:
+    get:
+      tags:
+        - Организационная структура
+      summary: Получение списка местоположений
+      responses:
+        '200':
+          description: Список местоположений
+    post:
+      tags:
+        - Организационная структура
+      summary: Создание местоположения
+      responses:
+        '200':
+          description: Местоположение создано
+    delete:
+      tags:
+        - Организационная структура  
+      summary: Удаление местоположения
+      responses:
+        '200':
+          description: Местоположение удалено
